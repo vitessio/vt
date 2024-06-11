@@ -1,0 +1,83 @@
+CREATE TABLE user (
+    id INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+
+CREATE TABLE user_extra (
+    user_id INT,
+    extra_info VARCHAR(100),
+    PRIMARY KEY (user_id, extra_info)
+);
+
+# Inserts for user table
+INSERT INTO user (id, name) VALUES
+(1, 'Alice'),
+(2, 'Bob'),
+(3, 'Charlie'),
+(4, 'David'),
+(5, 'Eve'),
+(6, 'Frank'),
+(7, 'Grace'),
+(8, 'Hannah'),
+(9, 'Ivy'),
+(10, 'Jack');
+
+# Inserts for user_extra table
+INSERT INTO user_extra (user_id, extra_info) VALUES
+(1, 'info1'),
+(1, 'info2'),
+(2, 'info1'),
+(3, 'info1'),
+(3, 'info2'),
+(4, 'info1'),
+(5, 'info1'),
+(6, 'info1'),
+(7, 'info1'),
+(8, 'info1');
+
+# Subquery with SUM aggregation in SELECT, used in HAVING
+SELECT
+    id,
+    name,
+    (SELECT SUM(LENGTH(extra_info)) FROM user_extra) AS total_length_extra_info,
+    AVG(id) AS avg_ids
+FROM
+    user
+GROUP BY
+    id, name
+HAVING
+    (SELECT SUM(LENGTH(extra_info)) FROM user_extra) > 10;
+
+# Subquery with SUM aggregation in SELECT, used in ORDER BY
+SELECT
+    id,
+    name,
+    (SELECT SUM(LENGTH(extra_info)) FROM user_extra) AS total_length_extra_info,
+    COUNT(id) AS count_ids
+FROM
+    user
+GROUP BY
+    id, name
+ORDER BY
+    (SELECT SUM(LENGTH(extra_info)) FROM user_extra);
+
+# Subquery with Multiple Aggregations in SELECT, used in HAVING
+SELECT
+    id,
+    name,
+    (SELECT COUNT(*) FROM user_extra) AS total_extra_count,
+    (SELECT SUM(LENGTH(extra_info)) FROM user_extra) AS total_length_extra_info,
+    (SELECT AVG(LENGTH(extra_info)) FROM user_extra) AS avg_length_extra_info,
+    (SELECT MAX(LENGTH(extra_info)) FROM user_extra) AS max_length_extra_info,
+    (SELECT MIN(LENGTH(extra_info)) FROM user_extra) AS min_length_extra_info,
+    SUM(id) AS sum_ids
+FROM
+    user
+GROUP BY
+    id, name
+HAVING
+    (SELECT AVG(LENGTH(extra_info)) FROM user_extra) > 2;
+
+select max((select min(user_id) from user_extra))
+from user
+where id = 1;
