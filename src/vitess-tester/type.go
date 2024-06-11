@@ -115,6 +115,7 @@ var commandMap = map[string]CmdType{
 	"begin_concurrent":           Q_BEGIN_CONCURRENT,
 	"end_concurrent":             Q_END_CONCURRENT,
 	"skip_if_below_version":      Q_SKIP_IF_BELOW_VERSION,
+	"vexplain":                   Q_VEXPLAIN,
 }
 
 func findType(cmdName string) CmdType {

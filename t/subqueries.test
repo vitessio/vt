@@ -456,3 +456,17 @@ GROUP BY
     id, name
 ORDER BY
     (SELECT SUM(LENGTH(extra_info)) FROM user_extra WHERE user_extra.user_id = user.id);
+
+select max((select min(user_id) from user_extra))
+from user
+where id = 1;
+
+select
+    max((select group_concat(id, name) from user where id = 1));
+
+--skip this is buggy at the moment
+select max((select max(name) from user u1 where u1.id = u2.id))
+from user u2;
+
+select count(distinct name, id)
+from user;
