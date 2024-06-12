@@ -81,7 +81,7 @@ func executeTests(fileNames []string, s Suite) (failed bool) {
 			failed = true
 			continue
 		}
-		failed = errReporter.Failed()
+		failed = failed || errReporter.Failed()
 		s.CloseReportForFile()
 	}
 	return
