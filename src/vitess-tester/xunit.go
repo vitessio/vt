@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package vitess_tester
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/jstemmer/go-junit-report/v2/junit"
+	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
 type XMLTestSuite struct {
@@ -33,7 +34,7 @@ type XMLTestSuite struct {
 
 var _ Suite = (*XMLTestSuite)(nil)
 
-func newXMLTestSuite() *XMLTestSuite {
+func NewXMLTestSuite() *XMLTestSuite {
 	return &XMLTestSuite{}
 }
 
@@ -77,10 +78,10 @@ func (xml *XMLTestSuite) EndTestCase() {
 	xml.currTestCase = nil
 }
 
-func (xml *XMLTestSuite) AddFailure(err error) {
+func (xml *XMLTestSuite) AddFailure(vschema vindexes.VSchema, err error) {
 	if xml.currTestCase == nil {
 		xml.AddTestCase("SETUP", 0)
-		xml.AddFailure(err)
+		xml.AddFailure(vschema, err)
 		xml.EndTestCase()
 		return
 	}
@@ -97,7 +98,7 @@ func (xml *XMLTestSuite) AddFailure(err error) {
 
 func (xml *XMLTestSuite) Report() string {
 	return fmt.Sprintf(
-		"%s: ok! Ran %d queries, %d successfully and %d failures take time %v s\n",
+		"%s: ok! Ran %d queries, %d successfully and %d failures take time %v\n",
 		xml.currTestSuite.Name,
 		xml.currTestSuite.Tests,
 		xml.currTestSuite.Tests-xml.currTestSuite.Failures,

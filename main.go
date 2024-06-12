@@ -27,6 +27,8 @@ import (
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
+
+	vitess_tester "github.com/vitessio/vitess-tester/src/vitess-tester"
 )
 
 var (
@@ -43,13 +45,6 @@ func init() {
 	flag.BoolVar(&sharded, "sharded", false, "run all tests on a sharded keyspace")
 	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file")
 	flag.BoolVar(&xunit, "xunit", false, "Get output in an xml file instead of errors directory")
-}
-
-type query struct {
-	firstWord string
-	Query     string
-	Line      int
-	tp        CmdType
 }
 
 func loadAllTests() (tests []string, err error) {
@@ -72,10 +67,10 @@ func loadAllTests() (tests []string, err error) {
 	return tests, nil
 }
 
-func executeTests(fileNames []string, s Suite) (failed bool) {
+func executeTests(clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, fileNames []string, s vitess_tester.Suite) (failed bool) {
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := newTester(name, errReporter)
+		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, keyspaceName, vschema, vschemaFile)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
@@ -88,12 +83,8 @@ func executeTests(fileNames []string, s Suite) (failed bool) {
 }
 
 var (
-	clusterInstance *cluster.LocalProcessCluster
-	keyspaceName    = "mysqltest"
-	cell            = "mysqltest"
-
-	vtParams    mysql.ConnParams
-	mysqlParams mysql.ConnParams
+	keyspaceName = "mysqltest"
+	cell         = "mysqltest"
 )
 
 type rawKeyspaceVindex struct {
@@ -122,7 +113,7 @@ var vschema = vindexes.VSchema{
 	},
 }
 
-func setupCluster(sharded bool) func() {
+func setupCluster(sharded bool) (clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, close func()) {
 	clusterInstance = cluster.NewCluster(cell, "localhost")
 
 	// Start topo server
@@ -171,7 +162,7 @@ func setupCluster(sharded bool) func() {
 	}
 	mysqlParams = conn
 
-	return func() {
+	return clusterInstance, vtParams, mysqlParams, func() {
 		clusterInstance.Teardown()
 		closer()
 	}
@@ -257,7 +248,7 @@ func main() {
 
 	log.Infof("running tests: %v", tests)
 
-	closer := setupCluster(sharded)
+	clusterInstance, vtParams, mysqlParams, closer := setupCluster(sharded)
 	defer closer()
 
 	// remove errors folder if exists
@@ -266,13 +257,13 @@ func main() {
 		panic(err.Error())
 	}
 
-	var reporterSuite Suite
+	var reporterSuite vitess_tester.Suite
 	if xunit {
-		reporterSuite = newXMLTestSuite()
+		reporterSuite = vitess_tester.NewXMLTestSuite()
 	} else {
-		reporterSuite = newFileReporterSuite()
+		reporterSuite = vitess_tester.NewFileReporterSuite()
 	}
-	failed := executeTests(tests, reporterSuite)
+	failed := executeTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite)
 	outputFile := reporterSuite.Close()
 	if failed {
 		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
