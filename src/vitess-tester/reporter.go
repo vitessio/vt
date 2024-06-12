@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package vitess_tester
 
 import (
 	"encoding/json"
@@ -24,6 +24,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
 type Suite interface {
@@ -35,7 +37,7 @@ type Suite interface {
 type Reporter interface {
 	AddTestCase(query string, lineNo int)
 	EndTestCase()
-	AddFailure(err error)
+	AddFailure(vschema vindexes.VSchema, err error)
 	Report() string
 	Failed() bool
 }
@@ -52,7 +54,7 @@ func (frs *FileReporterSuite) Close() string {
 	return "errors"
 }
 
-func newFileReporterSuite() *FileReporterSuite {
+func NewFileReporterSuite() *FileReporterSuite {
 	return &FileReporterSuite{}
 }
 
@@ -115,7 +117,7 @@ func (e *FileReporter) EndTestCase() {
 	}
 }
 
-func (e *FileReporter) AddFailure(err error) {
+func (e *FileReporter) AddFailure(vschema vindexes.VSchema, err error) {
 	e.failureCount++
 	e.currentQueryFailed = true
 	if e.currentQuery == "" {
@@ -130,7 +132,7 @@ func (e *FileReporter) AddFailure(err error) {
 		panic("failed to write error file\n" + err.Error())
 	}
 
-	e.createVSchemaDump()
+	e.createVSchemaDump(vschema)
 }
 
 func (e *FileReporter) createErrorFileFor() *os.File {
@@ -152,7 +154,7 @@ func (e *FileReporter) createErrorFileFor() *os.File {
 	return file
 }
 
-func (e *FileReporter) createVSchemaDump() {
+func (e *FileReporter) createVSchemaDump(vschema vindexes.VSchema) {
 	errorDir := e.errorDir()
 	err := os.MkdirAll(errorDir, PERM)
 	if err != nil {

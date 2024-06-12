@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package vitess_tester
 
 import (
 	"strings"
@@ -129,6 +129,13 @@ const (
 	Q_SKIP_IF_BELOW_VERSION
 	Q_VEXPLAIN
 )
+
+type query struct {
+	firstWord string
+	Query     string
+	Line      int
+	tp        CmdType
+}
 
 // ParseQueries parses an array of string into an array of query object.
 // Note: a query statement may reside in several lines.

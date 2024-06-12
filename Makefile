@@ -5,10 +5,7 @@ GO := go
 default: build
 
 build:
-	$(GO) build -o vitess-tester ./src/vitess-tester
-
-debug:
-	$(GO) build -gcflags="all=-N -l" -o vitess-tester ./src/vitess-tester
+	$(GO) build -o vitess-tester ./
 
 test: build
 	$(GO) test -cover ./...
@@ -20,6 +17,3 @@ tidy:
 clean:
 	$(GO) clean -i ./...
 	rm -rf vitess-tester
-
-gen_perror: generate_perror/main.go
-	$(GO) build -o gen_perror ./generate_perror

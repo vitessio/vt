@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package vitess_tester
 
 import (
 	"bytes"
@@ -28,6 +28,8 @@ import (
 
 	"github.com/pingcap/errors"
 	log "github.com/sirupsen/logrus"
+	"vitess.io/vitess/go/mysql"
+	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
@@ -36,12 +38,18 @@ import (
 type tester struct {
 	name string
 
-	curr utils.MySQLCompare
+	clusterInstance       *cluster.LocalProcessCluster
+	vtParams, mysqlParams mysql.ConnParams
+	curr                  utils.MySQLCompare
 
-	skipBinary  string
-	skipVersion int
-	skipNext    bool
-	vexplain    string
+	skipBinary   string
+	skipVersion  int
+	skipNext     bool
+	olap         bool
+	keyspaceName string
+	vschema      vindexes.VSchema
+	vschemaFile  string
+	vexplain     string
 
 	// check expected error, use --error before the statement
 	// we only care if an error is returned, not the exact error message.
@@ -50,21 +58,36 @@ type tester struct {
 	reporter Reporter
 }
 
-func newTester(name string, reporter Reporter) *tester {
-	t := new(tester)
-	t.name = name
-	t.reporter = reporter
-
+func NewTester(name string, reporter Reporter,
+	clusterInstance *cluster.LocalProcessCluster,
+	vtParams,
+	mysqlParams mysql.ConnParams,
+	olap bool,
+	keyspaceName string,
+	vschema vindexes.VSchema,
+	vschemaFile string,
+) *tester {
+	t := &tester{
+		name:            name,
+		reporter:        reporter,
+		vtParams:        vtParams,
+		mysqlParams:     mysqlParams,
+		clusterInstance: clusterInstance,
+		keyspaceName:    keyspaceName,
+		vschema:         vschema,
+		vschemaFile:     vschemaFile,
+		olap:            olap,
+	}
 	return t
 }
 
 func (t *tester) preProcess() {
-	mcmp, err := utils.NewMySQLCompare(t, vtParams, mysqlParams)
+	mcmp, err := utils.NewMySQLCompare(t, t.vtParams, t.mysqlParams)
 	if err != nil {
 		panic(err.Error())
 	}
 	t.curr = mcmp
-	if olap {
+	if t.olap {
 		_, err := t.curr.VtConn.ExecuteFetch("set workload = 'olap'", 0, false)
 		if err != nil {
 			panic(err)
@@ -94,7 +117,7 @@ func (t *tester) Run() error {
 	defer t.postProcess()
 	queries, err := t.loadQueries()
 	if err != nil {
-		t.reporter.AddFailure(err)
+		t.reporter.AddFailure(t.vschema, err)
 		return err
 	}
 
@@ -116,18 +139,18 @@ func (t *tester) Run() error {
 		case Q_SKIP:
 			t.skipNext = true
 		case Q_BEGIN_CONCURRENT, Q_END_CONCURRENT, Q_CONNECT, Q_CONNECTION, Q_DISCONNECT, Q_LET, Q_REPLACE_COLUMN:
-			t.reporter.AddFailure(fmt.Errorf("%s not supported", String(q.tp)))
+			t.reporter.AddFailure(t.vschema, fmt.Errorf("%s not supported", String(q.tp)))
 		case Q_SKIP_IF_BELOW_VERSION:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
-				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
+				t.reporter.AddFailure(t.vschema, fmt.Errorf("incorrect syntax for Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
 				continue
 			}
 			t.skipBinary = strs[1]
 			var err error
 			t.skipVersion, err = strconv.Atoi(strs[2])
 			if err != nil {
-				t.reporter.AddFailure(err)
+				t.reporter.AddFailure(t.vschema, err)
 				continue
 			}
 		case Q_ERROR:
@@ -135,7 +158,7 @@ func (t *tester) Run() error {
 		case Q_VEXPLAIN:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 2 {
-				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
+				t.reporter.AddFailure(t.vschema, fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
 				continue
 			}
 
@@ -156,15 +179,15 @@ func (t *tester) Run() error {
 				result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+q.Query, -1, false)
 				t.vexplain = ""
 				if err != nil {
-					t.reporter.AddFailure(err)
+					t.reporter.AddFailure(t.vschema, err)
 					continue
 				}
 
-				t.reporter.AddFailure(fmt.Errorf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
+				t.reporter.AddFailure(t.vschema, fmt.Errorf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
 			}
 			t.reporter.AddTestCase(q.Query, q.Line)
 			if err = t.execute(q); err != nil && !t.expectedErrs {
-				t.reporter.AddFailure(err)
+				t.reporter.AddFailure(t.vschema, err)
 			}
 			t.reporter.EndTestCase()
 			// clear expected errors and current query after we execute any query
@@ -175,7 +198,7 @@ func (t *tester) Run() error {
 				return errors.Annotate(err, "failed to remove file")
 			}
 		default:
-			t.reporter.AddFailure(fmt.Errorf("%s not supported", String(q.tp)))
+			t.reporter.AddFailure(t.vschema, fmt.Errorf("%s not supported", String(q.tp)))
 		}
 	}
 	fmt.Printf("%s\n", t.reporter.Report())
@@ -282,7 +305,7 @@ func (t *tester) executeStmt(query string) error {
 
 	log.Debugf("executeStmt: %s", query)
 	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	autoVschema := isCreateStatement && !t.expectedErrs && vschemaFile == ""
+	autoVschema := isCreateStatement && !t.expectedErrs && t.vschemaFile == ""
 	if autoVschema {
 		t.handleCreateTable(create)
 	}
@@ -299,7 +322,7 @@ func (t *tester) executeStmt(query string) error {
 	}
 
 	if autoVschema {
-		err = utils.WaitForAuthoritative(t, keyspaceName, create.Table.Name.String(), clusterInstance.VtgateProcess.ReadVSchema)
+		err = utils.WaitForAuthoritative(t, t.keyspaceName, create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
 		if err != nil {
 			panic(err)
 		}
@@ -343,7 +366,7 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 		Type:    "xxhash",
 	}
 
-	ks := vschema.Keyspaces[keyspaceName]
+	ks := t.vschema.Keyspaces[t.keyspaceName]
 	tableName := create.Table.Name
 	ks.Tables[tableName.String()] = &vindexes.Table{
 		Name:           tableName,
@@ -356,7 +379,7 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 		panic(err)
 	}
 
-	err = clusterInstance.VtctldClientProcess.ApplyVSchema(keyspaceName, string(ksJson))
+	err = t.clusterInstance.VtctldClientProcess.ApplyVSchema(t.keyspaceName, string(ksJson))
 	if err != nil {
 		panic(err)
 	}
@@ -368,7 +391,7 @@ func (t *tester) testFileName() string {
 }
 
 func (t *tester) Errorf(format string, args ...interface{}) {
-	t.reporter.AddFailure(errors.Errorf(format, args...))
+	t.reporter.AddFailure(t.vschema, errors.Errorf(format, args...))
 }
 
 func (t *tester) FailNow() {
