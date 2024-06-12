@@ -74,14 +74,15 @@ func loadAllTests() (tests []string, err error) {
 
 func executeTests(fileNames []string, s Suite) (failed bool) {
 	for _, name := range fileNames {
-		errFileReporter := s.NewReporterForFile(name)
-		vTester := newTester(name, errFileReporter)
+		errReporter := s.NewReporterForFile(name)
+		vTester := newTester(name, errReporter)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
 			continue
 		}
-		failed = errFileReporter.Failed()
+		failed = errReporter.Failed()
+		s.CloseReportForFile()
 	}
 	return
 }
@@ -265,9 +266,16 @@ func main() {
 		panic(err.Error())
 	}
 
-	frs := newFileReporterSuite()
-	if failed := executeTests(tests, frs); failed {
-		log.Errorf("some tests failed 😭\nsee errors in errors folder")
+	var reporterSuite Suite
+	if xunit {
+		reporterSuite = newXMLTestSuite()
+	} else {
+		reporterSuite = newFileReporterSuite()
+	}
+	failed := executeTests(tests, reporterSuite)
+	outputFile := reporterSuite.Close()
+	if failed {
+		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
 		os.Exit(1)
 	}
 	println("Great, All tests passed")
