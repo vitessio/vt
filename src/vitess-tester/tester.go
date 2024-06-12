@@ -41,6 +41,7 @@ type tester struct {
 	skipBinary  string
 	skipVersion int
 	skipNext    bool
+	vexplain    string
 
 	// check expected error, use --error before the statement
 	// we only care if an error is returned, not the exact error message.
@@ -131,6 +132,14 @@ func (t *tester) Run() error {
 			}
 		case Q_ERROR:
 			t.expectedErrs = true
+		case Q_VEXPLAIN:
+			strs := strings.Split(q.Query, " ")
+			if len(strs) != 2 {
+				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
+				continue
+			}
+
+			t.vexplain = strs[1]
 		case Q_QUERY:
 			if t.skipNext {
 				t.skipNext = false
@@ -142,6 +151,16 @@ func (t *tester) Run() error {
 				if !okayToRun {
 					continue
 				}
+			}
+			if t.vexplain != "" {
+				result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+q.Query, -1, false)
+				t.vexplain = ""
+				if err != nil {
+					t.reporter.AddFailure(err)
+					continue
+				}
+
+				t.reporter.AddFailure(fmt.Errorf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
 			}
 			t.reporter.AddTestCase(q.Query, q.Line)
 			if err = t.execute(q); err != nil && !t.expectedErrs {

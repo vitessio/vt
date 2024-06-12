@@ -127,6 +127,7 @@ const (
 	Q_COMMENT_WITH_COMMAND
 	Q_EMPTY_LINE
 	Q_SKIP_IF_BELOW_VERSION
+	Q_VEXPLAIN
 )
 
 // ParseQueries parses an array of string into an array of query object.
