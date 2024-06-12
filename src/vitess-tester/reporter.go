@@ -26,12 +26,26 @@ import (
 	"time"
 )
 
+type Suite interface {
+	NewReporterForFile(name string) Reporter
+}
+
 type Reporter interface {
 	AddTestCase(query string, lineNo int)
 	EndTestCase()
 	AddFailure(err error)
 	Report() string
 	Failed() bool
+}
+
+type FileReporterSuite struct{}
+
+func (frs *FileReporterSuite) NewReporterForFile(name string) Reporter {
+	return newFileReporter(name)
+}
+
+func newFileReporterSuite() *FileReporterSuite {
+	return &FileReporterSuite{}
 }
 
 type FileReporter struct {
