@@ -42,6 +42,7 @@ func init() {
 	flag.StringVar(&logLevel, "log-level", "error", "The log level of vitess-tester: info, warn, error, debug.")
 	flag.BoolVar(&sharded, "sharded", false, "run all tests on a sharded keyspace")
 	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file")
+	flag.BoolVar(&xunit, "xunit", false, "Get output in an xml file instead of errors directory")
 }
 
 type query struct {
@@ -71,16 +72,17 @@ func loadAllTests() (tests []string, err error) {
 	return tests, nil
 }
 
-func executeTests(fileNames []string) (failed bool) {
+func executeTests(fileNames []string, s Suite) (failed bool) {
 	for _, name := range fileNames {
-		errFileReporter := newFileReporter(name)
-		vTester := newTester(name, errFileReporter)
+		errReporter := s.NewReporterForFile(name)
+		vTester := newTester(name, errReporter)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
 			continue
 		}
-		failed = errFileReporter.Failed()
+		failed = failed || errReporter.Failed()
+		s.CloseReportForFile()
 	}
 	return
 }
@@ -264,8 +266,16 @@ func main() {
 		panic(err.Error())
 	}
 
-	if failed := executeTests(tests); failed {
-		log.Errorf("some tests failed 😭\nsee errors in errors folder")
+	var reporterSuite Suite
+	if xunit {
+		reporterSuite = newXMLTestSuite()
+	} else {
+		reporterSuite = newFileReporterSuite()
+	}
+	failed := executeTests(tests, reporterSuite)
+	outputFile := reporterSuite.Close()
+	if failed {
+		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
 		os.Exit(1)
 	}
 	println("Great, All tests passed")

@@ -21,5 +21,6 @@ go.work
 .DS_Store
 
 # the produced binary
+report.xml
 errors/
 vitess-tester
