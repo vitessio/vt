@@ -27,10 +27,6 @@ A critical aspect of working with Vitess involves defining sharding keys for all
 This method allows us to thoroughly test queries within a sharded environment, ensuring that applications running on Vitess can confidently handle both uniform and edge-case scenarios. By prioritizing functional correctness over performance in our testing environment, we can guarantee that Vitess behaves as expected under a variety of sharding configurations.
 
 
-## Requirements
-
-- All the tests should be put in [`t`](./t), take [t/example.test](./t/example.test) as an example.
-
 ## How to use
 
 Build the `vitess-tester` binary:
@@ -41,14 +37,52 @@ make
 Basic usage:
 ```
 Usage of ./vitess-tester:
-  --log-level string
+  -alsologtostderr
+        log to standard error as well as files
+  -force-base-tablet-uid int
+        force assigning tablet ports based on this seed
+  -force-port-start int
+        force assigning ports based on this seed
+  -force-vtdataroot string
+        force path for VTDATAROOT, which may already be populated
+  -is-coverage
+        whether coverage is required
+  -keep-data
+        don't delete the per-test VTDATAROOT subfolders (default true)
+  -log-level string
         The log level of vitess-tester: info, warn, error, debug. (default "error")
-  --olap
+  -log_backtrace_at value
+        when logging hits line file:N, emit a stack trace
+  -log_dir string
+        If non-empty, write log files in this directory
+  -log_link string
+        If non-empty, add symbolic links in this directory to the log files
+  -logbuflevel int
+        Buffer log messages logged at this level or lower (-1 means don't buffer; 0 means buffer INFO only; ...). Has limited applicability on non-prod platforms.
+  -logtostderr
+        log to standard error instead of files
+  -olap
         Use OLAP to run the queries.
-  --sharded
+  -partial-keyspace
+        add a second keyspace for sharded tests and mark first shard as moved to this keyspace in the shard routing rules
+  -perf-test
+        include end-to-end performance tests
+  -sharded
         run all tests on a sharded keyspace
-  --vschema file-name
-        The vschema file to use for sharded tests.
+  -stderrthreshold value
+        logs at or above this threshold go to stderr (default 2)
+  -test-dir string
+        Directory for the test files (default "./t/")
+  -topo-flavor string
+        choose a topo server from etcd2, zk2 or consul (default "etcd2")
+  -v value
+        log level for V logs
+  -vmodule value
+        comma-separated list of pattern=N settings for file-filtered logging
+  -vschema string
+        Disable auto-vschema by providing your own vschema file
+  -xunit
+        Get output in an xml file instead of errors directory
 ```
 
 By default, it connects to the MySQL server at 127.0.0.1 with root and no password, and to the vtgate server at 127.0.0.1 with root and no password:
