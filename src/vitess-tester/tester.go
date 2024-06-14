@@ -166,6 +166,20 @@ func (t *tester) Run() error {
 			}
 
 			t.vexplain = strs[1]
+		case Q_WAIT_FOR_AUTHORITATIVE:
+			strs := strings.Split(q.Query, " ")
+			if len(strs) != 2 {
+				t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name for wait_authoritative in: %v", q.Query))
+				continue
+			}
+
+			tblName := strs[1]
+			log.Infof("Waiting for authoritative schema for table %s", tblName)
+			err := utils.WaitForAuthoritative(t, t.keyspaceName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
+			if err != nil {
+				t.reporter.AddFailure(t.vschema, fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
+				continue
+			}
 		case Q_QUERY:
 			if t.skipNext {
 				t.skipNext = false

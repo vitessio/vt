@@ -128,6 +128,7 @@ const (
 	Q_EMPTY_LINE
 	Q_SKIP_IF_BELOW_VERSION
 	Q_VEXPLAIN
+	Q_WAIT_FOR_AUTHORITATIVE
 )
 
 type query struct {
