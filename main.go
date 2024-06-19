@@ -18,8 +18,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/mysql"
@@ -37,7 +35,6 @@ var (
 	olap        bool
 	vschemaFile string
 	xunit       bool
-	testDir     string
 )
 
 func init() {
@@ -46,33 +43,12 @@ func init() {
 	flag.BoolVar(&sharded, "sharded", false, "run all tests on a sharded keyspace")
 	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file")
 	flag.BoolVar(&xunit, "xunit", false, "Get output in an xml file instead of errors directory")
-	flag.StringVar(&testDir, "test-dir", "./t/", "Directory for the test files")
-}
-
-func loadAllTests() (tests []string, err error) {
-	// tests must be in t folder or subdir in t folder
-	err = filepath.Walk(testDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !info.IsDir() && strings.HasSuffix(path, ".test") {
-			name := strings.TrimSuffix(info.Name(), ".test")
-			tests = append(tests, name)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return tests, nil
 }
 
 func executeTests(clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, fileNames []string, s vitess_tester.Suite) (failed bool) {
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, keyspaceName, vschema, testDir, vschemaFile)
+		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, keyspaceName, vschema, vschemaFile)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
@@ -240,12 +216,9 @@ func main() {
 		log.SetLevel(ll)
 	}
 
-	// we will run all tests if no tests assigned
 	if len(tests) == 0 {
-		var err error
-		if tests, err = loadAllTests(); err != nil {
-			log.Fatalf("load all tests err %v", err)
-		}
+		log.Errorf("no tests specified")
+		os.Exit(1)
 	}
 
 	log.Infof("running tests: %v", tests)
