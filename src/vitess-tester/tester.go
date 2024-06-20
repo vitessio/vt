@@ -36,7 +36,6 @@ import (
 )
 
 type tester struct {
-	dir  string
 	name string
 
 	clusterInstance       *cluster.LocalProcessCluster
@@ -59,14 +58,14 @@ type tester struct {
 	reporter Reporter
 }
 
-func NewTester(name string, reporter Reporter,
+func NewTester(
+	name string,
+	reporter Reporter,
 	clusterInstance *cluster.LocalProcessCluster,
-	vtParams,
-	mysqlParams mysql.ConnParams,
+	vtParams, mysqlParams mysql.ConnParams,
 	olap bool,
 	keyspaceName string,
 	vschema vindexes.VSchema,
-	dir string,
 	vschemaFile string,
 ) *tester {
 	t := &tester{
@@ -78,7 +77,6 @@ func NewTester(name string, reporter Reporter,
 		keyspaceName:    keyspaceName,
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
-		dir:             dir,
 		olap:            olap,
 	}
 	return t
@@ -275,7 +273,7 @@ func (t *tester) readData() ([]byte, error) {
 		defer res.Body.Close()
 		return io.ReadAll(res.Body)
 	}
-	return os.ReadFile(t.testFileName())
+	return os.ReadFile(t.name)
 }
 
 func (t *tester) execute(query query) error {
@@ -400,10 +398,6 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func (t *tester) testFileName() string {
-	return fmt.Sprintf("%s/%s.test", t.dir, t.name)
 }
 
 func (t *tester) Errorf(format string, args ...interface{}) {
