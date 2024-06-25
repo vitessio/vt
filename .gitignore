@@ -24,3 +24,6 @@ go.work
 report.xml
 errors/
 vitess-tester
+
+# Do not ignore anything inside the src/vitess-tester directory
+!/src/vitess-tester/
