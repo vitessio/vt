@@ -205,6 +205,13 @@ func main() {
 	flag.Parse()
 	tests := flag.Args()
 
+	err := vitess_tester.CheckEnvironment()
+	if err != nil {
+		fmt.Println("Fatal error:")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	if ll := os.Getenv("LOG_LEVEL"); ll != "" {
 		logLevel = ll
 	}
@@ -227,7 +234,7 @@ func main() {
 	defer closer()
 
 	// remove errors folder if exists
-	err := os.RemoveAll("errors")
+	err = os.RemoveAll("errors")
 	if err != nil {
 		panic(err.Error())
 	}
