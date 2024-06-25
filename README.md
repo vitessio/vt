@@ -85,12 +85,13 @@ Usage of ./vitess-tester:
         Get output in an xml file instead of errors directory
 ```
 
-By default, it connects to the MySQL server at 127.0.0.1 with root and no password, and to the vtgate server at 127.0.0.1 with root and no password:
+It will bring up a MySQL server and a vtgate server on 127.0.0.1, both with root and no password configured.
 
 ```sh
 ./vitess-tester # run all the tests
-./vitess-tester example # run a specified test
-./vitess-tester example1 example2   example3 # seperate different tests with one or more spaces
+./vitess-tester t/example.test # run a specified test
+./vitess-tester t/example1.test t/example2.test  t/example3.test # seperate different tests with one or more spaces
+./vitess-tester t/*.test   # wildcards can be used
 ```
 
 ## Contributing
