@@ -28,7 +28,11 @@ var environmentVars = []string{
 }
 var neededBinaries = []string{
 	"vtgate",
+	"vttablet",
+	"vtctldclient",
 	"mysqlctl",
+	"mysqld",
+	"etcd",
 }
 
 // CheckEnvironment checks if the required environment variables are set
