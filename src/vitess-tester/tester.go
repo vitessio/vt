@@ -190,6 +190,7 @@ func (t *tester) Run() error {
 					continue
 				}
 			}
+			t.reporter.AddTestCase(q.Query, q.Line)
 			if t.vexplain != "" {
 				result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+q.Query, -1, false)
 				t.vexplain = ""
@@ -198,9 +199,8 @@ func (t *tester) Run() error {
 					continue
 				}
 
-				t.reporter.AddFailure(t.vschema, fmt.Errorf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
+				t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
 			}
-			t.reporter.AddTestCase(q.Query, q.Line)
 			if err = t.execute(q); err != nil && !t.expectedErrs {
 				t.reporter.AddFailure(t.vschema, err)
 			}
