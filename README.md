@@ -5,7 +5,7 @@ Vitess tester tests Vitess using the same test files as the [MySQL Test Framewor
 ## Install
 
 ```
-go install github.com/vitessio/vitess-tester/src/vitess-tester@latest
+go install github.com/vitessio/vitess-tester@latest
 ```
 
 ## Testing methodology
@@ -85,13 +85,13 @@ Usage of ./vitess-tester:
         Get output in an xml file instead of errors directory
 ```
 
-It will bring up a MySQL server and a vtgate server on 127.0.0.1, both with root and no password configured.
+It will bring up an entire Vitess cluster on 127.0.0.1, unsharded or sharded depending on the `-sharded` flag. MySQL and VTGate both start with root and no password configured.
 
 ```sh
-./vitess-tester # run all the tests
 ./vitess-tester t/example.test # run a specified test
-./vitess-tester t/example1.test t/example2.test  t/example3.test # seperate different tests with one or more spaces
+./vitess-tester t/example1.test t/example2.test  t/example3.test # separate different tests with one or more spaces
 ./vitess-tester t/*.test   # wildcards can be used
+./vitess-tester https://raw.githubusercontent.com/vitessio/vitess-tester/main/t/basic.test # can also be run against an URL
 ```
 
 ## Contributing
