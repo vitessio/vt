@@ -38,6 +38,7 @@ type Reporter interface {
 	AddTestCase(query string, lineNo int)
 	EndTestCase()
 	AddFailure(vschema vindexes.VSchema, err error)
+	AddInfo(info string)
 	Report() string
 	Failed() bool
 }
@@ -133,6 +134,16 @@ func (e *FileReporter) AddFailure(vschema vindexes.VSchema, err error) {
 	}
 
 	e.createVSchemaDump(vschema)
+}
+
+func (e *FileReporter) AddInfo(info string) {
+	if e.errorFile == nil {
+		e.errorFile = e.createErrorFileFor()
+	}
+	_, err := e.errorFile.WriteString(info + "\n")
+	if err != nil {
+		panic("failed to write info to error file\n" + err.Error())
+	}
 }
 
 func (e *FileReporter) createErrorFileFor() *os.File {

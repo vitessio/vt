@@ -110,3 +110,12 @@ func (xml *XMLTestSuite) Report() string {
 func (xml *XMLTestSuite) Failed() bool {
 	return xml.currTestSuite.Failures != 0
 }
+
+func (xml *XMLTestSuite) AddInfo(info string) {
+	if xml.currTestCase != nil {
+		if xml.currTestCase.SystemOut == nil {
+			xml.currTestCase.SystemOut = &junit.Output{}
+		}
+		xml.currTestCase.SystemOut.Data += info + "\n"
+	}
+}
