@@ -109,6 +109,9 @@
           ]
         }
       }
+    },
+    "test": {
+      "sharded": false
     }
   }
 }

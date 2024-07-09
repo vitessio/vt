@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
+	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 
@@ -30,25 +32,32 @@ import (
 )
 
 var (
-	logLevel    string
-	sharded     bool
-	olap        bool
-	vschemaFile string
-	xunit       bool
+	logLevel             string
+	sharded              bool
+	olap                 bool
+	vschemaFile          string
+	vtexplainVschemaFile string
+	xunit                bool
 )
 
 func init() {
 	flag.BoolVar(&olap, "olap", false, "Use OLAP to run the queries.")
 	flag.StringVar(&logLevel, "log-level", "error", "The log level of vitess-tester: info, warn, error, debug.")
-	flag.BoolVar(&sharded, "sharded", false, "run all tests on a sharded keyspace")
-	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file")
 	flag.BoolVar(&xunit, "xunit", false, "Get output in an xml file instead of errors directory")
+
+	flag.BoolVar(&sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
+	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
+	flag.StringVar(&vtexplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")
 }
 
-func executeTests(clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, fileNames []string, s vitess_tester.Suite) (failed bool) {
+func executeTests(clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, fileNames []string, s vitess_tester.Suite, ksNames []string) (failed bool) {
+	vschemaF := vschemaFile
+	if vschemaF == "" {
+		vschemaF = vtexplainVschemaFile
+	}
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, keyspaceName, vschema, vschemaFile)
+		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
@@ -60,9 +69,9 @@ func executeTests(clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlP
 	return
 }
 
-var (
-	keyspaceName = "mysqltest"
-	cell         = "mysqltest"
+const (
+	defaultKeyspaceName = "mysqltest"
+	defaultCellName     = "mysqltest"
 )
 
 type rawKeyspaceVindex struct {
@@ -78,21 +87,25 @@ func (hv hashVindex) String() string {
 	return "xxhash"
 }
 
-var vschema = vindexes.VSchema{
-	Keyspaces: map[string]*vindexes.KeyspaceSchema{
-		keyspaceName: {
-			Keyspace: &vindexes.Keyspace{},
-			Tables:   map[string]*vindexes.Table{},
-			Vindexes: map[string]vindexes.Vindex{
-				"xxhash": &hashVindex{Type: "xxhash"},
-			},
-			Views: map[string]sqlparser.SelectStatement{},
-		},
-	},
-}
+var (
+	vschema vindexes.VSchema
 
-func setupCluster(sharded bool) (clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, close func()) {
-	clusterInstance = cluster.NewCluster(cell, "localhost")
+	defaultVschema = vindexes.VSchema{
+		Keyspaces: map[string]*vindexes.KeyspaceSchema{
+			defaultKeyspaceName: {
+				Keyspace: &vindexes.Keyspace{},
+				Tables:   map[string]*vindexes.Table{},
+				Vindexes: map[string]vindexes.Vindex{
+					"xxhash": &hashVindex{Type: "xxhash"},
+				},
+				Views: map[string]sqlparser.SelectStatement{},
+			},
+		},
+	}
+)
+
+func setupCluster() (clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, ksNames []string, close func()) {
+	clusterInstance = cluster.NewCluster(defaultCellName, "localhost")
 
 	// Start topo server
 	err := clusterInstance.StartTopo()
@@ -101,25 +114,28 @@ func setupCluster(sharded bool) (clusterInstance *cluster.LocalProcessCluster, v
 		panic(err)
 	}
 
-	if sharded {
-		keyspace := getKeyspace()
+	keyspaces := getKeyspaces()
+	for _, keyspace := range keyspaces {
+		ksNames = append(ksNames, keyspace.Name)
+		vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
+		if !ok {
+			panic(fmt.Sprintf("keyspace '%s' not found in vschema", keyspace.Name))
+		}
 
-		println("starting sharded keyspace")
-		err = clusterInstance.StartKeyspace(*keyspace, []string{"-80", "80-"}, 0, false)
-		if err != nil {
-			fmt.Printf("Failed to start vitess cluster: %s\n", err.Error())
-			os.Exit(1)
-		}
-	} else {
-		// Start Unsharded keyspace
-		ukeyspace := &cluster.Keyspace{
-			Name: keyspaceName,
-		}
-		println("starting unsharded keyspace")
-		err = clusterInstance.StartUnshardedKeyspace(*ukeyspace, 0, false)
-		if err != nil {
-			clusterInstance.Teardown()
-			panic(err)
+		if vschemaKs.Keyspace.Sharded {
+			fmt.Printf("starting sharded keyspace: '%s'\n", keyspace.Name)
+			err = clusterInstance.StartKeyspace(*keyspace, []string{"-80", "80-"}, 0, false)
+			if err != nil {
+				clusterInstance.Teardown()
+				panic(err.Error())
+			}
+		} else {
+			fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)
+			err = clusterInstance.StartUnshardedKeyspace(*keyspace, 0, false)
+			if err != nil {
+				clusterInstance.Teardown()
+				panic(err.Error())
+			}
 		}
 	}
 
@@ -130,75 +146,125 @@ func setupCluster(sharded bool) (clusterInstance *cluster.LocalProcessCluster, v
 		panic(err)
 	}
 
-	vtParams = clusterInstance.GetVTParams(keyspaceName)
+	vtParams = clusterInstance.GetVTParams(ksNames[0])
 
-	// create mysql instance and connection parameters
-	conn, closer, err := utils.NewMySQL(clusterInstance, keyspaceName, "")
-	if err != nil {
-		clusterInstance.Teardown()
-		panic(err)
+	// Create the mysqld server we will use to compare the results.
+	// We go through all the keyspaces we found in the vschema, and
+	// simply create the mysqld process during the first iteration with
+	// the first database, following iterations will create new databases.
+	var conn *mysql.Conn
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
+
+	var closer func()
+
+	for i, keyspace := range keyspaces {
+		if i > 0 {
+			_, err = conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", keyspace.Name), 0, false)
+			if err != nil {
+				panic(err.Error())
+			}
+			break
+		}
+
+		mysqlParams, closer, err = utils.NewMySQL(clusterInstance, keyspace.Name, "")
+		if err != nil {
+			clusterInstance.Teardown()
+			panic(err)
+		}
+		conn, err = mysql.Connect(context.Background(), &mysqlParams)
+		if err != nil {
+			panic(err.Error())
+		}
 	}
-	mysqlParams = conn
 
-	return clusterInstance, vtParams, mysqlParams, func() {
+	return clusterInstance, vtParams, mysqlParams, ksNames, func() {
 		clusterInstance.Teardown()
 		closer()
 	}
 }
 
-func getKeyspace() *cluster.Keyspace {
-	var ksSchema []byte
-	var err error
+func getKeyspaces() []*cluster.Keyspace {
+	var ksRaw rawKeyspaceVindex
 	if vschemaFile != "" {
-		// Get the struct representation of the vschema, this is used
-		// to have an updated view of the vschema at all time, although
-		// we could probably remove this in the future if a vschema file
-		// is provided and just send a call to vtctld to get the vschema.
-		formal, err := vindexes.LoadFormal(vschemaFile)
-		if err != nil {
-			panic(err.Error())
-		}
-		vschema = *(vindexes.BuildVSchema(formal, sqlparser.NewTestParser()))
-		if len(vschema.Keyspaces) != 1 {
-			panic("please use only one keyspace when giving your own vschema")
-		}
-		for name := range vschema.Keyspaces {
-			keyspaceName = name
-		}
-
-		// Get the full string representation of the keyspace vschema
-		// we want to send the complete string to StartKeyspace instead
-		// of marshalling the vschema structure back and forth, this will
-		// prevent an issue where fields are missing (like the vindex type)
-		// in the structure. FWIW, in the Vitess' end-to-end tests we also
-		// send the text version of the vschema to StartKeyspace.
-		vschemaContent, err := os.ReadFile(vschemaFile)
-		if err != nil {
-			panic(err.Error())
-		}
-		var rk rawKeyspaceVindex
-		err = json.Unmarshal(vschemaContent, &rk)
-		if err != nil {
-			panic(err.Error())
-		}
-		for _, v := range rk.Keyspaces {
-			ksSchema, err = json.Marshal(v)
-			if err != nil {
-				panic(err.Error())
-			}
-		}
+		ksRaw = readVschema(vschemaFile, false)
+	} else if vtexplainVschemaFile != "" {
+		ksRaw = readVschema(vtexplainVschemaFile, true)
 	} else {
-		vschema.Keyspaces[keyspaceName].Keyspace.Sharded = true
-		ksSchema, err = json.Marshal(vschema.Keyspaces[keyspaceName])
+		// auto-vschema
+		vschema = defaultVschema
+		vschema.Keyspaces[defaultKeyspaceName].Keyspace.Sharded = sharded
+		ksSchema, err := json.Marshal(vschema.Keyspaces[defaultKeyspaceName])
 		if err != nil {
-			panic(err)
+			panic(err.Error())
 		}
+		ksRaw.Keyspaces[defaultKeyspaceName] = ksSchema
 	}
-	keyspace := &cluster.Keyspace{
-		Name:    keyspaceName,
-		VSchema: string(ksSchema),
+
+	var keyspaces []*cluster.Keyspace
+	for key, value := range ksRaw.Keyspaces {
+		ksSchema, err := json.Marshal(value)
+		if err != nil {
+			panic(err.Error())
+		}
+		keyspaces = append(keyspaces, &cluster.Keyspace{
+			Name:    key,
+			VSchema: string(ksSchema),
+		})
 	}
-	return keyspace
+	return keyspaces
+}
+
+func readVschema(file string, vtexplain bool) rawKeyspaceVindex {
+	rawVschema, srvVschema, err := getSrvVschema(file, vtexplain)
+	if err != nil {
+		panic(err.Error())
+	}
+	ksRaw, err := loadVschema(srvVschema, rawVschema)
+	if err != nil {
+		panic(err.Error())
+	}
+	return ksRaw
+}
+
+func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema, error) {
+	vschemaStr, err := os.ReadFile(file)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if wrap {
+		vschemaStr = []byte(fmt.Sprintf(`{"keyspaces": %s}`, vschemaStr))
+	}
+
+	var srvVSchema vschemapb.SrvVSchema
+	err = json.Unmarshal(vschemaStr, &srvVSchema)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(srvVSchema.Keyspaces) == 0 {
+		return nil, nil, fmt.Errorf("no keyspaces found")
+	}
+
+	return vschemaStr, &srvVSchema, nil
+}
+
+func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rawKeyspaceVindex, error) {
+	vschema = *(vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser()))
+	if len(vschema.Keyspaces) == 0 {
+		return rawKeyspaceVindex{}, fmt.Errorf("no keyspace defined in vschema")
+	}
+
+	var rk rawKeyspaceVindex
+	err := json.Unmarshal(rawVschema, &rk)
+	if err != nil {
+		return rawKeyspaceVindex{}, err
+	}
+	return rk, nil
 }
 
 func main() {
@@ -209,6 +275,11 @@ func main() {
 	if err != nil {
 		fmt.Println("Fatal error:")
 		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	if vschemaFile != "" && vtexplainVschemaFile != "" || vschemaFile != "" && sharded == true || vtexplainVschemaFile != "" && sharded == true {
+		log.Errorf("specify only one of the following flags: -vschema, -vtexpain-vschema, -sharded")
 		os.Exit(1)
 	}
 
@@ -230,7 +301,7 @@ func main() {
 
 	log.Infof("running tests: %v", tests)
 
-	clusterInstance, vtParams, mysqlParams, closer := setupCluster(sharded)
+	clusterInstance, vtParams, mysqlParams, ksNames, closer := setupCluster()
 	defer closer()
 
 	// remove errors folder if exists
@@ -245,7 +316,7 @@ func main() {
 	} else {
 		reporterSuite = vitess_tester.NewFileReporterSuite()
 	}
-	failed := executeTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite)
+	failed := executeTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames)
 	outputFile := reporterSuite.Close()
 	if failed {
 		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)

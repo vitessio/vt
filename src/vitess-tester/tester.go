@@ -42,14 +42,14 @@ type tester struct {
 	vtParams, mysqlParams mysql.ConnParams
 	curr                  utils.MySQLCompare
 
-	skipBinary   string
-	skipVersion  int
-	skipNext     bool
-	olap         bool
-	keyspaceName string
-	vschema      vindexes.VSchema
-	vschemaFile  string
-	vexplain     string
+	skipBinary  string
+	skipVersion int
+	skipNext    bool
+	olap        bool
+	ksNames     []string
+	vschema     vindexes.VSchema
+	vschemaFile string
+	vexplain    string
 
 	// check expected error, use --error before the statement
 	// we only care if an error is returned, not the exact error message.
@@ -58,23 +58,14 @@ type tester struct {
 	reporter Reporter
 }
 
-func NewTester(
-	name string,
-	reporter Reporter,
-	clusterInstance *cluster.LocalProcessCluster,
-	vtParams, mysqlParams mysql.ConnParams,
-	olap bool,
-	keyspaceName string,
-	vschema vindexes.VSchema,
-	vschemaFile string,
-) *tester {
+func NewTester(name string, reporter Reporter, clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, olap bool, ksNames []string, vschema vindexes.VSchema, vschemaFile string) *tester {
 	t := &tester{
 		name:            name,
 		reporter:        reporter,
 		vtParams:        vtParams,
 		mysqlParams:     mysqlParams,
 		clusterInstance: clusterInstance,
-		keyspaceName:    keyspaceName,
+		ksNames:         ksNames,
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
@@ -166,14 +157,15 @@ func (t *tester) Run() error {
 			t.vexplain = strs[1]
 		case Q_WAIT_FOR_AUTHORITATIVE:
 			strs := strings.Split(q.Query, " ")
-			if len(strs) != 2 {
-				t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name for wait_authoritative in: %v", q.Query))
+			if len(strs) != 3 {
+				t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", q.Query))
 				continue
 			}
 
 			tblName := strs[1]
+			ksName := strs[2]
 			log.Infof("Waiting for authoritative schema for table %s", tblName)
-			err := utils.WaitForAuthoritative(t, t.keyspaceName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
+			err := utils.WaitForAuthoritative(t, ksName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
 			if err != nil {
 				t.reporter.AddFailure(t.vschema, fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
 				continue
@@ -327,7 +319,7 @@ func (t *tester) executeStmt(query string) error {
 
 	switch {
 	case t.expectedErrs:
-		_, err := t.curr.ExecAllowAndCompareError(query)
+		_, err := t.curr.ExecAllowAndCompareError(query, utils.CompareOptions{CompareColumnNames: true})
 		if err == nil {
 			// If we expected an error, but didn't get one, return an error
 			return fmt.Errorf("expected error, but got none")
@@ -337,7 +329,7 @@ func (t *tester) executeStmt(query string) error {
 	}
 
 	if autoVschema {
-		err = utils.WaitForAuthoritative(t, t.keyspaceName, create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
+		err = utils.WaitForAuthoritative(t, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
 		if err != nil {
 			panic(err)
 		}
@@ -381,7 +373,7 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 		Type:    "xxhash",
 	}
 
-	ks := t.vschema.Keyspaces[t.keyspaceName]
+	ks := t.vschema.Keyspaces[t.ksNames[0]]
 	tableName := create.Table.Name
 	ks.Tables[tableName.String()] = &vindexes.Table{
 		Name:           tableName,
@@ -394,7 +386,7 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 		panic(err)
 	}
 
-	err = t.clusterInstance.VtctldClientProcess.ApplyVSchema(t.keyspaceName, string(ksJson))
+	err = t.clusterInstance.VtctldClientProcess.ApplyVSchema(t.ksNames[0], string(ksJson))
 	if err != nil {
 		panic(err)
 	}
