@@ -35,21 +35,21 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
-type tester struct {
+type Tester struct {
 	name string
 
 	clusterInstance       *cluster.LocalProcessCluster
 	vtParams, mysqlParams mysql.ConnParams
 	curr                  utils.MySQLCompare
 
-	skipBinary   string
-	skipVersion  int
-	skipNext     bool
-	olap         bool
-	keyspaceName string
-	vschema      vindexes.VSchema
-	vschemaFile  string
-	vexplain     string
+	skipBinary  string
+	skipVersion int
+	skipNext    bool
+	olap        bool
+	ksNames     []string
+	vschema     vindexes.VSchema
+	vschemaFile string
+	vexplain    string
 
 	// check expected error, use --error before the statement
 	// we only care if an error is returned, not the exact error message.
@@ -64,17 +64,17 @@ func NewTester(
 	clusterInstance *cluster.LocalProcessCluster,
 	vtParams, mysqlParams mysql.ConnParams,
 	olap bool,
-	keyspaceName string,
+	ksNames []string,
 	vschema vindexes.VSchema,
 	vschemaFile string,
-) *tester {
-	t := &tester{
+) *Tester {
+	t := &Tester{
 		name:            name,
 		reporter:        reporter,
 		vtParams:        vtParams,
 		mysqlParams:     mysqlParams,
 		clusterInstance: clusterInstance,
-		keyspaceName:    keyspaceName,
+		ksNames:         ksNames,
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
@@ -82,7 +82,7 @@ func NewTester(
 	return t
 }
 
-func (t *tester) preProcess() {
+func (t *Tester) preProcess() {
 	mcmp, err := utils.NewMySQLCompare(t, t.vtParams, t.mysqlParams)
 	if err != nil {
 		panic(err.Error())
@@ -96,7 +96,7 @@ func (t *tester) preProcess() {
 	}
 }
 
-func (t *tester) postProcess() {
+func (t *Tester) postProcess() {
 	r, err := t.curr.MySQLConn.ExecuteFetch("show tables", 1000, true)
 	if err != nil {
 		panic(err)
@@ -109,13 +109,15 @@ func (t *tester) postProcess() {
 
 var PERM os.FileMode = 0755
 
-func (t *tester) addSuccess() {
+func (t *Tester) addSuccess() {
 
 }
 
-func (t *tester) Run() error {
+func (t *Tester) Run() error {
 	t.preProcess()
-	defer t.postProcess()
+	if t.autoVSchema() {
+		defer t.postProcess()
+	}
 	queries, err := t.loadQueries()
 	if err != nil {
 		t.reporter.AddFailure(t.vschema, err)
@@ -166,14 +168,15 @@ func (t *tester) Run() error {
 			t.vexplain = strs[1]
 		case Q_WAIT_FOR_AUTHORITATIVE:
 			strs := strings.Split(q.Query, " ")
-			if len(strs) != 2 {
-				t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name for wait_authoritative in: %v", q.Query))
+			if len(strs) != 3 {
+				t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", q.Query))
 				continue
 			}
 
 			tblName := strs[1]
+			ksName := strs[2]
 			log.Infof("Waiting for authoritative schema for table %s", tblName)
-			err := utils.WaitForAuthoritative(t, t.keyspaceName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
+			err := utils.WaitForAuthoritative(t, ksName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
 			if err != nil {
 				t.reporter.AddFailure(t.vschema, fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
 				continue
@@ -221,7 +224,7 @@ func (t *tester) Run() error {
 	return nil
 }
 
-func (t *tester) loadQueries() ([]query, error) {
+func (t *Tester) loadQueries() ([]query, error) {
 	data, err := t.readData()
 	if err != nil {
 		return nil, err
@@ -260,7 +263,7 @@ func (t *tester) loadQueries() ([]query, error) {
 	return ParseQueries(queries...)
 }
 
-func (t *tester) readData() ([]byte, error) {
+func (t *Tester) readData() ([]byte, error) {
 	if strings.HasPrefix(t.name, "http") {
 		client := http.Client{}
 		res, err := client.Get(t.name)
@@ -276,7 +279,7 @@ func (t *tester) readData() ([]byte, error) {
 	return os.ReadFile(t.name)
 }
 
-func (t *tester) execute(query query) error {
+func (t *Tester) execute(query query) error {
 	if len(query.Query) == 0 {
 		return nil
 	}
@@ -307,7 +310,7 @@ func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlp
 	return index
 }
 
-func (t *tester) executeStmt(query string) error {
+func (t *Tester) executeStmt(query string) error {
 	parser := sqlparser.NewTestParser()
 	ast, err := parser.Parse(query)
 	if err != nil {
@@ -320,14 +323,14 @@ func (t *tester) executeStmt(query string) error {
 
 	log.Debugf("executeStmt: %s", query)
 	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	autoVschema := isCreateStatement && !t.expectedErrs && t.vschemaFile == ""
-	if autoVschema {
+	handleVSchema := isCreateStatement && !t.expectedErrs && t.autoVSchema()
+	if handleVSchema {
 		t.handleCreateTable(create)
 	}
 
 	switch {
 	case t.expectedErrs:
-		_, err := t.curr.ExecAllowAndCompareError(query)
+		_, err := t.curr.ExecAllowAndCompareError(query, utils.CompareOptions{CompareColumnNames: true})
 		if err == nil {
 			// If we expected an error, but didn't get one, return an error
 			return fmt.Errorf("expected error, but got none")
@@ -336,13 +339,17 @@ func (t *tester) executeStmt(query string) error {
 		_ = t.curr.Exec(query)
 	}
 
-	if autoVschema {
-		err = utils.WaitForAuthoritative(t, t.keyspaceName, create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
+	if handleVSchema {
+		err = utils.WaitForAuthoritative(t, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
 		if err != nil {
 			panic(err)
 		}
 	}
 	return nil
+}
+
+func (t *Tester) autoVSchema() bool {
+	return t.vschemaFile == ""
 }
 
 func getShardingKeysForTable(create *sqlparser.CreateTable) (sks []sqlparser.IdentifierCI) {
@@ -372,7 +379,7 @@ func getShardingKeysForTable(create *sqlparser.CreateTable) (sks []sqlparser.Ide
 	return
 }
 
-func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
+func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) {
 	sks := getShardingKeysForTable(create)
 
 	shardingKeys := &vindexes.ColumnVindex{
@@ -381,7 +388,7 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 		Type:    "xxhash",
 	}
 
-	ks := t.vschema.Keyspaces[t.keyspaceName]
+	ks := t.vschema.Keyspaces[t.ksNames[0]]
 	tableName := create.Table.Name
 	ks.Tables[tableName.String()] = &vindexes.Table{
 		Name:           tableName,
@@ -394,18 +401,18 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 		panic(err)
 	}
 
-	err = t.clusterInstance.VtctldClientProcess.ApplyVSchema(t.keyspaceName, string(ksJson))
+	err = t.clusterInstance.VtctldClientProcess.ApplyVSchema(t.ksNames[0], string(ksJson))
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (t *tester) Errorf(format string, args ...interface{}) {
+func (t *Tester) Errorf(format string, args ...interface{}) {
 	t.reporter.AddFailure(t.vschema, errors.Errorf(format, args...))
 }
 
-func (t *tester) FailNow() {
+func (t *Tester) FailNow() {
 	// we don't need to do anything here
 }
 
-func (t *tester) Helper() {}
+func (t *Tester) Helper() {}

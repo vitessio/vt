@@ -1,0 +1,29 @@
+{
+  "sharded": {
+    "sharded": true,
+    "foreignKeyMode": "unspecified",
+    "vindexes": {
+      "xxhash": {
+        "type": "xxhash"
+      }
+    },
+    "tables": {
+      "customer": {
+        "name": "customer",
+        "column_vindexes": [
+          {
+            "column": "id",
+            "name": "xxhash",
+            "type": "xxhash"
+          }
+        ]
+      }
+    }
+  },
+  "unsharded": {
+    "sharded": false,
+    "tables": {
+      "customer": {}
+    }
+  }
+}
