@@ -188,7 +188,10 @@ func setupCluster() (clusterInstance *cluster.LocalProcessCluster, vtParams, mys
 }
 
 func getKeyspaces() []*cluster.Keyspace {
-	var ksRaw rawKeyspaceVindex
+	ksRaw := rawKeyspaceVindex{
+		Keyspaces: map[string]interface{}{},
+	}
+
 	if vschemaFile != "" {
 		ksRaw = readVschema(vschemaFile, false)
 	} else if vtexplainVschemaFile != "" {
