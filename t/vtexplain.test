@@ -1,0 +1,18 @@
+CREATE TABLE sharded.customer
+(
+    id   INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+CREATE TABLE unsharded.unsharded
+(
+    id   INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+
+insert into sharded.customer (id, name) values (1, 'Alice'), (2, 'Bob'), (3, 'Charlie'), (4, 'David'), (5, 'Eve');
+insert into unsharded.unsharded (id, name) values (1, 'Alfons'), (2, 'Bert'), (3, 'Cecilia'), (4, 'Dirkjan'), (5, 'Eleanor');
+
+select id, name from sharded.customer;
+select id, name from unsharded.unsharded;
+
+select u.id, u.name, c.id, c.name from sharded.customer c join unsharded.unsharded u on c.id = u.id;

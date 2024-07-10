@@ -35,7 +35,7 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
-type tester struct {
+type Tester struct {
 	name string
 
 	clusterInstance       *cluster.LocalProcessCluster
@@ -58,8 +58,17 @@ type tester struct {
 	reporter Reporter
 }
 
-func NewTester(name string, reporter Reporter, clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, olap bool, ksNames []string, vschema vindexes.VSchema, vschemaFile string) *tester {
-	t := &tester{
+func NewTester(
+	name string,
+	reporter Reporter,
+	clusterInstance *cluster.LocalProcessCluster,
+	vtParams, mysqlParams mysql.ConnParams,
+	olap bool,
+	ksNames []string,
+	vschema vindexes.VSchema,
+	vschemaFile string,
+) *Tester {
+	t := &Tester{
 		name:            name,
 		reporter:        reporter,
 		vtParams:        vtParams,
@@ -73,7 +82,7 @@ func NewTester(name string, reporter Reporter, clusterInstance *cluster.LocalPro
 	return t
 }
 
-func (t *tester) preProcess() {
+func (t *Tester) preProcess() {
 	mcmp, err := utils.NewMySQLCompare(t, t.vtParams, t.mysqlParams)
 	if err != nil {
 		panic(err.Error())
@@ -87,7 +96,7 @@ func (t *tester) preProcess() {
 	}
 }
 
-func (t *tester) postProcess() {
+func (t *Tester) postProcess() {
 	r, err := t.curr.MySQLConn.ExecuteFetch("show tables", 1000, true)
 	if err != nil {
 		panic(err)
@@ -100,13 +109,15 @@ func (t *tester) postProcess() {
 
 var PERM os.FileMode = 0755
 
-func (t *tester) addSuccess() {
+func (t *Tester) addSuccess() {
 
 }
 
-func (t *tester) Run() error {
+func (t *Tester) Run() error {
 	t.preProcess()
-	defer t.postProcess()
+	if t.autoVSchema() {
+		defer t.postProcess()
+	}
 	queries, err := t.loadQueries()
 	if err != nil {
 		t.reporter.AddFailure(t.vschema, err)
@@ -213,7 +224,7 @@ func (t *tester) Run() error {
 	return nil
 }
 
-func (t *tester) loadQueries() ([]query, error) {
+func (t *Tester) loadQueries() ([]query, error) {
 	data, err := t.readData()
 	if err != nil {
 		return nil, err
@@ -252,7 +263,7 @@ func (t *tester) loadQueries() ([]query, error) {
 	return ParseQueries(queries...)
 }
 
-func (t *tester) readData() ([]byte, error) {
+func (t *Tester) readData() ([]byte, error) {
 	if strings.HasPrefix(t.name, "http") {
 		client := http.Client{}
 		res, err := client.Get(t.name)
@@ -268,7 +279,7 @@ func (t *tester) readData() ([]byte, error) {
 	return os.ReadFile(t.name)
 }
 
-func (t *tester) execute(query query) error {
+func (t *Tester) execute(query query) error {
 	if len(query.Query) == 0 {
 		return nil
 	}
@@ -299,7 +310,7 @@ func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlp
 	return index
 }
 
-func (t *tester) executeStmt(query string) error {
+func (t *Tester) executeStmt(query string) error {
 	parser := sqlparser.NewTestParser()
 	ast, err := parser.Parse(query)
 	if err != nil {
@@ -312,8 +323,8 @@ func (t *tester) executeStmt(query string) error {
 
 	log.Debugf("executeStmt: %s", query)
 	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	autoVschema := isCreateStatement && !t.expectedErrs && t.vschemaFile == ""
-	if autoVschema {
+	handleVSchema := isCreateStatement && !t.expectedErrs && t.autoVSchema()
+	if handleVSchema {
 		t.handleCreateTable(create)
 	}
 
@@ -328,13 +339,17 @@ func (t *tester) executeStmt(query string) error {
 		_ = t.curr.Exec(query)
 	}
 
-	if autoVschema {
+	if handleVSchema {
 		err = utils.WaitForAuthoritative(t, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
 		if err != nil {
 			panic(err)
 		}
 	}
 	return nil
+}
+
+func (t *Tester) autoVSchema() bool {
+	return t.vschemaFile == ""
 }
 
 func getShardingKeysForTable(create *sqlparser.CreateTable) (sks []sqlparser.IdentifierCI) {
@@ -364,7 +379,7 @@ func getShardingKeysForTable(create *sqlparser.CreateTable) (sks []sqlparser.Ide
 	return
 }
 
-func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
+func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) {
 	sks := getShardingKeysForTable(create)
 
 	shardingKeys := &vindexes.ColumnVindex{
@@ -392,12 +407,12 @@ func (t *tester) handleCreateTable(create *sqlparser.CreateTable) {
 	}
 }
 
-func (t *tester) Errorf(format string, args ...interface{}) {
+func (t *Tester) Errorf(format string, args ...interface{}) {
 	t.reporter.AddFailure(t.vschema, errors.Errorf(format, args...))
 }
 
-func (t *tester) FailNow() {
+func (t *Tester) FailNow() {
 	// we don't need to do anything here
 }
 
-func (t *tester) Helper() {}
+func (t *Tester) Helper() {}
