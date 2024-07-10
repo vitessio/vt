@@ -278,8 +278,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if vschemaFile != "" && vtexplainVschemaFile != "" || vschemaFile != "" && sharded == true || vtexplainVschemaFile != "" && sharded == true {
-		log.Errorf("specify only one of the following flags: -vschema, -vtexpain-vschema, -sharded")
+	a := vschemaFile != ""
+	b := vtexplainVschemaFile != ""
+	if a && b || a && sharded || b && sharded {
+		log.Errorf("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
 		os.Exit(1)
 	}
 
