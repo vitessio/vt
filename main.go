@@ -208,14 +208,20 @@ func getKeyspaces() []*cluster.Keyspace {
 	}
 
 	var keyspaces []*cluster.Keyspace
+	var err error
 	for key, value := range ksRaw.Keyspaces {
-		ksSchema, err := json.Marshal(value)
-		if err != nil {
-			panic(err.Error())
+		var ksSchema string
+		valueRaw, ok := value.([]uint8)
+		if !ok {
+			valueRaw, err = json.Marshal(value)
+			if err != nil {
+				panic(err.Error())
+			}
 		}
+		ksSchema = string(valueRaw)
 		keyspaces = append(keyspaces, &cluster.Keyspace{
 			Name:    key,
-			VSchema: string(ksSchema),
+			VSchema: ksSchema,
 		})
 	}
 	return keyspaces
