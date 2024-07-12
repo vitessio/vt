@@ -30,7 +30,7 @@ This method allows us to thoroughly test queries within a sharded environment, e
 ## How to use
 
 After installing the `vitess-tester` binary, you need to have Vitess installed and in your path. 
-To run vitess, you'll need to set VTDATAROOT and VTROOT environment variables.
+To run `vitess-tester` and Vitess, you will need to set the `VTDATAROOT` and `VTROOT` environment variables.
 You can do this, and set up the Vitess environment by running the following command:
 
 ```sh
