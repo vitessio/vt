@@ -1,0 +1,20 @@
+# vitess-tester, just like mysql-tester, uses `--<directive>` in the .test files to do things outside the regular script
+# --skip <comment> allows you to skip a test with a comment
+--skip "This test is not ready yet"
+select * from table_doesnt_exist;
+
+# skip_if_below_version <binary> <version> allows you to skip a query if the binary version is below the specified version
+--skip_if_below_version vtgate 999.0
+select * from table_doesnt_exist;
+
+# --error allows to assert that a query fails with an error
+--error the following query should fail
+select * from table_doesnt_exist;
+
+# --vexplain <mode> allows to run a query with vexplain to see the plan or which queries are sent to mysql. Mode can be `plan` or `queries`
+--vexplain plan
+select 1;
+
+# --wait_authoritative <table> <keyspace> allows to wait until the vtgate has authoritative information about the table
+# This is useful when you provide your own vschema and want it amended by the schema tracker
+--wait_authoritative table_doesnt_exist keyspace_doesnt_exist

@@ -29,9 +29,12 @@ This method allows us to thoroughly test queries within a sharded environment, e
 
 ## How to use
 
-Build the `vitess-tester` binary:
+After installing the `vitess-tester` binary, you need to have Vitess installed and in your path. 
+To run `vitess-tester` and Vitess, you will need to set the `VTDATAROOT` and `VTROOT` environment variables.
+You can do this, and set up the Vitess environment by running the following command:
+
 ```sh
-make
+source build.env
 ```
 
 Basic usage:
@@ -68,11 +71,9 @@ Usage of ./vitess-tester:
   -perf-test
         include end-to-end performance tests
   -sharded
-        run all tests on a sharded keyspace
+        Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.
   -stderrthreshold value
         logs at or above this threshold go to stderr (default 2)
-  -test-dir string
-        Directory for the test files (default "./t/")
   -topo-flavor string
         choose a topo server from etcd2, zk2 or consul (default "etcd2")
   -v value
@@ -80,19 +81,24 @@ Usage of ./vitess-tester:
   -vmodule value
         comma-separated list of pattern=N settings for file-filtered logging
   -vschema string
-        Disable auto-vschema by providing your own vschema file
+        Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.
+  -vtexplain-vschema string
+        Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.
   -xunit
         Get output in an xml file instead of errors directory
 ```
 
-It will bring up an entire Vitess cluster on 127.0.0.1, unsharded or sharded depending on the `-sharded` flag. MySQL and VTGate both start with root and no password configured.
+It will bring up an entire Vitess cluster on 127.0.0.1, unsharded or sharded depending on the configuration. MySQL and VTGate both start with root and no password configured.
 
 ```sh
-./vitess-tester t/example.test # run a specified test
-./vitess-tester t/example1.test t/example2.test  t/example3.test # separate different tests with one or more spaces
-./vitess-tester t/*.test   # wildcards can be used
-./vitess-tester https://raw.githubusercontent.com/vitessio/vitess-tester/main/t/basic.test # can also be run against an URL
+vitess-tester t/example.test # run a specified test
+vitess-tester t/example1.test t/example2.test  t/example3.test # separate different tests with one or more spaces
+vitess-tester t/*.test   # wildcards can be used
+vitess-tester https://raw.githubusercontent.com/vitessio/vitess-tester/main/t/basic.test # can also be run against an URL
+vitess-tester -vtexplain-vschema t/vtexplain-vschema.json t/vtexplain.test # run a test with a custom vschema
 ```
+
+The test files can be amended with directives to control the testing process. Check out `directives.test` to see examples of what directives are available. 
 
 ## Contributing
 
