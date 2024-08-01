@@ -167,20 +167,7 @@ func (t *Tester) Run() error {
 
 			t.vexplain = strs[1]
 		case Q_WAIT_FOR_AUTHORITATIVE:
-			strs := strings.Split(q.Query, " ")
-			if len(strs) != 3 {
-				t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", q.Query))
-				continue
-			}
-
-			tblName := strs[1]
-			ksName := strs[2]
-			log.Infof("Waiting for authoritative schema for table %s", tblName)
-			err := utils.WaitForAuthoritative(t, ksName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
-			if err != nil {
-				t.reporter.AddFailure(t.vschema, fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
-				continue
-			}
+			t.waitAuthoritative(q.Query)
 		case Q_QUERY:
 			if t.skipNext {
 				t.skipNext = false
@@ -222,6 +209,50 @@ func (t *Tester) Run() error {
 	fmt.Printf("%s\n", t.reporter.Report())
 
 	return nil
+}
+
+func (t *Tester) findTable(name string) (ks string, err error) {
+	for ksName, ksSchema := range t.vschema.Keyspaces {
+		for _, table := range ksSchema.Tables {
+			if table.Name.String() == name {
+				if ks != "" {
+					return "", fmt.Errorf("table %s found in multiple keyspaces", name)
+				}
+				ks = ksName
+			}
+		}
+	}
+	if ks == "" {
+		return "", fmt.Errorf("table %s not found in any keyspace", name)
+	}
+	return ks, nil
+}
+
+func (t *Tester) waitAuthoritative(query string) {
+	var tblName, ksName string
+	strs := strings.Split(query, " ")
+	switch len(strs) {
+	case 2:
+		tblName = strs[1]
+		var err error
+		ksName, err = t.findTable(tblName)
+		if err != nil {
+			t.reporter.AddFailure(t.vschema, err)
+			return
+		}
+	case 3:
+		tblName = strs[1]
+		ksName = strs[2]
+
+	default:
+		t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", query))
+	}
+
+	log.Infof("Waiting for authoritative schema for table %s", tblName)
+	err := utils.WaitForAuthoritative(t, ksName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
+	if err != nil {
+		t.reporter.AddFailure(t.vschema, fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
+	}
 }
 
 func (t *Tester) loadQueries() ([]query, error) {
