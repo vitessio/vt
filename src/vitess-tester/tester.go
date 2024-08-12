@@ -25,6 +25,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pingcap/errors"
 	log "github.com/sirupsen/logrus"
@@ -113,6 +114,23 @@ func (t *Tester) addSuccess() {
 
 }
 
+func (t *Tester) getVschema() []byte {
+	httpClient := &http.Client{Timeout: 5 * time.Second}
+	resp, err := httpClient.Get(t.clusterInstance.VtgateProcess.VSchemaURL)
+	if err != nil {
+		log.Errorf(err.Error())
+		return nil
+	}
+	defer resp.Body.Close()
+	res, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf(err.Error())
+		return nil
+	}
+
+	return res
+}
+
 func (t *Tester) Run() error {
 	t.preProcess()
 	if t.autoVSchema() {
@@ -120,7 +138,7 @@ func (t *Tester) Run() error {
 	}
 	queries, err := t.loadQueries()
 	if err != nil {
-		t.reporter.AddFailure(t.vschema, err)
+		t.reporter.AddFailure(t.getVschema(), err)
 		return err
 	}
 
@@ -142,18 +160,18 @@ func (t *Tester) Run() error {
 		case Q_SKIP:
 			t.skipNext = true
 		case Q_BEGIN_CONCURRENT, Q_END_CONCURRENT, Q_CONNECT, Q_CONNECTION, Q_DISCONNECT, Q_LET, Q_REPLACE_COLUMN:
-			t.reporter.AddFailure(t.vschema, fmt.Errorf("%s not supported", String(q.tp)))
+			t.reporter.AddFailure(t.getVschema(), fmt.Errorf("%s not supported", String(q.tp)))
 		case Q_SKIP_IF_BELOW_VERSION:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
-				t.reporter.AddFailure(t.vschema, fmt.Errorf("incorrect syntax for Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
+				t.reporter.AddFailure(t.getVschema(), fmt.Errorf("incorrect syntax for Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
 				continue
 			}
 			t.skipBinary = strs[1]
 			var err error
 			t.skipVersion, err = strconv.Atoi(strs[2])
 			if err != nil {
-				t.reporter.AddFailure(t.vschema, err)
+				t.reporter.AddFailure(t.getVschema(), err)
 				continue
 			}
 		case Q_ERROR:
@@ -161,7 +179,7 @@ func (t *Tester) Run() error {
 		case Q_VEXPLAIN:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 2 {
-				t.reporter.AddFailure(t.vschema, fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
+				t.reporter.AddFailure(t.getVschema(), fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
 				continue
 			}
 
@@ -185,14 +203,14 @@ func (t *Tester) Run() error {
 				result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+q.Query, -1, false)
 				t.vexplain = ""
 				if err != nil {
-					t.reporter.AddFailure(t.vschema, err)
+					t.reporter.AddFailure(t.getVschema(), err)
 					continue
 				}
 
 				t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
 			}
 			if err = t.execute(q); err != nil && !t.expectedErrs {
-				t.reporter.AddFailure(t.vschema, err)
+				t.reporter.AddFailure(t.getVschema(), err)
 			}
 			t.reporter.EndTestCase()
 			// clear expected errors and current query after we execute any query
@@ -203,7 +221,7 @@ func (t *Tester) Run() error {
 				return errors.Annotate(err, "failed to remove file")
 			}
 		default:
-			t.reporter.AddFailure(t.vschema, fmt.Errorf("%s not supported", String(q.tp)))
+			t.reporter.AddFailure(t.getVschema(), fmt.Errorf("%s not supported", String(q.tp)))
 		}
 	}
 	fmt.Printf("%s\n", t.reporter.Report())
@@ -237,7 +255,7 @@ func (t *Tester) waitAuthoritative(query string) {
 		var err error
 		ksName, err = t.findTable(tblName)
 		if err != nil {
-			t.reporter.AddFailure(t.vschema, err)
+			t.reporter.AddFailure(t.getVschema(), err)
 			return
 		}
 	case 3:
@@ -245,13 +263,13 @@ func (t *Tester) waitAuthoritative(query string) {
 		ksName = strs[2]
 
 	default:
-		t.reporter.AddFailure(t.vschema, fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", query))
+		t.reporter.AddFailure(t.getVschema(), fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", query))
 	}
 
 	log.Infof("Waiting for authoritative schema for table %s", tblName)
 	err := utils.WaitForAuthoritative(t, ksName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
 	if err != nil {
-		t.reporter.AddFailure(t.vschema, fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
+		t.reporter.AddFailure(t.getVschema(), fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
 	}
 }
 
@@ -439,7 +457,7 @@ func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) {
 }
 
 func (t *Tester) Errorf(format string, args ...interface{}) {
-	t.reporter.AddFailure(t.vschema, errors.Errorf(format, args...))
+	t.reporter.AddFailure(t.getVschema(), errors.Errorf(format, args...))
 }
 
 func (t *Tester) FailNow() {

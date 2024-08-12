@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/jstemmer/go-junit-report/v2/junit"
-	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
 type XMLTestSuite struct {
@@ -78,7 +77,7 @@ func (xml *XMLTestSuite) EndTestCase() {
 	xml.currTestCase = nil
 }
 
-func (xml *XMLTestSuite) AddFailure(vschema vindexes.VSchema, err error) {
+func (xml *XMLTestSuite) AddFailure(vschema []byte, err error) {
 	if xml.currTestCase == nil {
 		xml.AddTestCase("SETUP", 0)
 		xml.AddFailure(vschema, err)

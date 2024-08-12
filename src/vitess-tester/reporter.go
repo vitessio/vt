@@ -17,15 +17,12 @@ limitations under the License.
 package vitess_tester
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
 	"path"
 	"strings"
 	"time"
-
-	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
 type Suite interface {
@@ -37,7 +34,7 @@ type Suite interface {
 type Reporter interface {
 	AddTestCase(query string, lineNo int)
 	EndTestCase()
-	AddFailure(vschema vindexes.VSchema, err error)
+	AddFailure(vschema []byte, err error)
 	AddInfo(info string)
 	Report() string
 	Failed() bool
@@ -118,7 +115,7 @@ func (e *FileReporter) EndTestCase() {
 	}
 }
 
-func (e *FileReporter) AddFailure(vschema vindexes.VSchema, err error) {
+func (e *FileReporter) AddFailure(vschema []byte, err error) {
 	e.failureCount++
 	e.currentQueryFailed = true
 	if e.currentQuery == "" {
@@ -165,19 +162,14 @@ func (e *FileReporter) createErrorFileFor() *os.File {
 	return file
 }
 
-func (e *FileReporter) createVSchemaDump(vschema vindexes.VSchema) {
+func (e *FileReporter) createVSchemaDump(vschema []byte) {
 	errorDir := e.errorDir()
 	err := os.MkdirAll(errorDir, PERM)
 	if err != nil {
 		panic("failed to create vschema directory\n" + err.Error())
 	}
 
-	vschemaBytes, err := json.MarshalIndent(vschema, "", "\t")
-	if err != nil {
-		panic("failed to marshal vschema\n" + err.Error())
-	}
-
-	err = os.WriteFile(path.Join(errorDir, "vschema.json"), vschemaBytes, PERM)
+	err = os.WriteFile(path.Join(errorDir, "vschema.json"), vschema, PERM)
 	if err != nil {
 		panic("failed to write vschema\n" + err.Error())
 	}
