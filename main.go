@@ -26,17 +26,17 @@ import (
 
 var (
 	logLevel             string
-	sharded              bool
-	olap                 bool
+	sharded, olap, xunit bool
 	vschemaFile          string
 	vtexplainVschemaFile string
-	xunit                bool
+	traceFile            string
 )
 
 func init() {
 	flag.BoolVar(&olap, "olap", false, "Use OLAP to run the queries.")
 	flag.StringVar(&logLevel, "log-level", "error", "The log level of vitess-tester: info, warn, error, debug.")
 	flag.BoolVar(&xunit, "xunit", false, "Get output in an xml file instead of errors directory")
+	flag.StringVar(&traceFile, "trace", "", "Do a vexplain trace on all queries and store the output in the given file.")
 
 	flag.BoolVar(&sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
 	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
@@ -94,7 +94,7 @@ func main() {
 	} else {
 		reporterSuite = vitess_tester.NewFileReporterSuite()
 	}
-	failed := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap)
+	failed := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap, traceFile)
 	outputFile := reporterSuite.Close()
 	if failed {
 		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)

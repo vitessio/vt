@@ -53,6 +53,7 @@ func ExecuteTests(
 	ksNames []string,
 	vschemaFile, vtexplainVschemaFile string,
 	olap bool,
+	traceFile string,
 ) (failed bool) {
 	vschemaF := vschemaFile
 	if vschemaF == "" {
@@ -60,7 +61,7 @@ func ExecuteTests(
 	}
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF)
+		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, traceFile)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
