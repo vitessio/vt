@@ -395,13 +395,13 @@ func (t *Tester) trace(query query) error {
 	t.alreadyWrittenTraces = true
 
 	// Marshal the query into JSON format for safe embedding
-	queryJSON, err := json.Marshal(query)
+	queryJSON, err := json.Marshal(query.Query)
 	if err != nil {
 		return err
 	}
 
 	// Write the "Query" part of the JSON entry
-	if _, err := fmt.Fprintf(t.traceFile, `{"Query": %s, "Trace": `, queryJSON); err != nil {
+	if _, err := fmt.Fprintf(t.traceFile, `{"Query": %s, "LineNumber": "%d", "Trace": `, queryJSON, query.Line); err != nil {
 		return err
 	}
 
