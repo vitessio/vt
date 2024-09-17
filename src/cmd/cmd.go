@@ -17,20 +17,33 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	vitess_tester "github.com/vitessio/vitess-tester/src/vitess-tester"
 	"os"
+
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
+	"vitess.io/vitess/go/test/endtoend/utils"
 	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
+
+	vitess_tester "github.com/vitessio/vitess-tester/src/vitess-tester"
 )
 
 type RawKeyspaceVindex struct {
 	Keyspaces map[string]interface{} `json:"keyspaces"`
 }
+
+var (
+	vschema vindexes.VSchema
+)
+
+const (
+	defaultKeyspaceName = "mysqltest"
+	defaultCellName     = "mysqltest"
+)
 
 func ExecuteTests(
 	clusterInstance *cluster.LocalProcessCluster,
@@ -39,7 +52,6 @@ func ExecuteTests(
 	s vitess_tester.Suite,
 	ksNames []string,
 	vschemaFile, vtexplainVschemaFile string,
-	vschema vindexes.VSchema,
 	olap bool,
 ) (failed bool) {
 	vschemaF := vschemaFile
@@ -60,7 +72,147 @@ func ExecuteTests(
 	return
 }
 
-func ReadVschema(file string, vtexplain bool) RawKeyspaceVindex {
+func SetupCluster(
+	vschemaFile, vtexplainVschemaFile string,
+	sharded bool,
+) (clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, ksNames []string, close func()) {
+	clusterInstance = cluster.NewCluster(defaultCellName, "localhost")
+
+	// Start topo server
+	err := clusterInstance.StartTopo()
+	if err != nil {
+		clusterInstance.Teardown()
+		panic(err)
+	}
+
+	keyspaces := getKeyspaces(vschemaFile, vtexplainVschemaFile, defaultKeyspaceName, sharded)
+	for _, keyspace := range keyspaces {
+		ksNames = append(ksNames, keyspace.Name)
+		vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
+		if !ok {
+			panic(fmt.Sprintf("keyspace '%s' not found in vschema", keyspace.Name))
+		}
+
+		if vschemaKs.Keyspace.Sharded {
+			fmt.Printf("starting sharded keyspace: '%s'\n", keyspace.Name)
+			err = clusterInstance.StartKeyspace(*keyspace, []string{"-80", "80-"}, 0, false)
+			if err != nil {
+				clusterInstance.Teardown()
+				panic(err.Error())
+			}
+		} else {
+			fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)
+			err = clusterInstance.StartUnshardedKeyspace(*keyspace, 0, false)
+			if err != nil {
+				clusterInstance.Teardown()
+				panic(err.Error())
+			}
+		}
+	}
+
+	// Start vtgate
+	err = clusterInstance.StartVtgate()
+	if err != nil {
+		clusterInstance.Teardown()
+		panic(err)
+	}
+
+	vtParams = clusterInstance.GetVTParams(ksNames[0])
+
+	// Create the mysqld server we will use to compare the results.
+	// We go through all the keyspaces we found in the vschema, and
+	// simply create the mysqld process during the first iteration with
+	// the first database, following iterations will create new databases.
+	var conn *mysql.Conn
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
+
+	var closer func()
+
+	for i, keyspace := range keyspaces {
+		if i > 0 {
+			_, err = conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", keyspace.Name), 0, false)
+			if err != nil {
+				panic(err.Error())
+			}
+			break
+		}
+
+		mysqlParams, closer, err = utils.NewMySQL(clusterInstance, keyspace.Name, "")
+		if err != nil {
+			clusterInstance.Teardown()
+			panic(err)
+		}
+		conn, err = mysql.Connect(context.Background(), &mysqlParams)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	return clusterInstance, vtParams, mysqlParams, ksNames, func() {
+		clusterInstance.Teardown()
+		closer()
+	}
+}
+
+func defaultVschema(defaultKeyspaceName string) vindexes.VSchema {
+	return vindexes.VSchema{
+		Keyspaces: map[string]*vindexes.KeyspaceSchema{
+			defaultKeyspaceName: {
+				Keyspace: &vindexes.Keyspace{},
+				Tables:   map[string]*vindexes.Table{},
+				Vindexes: map[string]vindexes.Vindex{
+					"xxhash": &hashVindex{Type: "xxhash"},
+				},
+				Views: map[string]sqlparser.SelectStatement{},
+			},
+		},
+	}
+}
+
+func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharded bool) (keyspaces []*cluster.Keyspace) {
+	ksRaw := RawKeyspaceVindex{
+		Keyspaces: map[string]interface{}{},
+	}
+
+	if vschemaFile != "" {
+		ksRaw = readVschema(vschemaFile, false)
+	} else if vtexplainVschemaFile != "" {
+		ksRaw = readVschema(vtexplainVschemaFile, true)
+	} else {
+		// auto-vschema
+		vschema = defaultVschema(keyspaceName)
+		vschema.Keyspaces[keyspaceName].Keyspace.Sharded = sharded
+		ksSchema, err := json.Marshal(vschema.Keyspaces[keyspaceName])
+		if err != nil {
+			panic(err.Error())
+		}
+		ksRaw.Keyspaces[keyspaceName] = ksSchema
+	}
+
+	var err error
+	for key, value := range ksRaw.Keyspaces {
+		var ksSchema string
+		valueRaw, ok := value.([]uint8)
+		if !ok {
+			valueRaw, err = json.Marshal(value)
+			if err != nil {
+				panic(err.Error())
+			}
+		}
+		ksSchema = string(valueRaw)
+		keyspaces = append(keyspaces, &cluster.Keyspace{
+			Name:    key,
+			VSchema: ksSchema,
+		})
+	}
+	return keyspaces
+}
+
+func readVschema(file string, vtexplain bool) RawKeyspaceVindex {
 	rawVschema, srvVschema, err := getSrvVschema(file, vtexplain)
 	if err != nil {
 		panic(err.Error())
@@ -105,4 +257,13 @@ func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rkv RawKe
 	var rk RawKeyspaceVindex
 	err = json.Unmarshal(rawVschema, &rk)
 	return
+}
+
+type hashVindex struct {
+	vindexes.Hash
+	Type string `json:"type"`
+}
+
+func (hv hashVindex) String() string {
+	return "xxhash"
 }
