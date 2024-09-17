@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/vitessio/vitess-tester/src/cmd"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -48,25 +49,6 @@ func init() {
 	flag.BoolVar(&sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
 	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
 	flag.StringVar(&vtexplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")
-}
-
-func executeTests(clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, fileNames []string, s vitess_tester.Suite, ksNames []string) (failed bool) {
-	vschemaF := vschemaFile
-	if vschemaF == "" {
-		vschemaF = vtexplainVschemaFile
-	}
-	for _, name := range fileNames {
-		errReporter := s.NewReporterForFile(name)
-		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF)
-		err := vTester.Run()
-		if err != nil {
-			failed = true
-			continue
-		}
-		failed = failed || errReporter.Failed()
-		s.CloseReportForFile()
-	}
-	return
 }
 
 const (
@@ -327,7 +309,7 @@ func main() {
 	} else {
 		reporterSuite = vitess_tester.NewFileReporterSuite()
 	}
-	failed := executeTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames)
+	failed := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, vschema, olap)
 	outputFile := reporterSuite.Close()
 	if failed {
 		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
