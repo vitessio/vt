@@ -17,11 +17,20 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
 	vitess_tester "github.com/vitessio/vitess-tester/src/vitess-tester"
+	"os"
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
+	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
+	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
+
+type RawKeyspaceVindex struct {
+	Keyspaces map[string]interface{} `json:"keyspaces"`
+}
 
 func ExecuteTests(
 	clusterInstance *cluster.LocalProcessCluster,
@@ -48,5 +57,52 @@ func ExecuteTests(
 		failed = failed || errReporter.Failed()
 		s.CloseReportForFile()
 	}
+	return
+}
+
+func ReadVschema(file string, vtexplain bool) RawKeyspaceVindex {
+	rawVschema, srvVschema, err := getSrvVschema(file, vtexplain)
+	if err != nil {
+		panic(err.Error())
+	}
+	ksRaw, err := loadVschema(srvVschema, rawVschema)
+	if err != nil {
+		panic(err.Error())
+	}
+	return ksRaw
+}
+
+func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema, error) {
+	vschemaStr, err := os.ReadFile(file)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	if wrap {
+		vschemaStr = []byte(fmt.Sprintf(`{"keyspaces": %s}`, vschemaStr))
+	}
+
+	var srvVSchema vschemapb.SrvVSchema
+	err = json.Unmarshal(vschemaStr, &srvVSchema)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(srvVSchema.Keyspaces) == 0 {
+		return nil, nil, fmt.Errorf("no keyspaces found")
+	}
+
+	return vschemaStr, &srvVSchema, nil
+}
+
+func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rkv RawKeyspaceVindex, err error) {
+	vschema := *(vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser()))
+	if len(vschema.Keyspaces) == 0 {
+		err = fmt.Errorf("no keyspace defined in vschema")
+		return
+	}
+
+	var rk RawKeyspaceVindex
+	err = json.Unmarshal(rawVschema, &rk)
 	return
 }

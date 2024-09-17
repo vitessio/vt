@@ -25,7 +25,7 @@ import (
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
-	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
+
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 
@@ -55,10 +55,6 @@ const (
 	defaultKeyspaceName = "mysqltest"
 	defaultCellName     = "mysqltest"
 )
-
-type rawKeyspaceVindex struct {
-	Keyspaces map[string]interface{} `json:"keyspaces"`
-}
 
 type hashVindex struct {
 	vindexes.Hash
@@ -170,14 +166,14 @@ func setupCluster() (clusterInstance *cluster.LocalProcessCluster, vtParams, mys
 }
 
 func getKeyspaces() []*cluster.Keyspace {
-	ksRaw := rawKeyspaceVindex{
+	ksRaw := cmd.RawKeyspaceVindex{
 		Keyspaces: map[string]interface{}{},
 	}
 
 	if vschemaFile != "" {
-		ksRaw = readVschema(vschemaFile, false)
+		ksRaw = cmd.ReadVschema(vschemaFile, false)
 	} else if vtexplainVschemaFile != "" {
-		ksRaw = readVschema(vtexplainVschemaFile, true)
+		ksRaw = cmd.ReadVschema(vtexplainVschemaFile, true)
 	} else {
 		// auto-vschema
 		vschema = defaultVschema
@@ -207,55 +203,6 @@ func getKeyspaces() []*cluster.Keyspace {
 		})
 	}
 	return keyspaces
-}
-
-func readVschema(file string, vtexplain bool) rawKeyspaceVindex {
-	rawVschema, srvVschema, err := getSrvVschema(file, vtexplain)
-	if err != nil {
-		panic(err.Error())
-	}
-	ksRaw, err := loadVschema(srvVschema, rawVschema)
-	if err != nil {
-		panic(err.Error())
-	}
-	return ksRaw
-}
-
-func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema, error) {
-	vschemaStr, err := os.ReadFile(file)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	if wrap {
-		vschemaStr = []byte(fmt.Sprintf(`{"keyspaces": %s}`, vschemaStr))
-	}
-
-	var srvVSchema vschemapb.SrvVSchema
-	err = json.Unmarshal(vschemaStr, &srvVSchema)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if len(srvVSchema.Keyspaces) == 0 {
-		return nil, nil, fmt.Errorf("no keyspaces found")
-	}
-
-	return vschemaStr, &srvVSchema, nil
-}
-
-func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rawKeyspaceVindex, error) {
-	vschema = *(vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser()))
-	if len(vschema.Keyspaces) == 0 {
-		return rawKeyspaceVindex{}, fmt.Errorf("no keyspace defined in vschema")
-	}
-
-	var rk rawKeyspaceVindex
-	err := json.Unmarshal(rawVschema, &rk)
-	if err != nil {
-		return rawKeyspaceVindex{}, err
-	}
-	return rk, nil
 }
 
 func main() {
