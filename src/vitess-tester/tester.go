@@ -57,8 +57,9 @@ type Tester struct {
 	// we only care if an error is returned, not the exact error message.
 	expectedErrs bool
 
-	reporter  Reporter
-	traceFile io.Writer
+	reporter             Reporter
+	traceFile            io.Writer
+	alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
 }
 
 func NewTester(
@@ -69,17 +70,9 @@ func NewTester(
 	olap bool,
 	ksNames []string,
 	vschema vindexes.VSchema,
-	vschemaFile, traceFile string,
+	vschemaFile string,
+	traceFile *os.File,
 ) *Tester {
-	var f *os.File
-	if traceFile != "" {
-		// create the file and store the writer in the Tester struct
-		var err error
-		f, err = os.Create(traceFile)
-		if err != nil {
-			panic(err)
-		}
-	}
 	t := &Tester{
 		name:            name,
 		reporter:        reporter,
@@ -90,7 +83,7 @@ func NewTester(
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
-		traceFile:       f,
+		traceFile:       traceFile,
 	}
 	return t
 }
@@ -389,13 +382,52 @@ func (t *Tester) execute(query query) error {
 	return t.trace(query)
 }
 
+// trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile
 func (t *Tester) trace(query query) error {
+	// If there are already written traces, prepend a comma for valid JSON separation
+	if t.alreadyWrittenTraces {
+		if _, err := t.traceFile.Write([]byte(",")); err != nil {
+			return err
+		}
+	}
+
+	// Mark that at least one trace has been written
+	t.alreadyWrittenTraces = true
+
+	// Marshal the query into JSON format for safe embedding
+	queryJSON, err := json.Marshal(query)
+	if err != nil {
+		return err
+	}
+
+	// Write the "Query" part of the JSON entry
+	if _, err := fmt.Fprintf(t.traceFile, `{"Query": %s, "Trace": `, queryJSON); err != nil {
+		return err
+	}
+
+	// Fetch the trace for the query using "vexplain trace"
 	rs, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain trace %s", query.Query), 10000, false)
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintln(t.traceFile, rs.Rows[0][0].ToString())
-	return err
+
+	// Extract the trace result and format it with indentation for pretty printing
+	var prettyTrace bytes.Buffer
+	if err := json.Indent(&prettyTrace, []byte(rs.Rows[0][0].ToString()), "", "  "); err != nil {
+		return err
+	}
+
+	// Write the formatted trace JSON
+	if _, err := t.traceFile.Write(prettyTrace.Bytes()); err != nil {
+		return err
+	}
+
+	// Close the JSON object for this query/trace pair
+	if _, err := t.traceFile.Write([]byte("}")); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlparser.IndexDefinition {

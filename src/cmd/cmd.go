@@ -59,9 +59,22 @@ func ExecuteTests(
 	if vschemaF == "" {
 		vschemaF = vtexplainVschemaFile
 	}
+	var writer *os.File
+	if traceFile != "" {
+		// create the file and store the writer in the Tester struct
+		var err error
+		writer, err = os.Create(traceFile)
+		if err != nil {
+			panic(err)
+		}
+		_, err = writer.Write([]byte("["))
+		if err != nil {
+			panic(err.Error())
+		}
+	}
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, traceFile)
+		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, writer)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
@@ -69,6 +82,16 @@ func ExecuteTests(
 		}
 		failed = failed || errReporter.Failed()
 		s.CloseReportForFile()
+	}
+	if writer != nil {
+		_, err := writer.Write([]byte("]"))
+		if err != nil {
+			panic(err.Error())
+		}
+		err = writer.Close()
+		if err != nil {
+			panic(err.Error())
+		}
 	}
 	return
 }
