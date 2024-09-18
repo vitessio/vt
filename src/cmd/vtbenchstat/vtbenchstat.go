@@ -24,6 +24,7 @@ import (
 	"golang.org/x/term"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -31,8 +32,9 @@ import (
 type (
 	// TracedQuery represents the structure of each element in the JSON file
 	TracedQuery struct {
-		Trace Trace  `json:"Trace"`
-		Query string `json:"Query"`
+		Trace      Trace  `json:"Trace"`
+		Query      string `json:"Query"`
+		LineNumber string `json:"LineNumber"`
 	}
 
 	// Trace represents the recursive structure of the Trace field
@@ -45,7 +47,8 @@ type (
 		Inputs             []Trace `json:"Inputs,omitempty"`
 	}
 
-	Summary struct {
+	QuerySummary struct {
+		Q TracedQuery
 		RouteCalls,
 		RowsSent,
 		RowsInMemory int
@@ -64,10 +67,10 @@ func visit(trace Trace, f func(Trace)) {
 	}
 }
 
-func summarizeTraces(file TraceFile) map[string]Summary {
-	summary := make(map[string]Summary)
+func summarizeTraces(file TraceFile) map[string]QuerySummary {
+	summary := make(map[string]QuerySummary)
 	for _, traceElement := range file.Queries {
-		summary[traceElement.Query] = summarizeTrace(traceElement.Trace)
+		summary[traceElement.Query] = summarizeTrace(traceElement)
 	}
 	return summary
 }
@@ -76,14 +79,12 @@ func (trace *Trace) TotalRows() int {
 	return int(trace.AvgNumberOfRows * float64(trace.NoOfCalls))
 }
 
-/*
-"OperatorType": "Sort",
-"Variant": "Memory",
-*/
-func summarizeTrace(t Trace) Summary {
-	var summary Summary
+func summarizeTrace(t TracedQuery) QuerySummary {
+	summary := QuerySummary{
+		Q: t,
+	}
 
-	visit(t, func(trace Trace) {
+	visit(t.Trace, func(trace Trace) {
 		switch trace.OperatorType {
 		case "Route":
 			summary.RouteCalls += trace.NoOfCalls
@@ -137,6 +138,18 @@ func readTraceFile(fileName string) TraceFile {
 		panic(err.Error())
 	}
 
+	sort.Slice(queries, func(i, j int) bool {
+		a, err := strconv.Atoi(queries[i].LineNumber)
+		if err != nil {
+			return false
+		}
+		b, err := strconv.Atoi(queries[j].LineNumber)
+		if err != nil {
+			return false
+		}
+		return a < b
+	})
+
 	return TraceFile{
 		Name:    fileName,
 		Queries: queries,
@@ -160,14 +173,14 @@ func limitQueryLength(query string, termWidth int) string {
 }
 
 func printSummary(file TraceFile) {
-	var summary map[string]Summary = summarizeTraces(file)
+	summary := summarizeTraces(file)
 	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		termWidth = 80 // default to 80 if we can't get the terminal width
 	}
 	for _, query := range file.Queries {
 		querySummary := summary[query.Query]
-		printQuery(query.Query, termWidth)
+		printQuery(query, termWidth)
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetAutoFormatHeaders(false)
 		table.SetHeader([]string{"Route Calls", "Rows Sent", "Rows In Memory"})
@@ -177,13 +190,13 @@ func printSummary(file TraceFile) {
 	}
 }
 
-func printQuery(query string, terminalWidth int) {
+func printQuery(q TracedQuery, terminalWidth int) {
 	fmt.Printf("%s", queryPrefix)
-	err := quick.Highlight(os.Stdout, limitQueryLength(query, terminalWidth), "sql", "terminal", "monokai")
+	err := quick.Highlight(os.Stdout, limitQueryLength(q.Query, terminalWidth), "sql", "terminal", "monokai")
 	if err != nil {
 		return
 	}
-	fmt.Println()
+	fmt.Printf("\nLine # %s\n", q.LineNumber)
 }
 
 const significantChangeThreshold = 10
@@ -207,7 +220,7 @@ func compareTraces(file1, file2 TraceFile) {
 		}
 		totalQueries++
 
-		printQuery(query, termWidth)
+		printQuery(s1.Q, termWidth)
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{"Metric", file1.Name, file2.Name, "Diff", "% Change"})
 		table.SetAutoFormatHeaders(false)
@@ -261,9 +274,4 @@ func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) 
 	})
 
 	return percentChange
-}
-
-func addMissingMetrics(table *tablewriter.Table, routeCalls, rowsSent int) {
-	table.Append([]string{"Route Calls", strconv.Itoa(routeCalls), "N/A", "N/A", "N/A"})
-	table.Append([]string{"Rows Sent", strconv.Itoa(rowsSent), "N/A", "N/A", "N/A"})
 }
