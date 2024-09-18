@@ -1,11 +1,16 @@
-.PHONY: all build test tidy clean
+.PHONY: all build test tidy clean vitess-tester vtbenchstat
 
 GO := go
 
 default: build
 
-build:
-	$(GO) build -o vitess-tester ./
+build: vitess-tester vtbenchstat
+
+vitess-tester:
+	$(GO) build -o $@ ./
+
+vtbenchstat:
+	$(GO) build -o $@ ./src/cmd/vtbenchstat
 
 test: build
 	$(GO) test -cover ./...
@@ -16,4 +21,4 @@ tidy:
 
 clean:
 	$(GO) clean -i ./...
-	rm -rf vitess-tester
+	rm -f vitess-tester vtbenchstat

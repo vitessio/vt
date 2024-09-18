@@ -384,24 +384,9 @@ func (t *Tester) execute(query query) error {
 
 // trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile
 func (t *Tester) trace(query query) error {
-	// If there are already written traces, prepend a comma for valid JSON separation
-	if t.alreadyWrittenTraces {
-		if _, err := t.traceFile.Write([]byte(",")); err != nil {
-			return err
-		}
-	}
-
-	// Mark that at least one trace has been written
-	t.alreadyWrittenTraces = true
-
 	// Marshal the query into JSON format for safe embedding
 	queryJSON, err := json.Marshal(query.Query)
 	if err != nil {
-		return err
-	}
-
-	// Write the "Query" part of the JSON entry
-	if _, err := fmt.Fprintf(t.traceFile, `{"Query": %s, "LineNumber": "%d", "Trace": `, queryJSON, query.Line); err != nil {
 		return err
 	}
 
@@ -417,13 +402,20 @@ func (t *Tester) trace(query query) error {
 		return err
 	}
 
-	// Write the formatted trace JSON
-	if _, err := t.traceFile.Write(prettyTrace.Bytes()); err != nil {
-		return err
+	// Construct the entire JSON entry in memory
+	var traceEntry bytes.Buffer
+	if t.alreadyWrittenTraces {
+		traceEntry.WriteString(",") // Prepend a comma if there are already written traces
 	}
+	traceEntry.WriteString(fmt.Sprintf(`{"Query": %s, "LineNumber": "%d", "Trace": `, queryJSON, query.Line))
+	traceEntry.Write(prettyTrace.Bytes()) // Add the formatted trace
+	traceEntry.WriteString("}")           // Close the JSON object
 
-	// Close the JSON object for this query/trace pair
-	if _, err := t.traceFile.Write([]byte("}")); err != nil {
+	// Mark that at least one trace has been written
+	t.alreadyWrittenTraces = true
+
+	// Write the fully constructed JSON entry to the file
+	if _, err := t.traceFile.Write(traceEntry.Bytes()); err != nil {
 		return err
 	}
 
