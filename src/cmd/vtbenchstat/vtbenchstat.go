@@ -46,8 +46,9 @@ type (
 	}
 
 	Summary struct {
-		RouteCalls int
-		RowsSent   int
+		RouteCalls,
+		RowsSent,
+		RowsInMemory int
 	}
 
 	TraceFile struct {
@@ -71,12 +72,32 @@ func summarizeTraces(file TraceFile) map[string]Summary {
 	return summary
 }
 
+func (trace *Trace) TotalRows() int {
+	return int(trace.AvgNumberOfRows * float64(trace.NoOfCalls))
+}
+
+/*
+"OperatorType": "Sort",
+"Variant": "Memory",
+*/
 func summarizeTrace(t Trace) Summary {
 	var summary Summary
 
 	visit(t, func(trace Trace) {
-		summary.RouteCalls += trace.NoOfCalls
-		summary.RowsSent += int(trace.AvgNumberOfRows * float64(trace.NoOfCalls))
+		switch trace.OperatorType {
+		case "Route":
+			summary.RouteCalls += trace.NoOfCalls
+			summary.RowsSent += trace.TotalRows()
+		case "Sort":
+			if trace.Variant == "Memory" {
+				summary.RowsInMemory += int(trace.AvgNumberOfRows)
+			}
+		case "Join":
+			if trace.Variant == "HashJoin" {
+				// HashJoin has to keep the LHS in memory
+				summary.RowsInMemory += trace.Inputs[0].TotalRows()
+			}
+		}
 	})
 
 	return summary
@@ -149,8 +170,8 @@ func printSummary(file TraceFile) {
 		printQuery(query.Query, termWidth)
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetAutoFormatHeaders(false)
-		table.SetHeader([]string{"Route Calls", "Rows Sent"})
-		table.Append([]string{strconv.Itoa(querySummary.RouteCalls), strconv.Itoa(querySummary.RowsSent)})
+		table.SetHeader([]string{"Route Calls", "Rows Sent", "Rows In Memory"})
+		table.Append([]string{strconv.Itoa(querySummary.RouteCalls), strconv.Itoa(querySummary.RowsSent), strconv.Itoa(querySummary.RowsInMemory)})
 		table.Render()
 		fmt.Println()
 	}
@@ -177,7 +198,7 @@ func compareTraces(file1, file2 TraceFile) {
 	}
 
 	var significantChanges, totalQueries int
-	var totalRouteCallsChange, totalDataSentChange float64
+	var totalRouteCallsChange, totalDataSentChange, totalMemoryRowsChange float64
 
 	for query, s1 := range summary1 {
 		s2, ok := summary2[query]
@@ -192,11 +213,18 @@ func compareTraces(file1, file2 TraceFile) {
 		table.SetAutoFormatHeaders(false)
 
 		routeCallsChange := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
-		dataSentChange := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
+		if !math.IsNaN(routeCallsChange) {
+			totalRouteCallsChange += routeCallsChange
+		}
 
-		totalRouteCallsChange += routeCallsChange
+		dataSentChange := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
 		if !math.IsNaN(dataSentChange) {
 			totalDataSentChange += dataSentChange
+		}
+
+		memoryRowsChange := compareMetric(table, "Rows In Memory", s1.RowsInMemory, s2.RowsInMemory)
+		if !math.IsNaN(memoryRowsChange) {
+			totalMemoryRowsChange += memoryRowsChange
 		}
 
 		if math.Abs(routeCallsChange) > significantChangeThreshold || math.Abs(dataSentChange) > significantChangeThreshold {
@@ -212,6 +240,7 @@ func compareTraces(file1, file2 TraceFile) {
 	fmt.Printf("- %d out of %d queries showed significant change\n", significantChanges, totalQueries)
 	fmt.Printf("- Average change in Route Calls: %.2f%%\n", totalRouteCallsChange/float64(totalQueries))
 	fmt.Printf("- Average change in Data Sent: %.2f%%\n", totalDataSentChange/float64(totalQueries))
+	fmt.Printf("- Average change in Rows In Memory: %.2f%%\n", totalMemoryRowsChange/float64(totalQueries))
 }
 
 func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) float64 {
