@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"vitess.io/vitess/go/vt/vterrors"
 
 	"github.com/pingcap/errors"
 	log "github.com/sirupsen/logrus"
@@ -56,7 +57,9 @@ type Tester struct {
 	// we only care if an error is returned, not the exact error message.
 	expectedErrs bool
 
-	reporter Reporter
+	reporter             Reporter
+	traceFile            io.Writer
+	alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
 }
 
 func NewTester(
@@ -68,6 +71,7 @@ func NewTester(
 	ksNames []string,
 	vschema vindexes.VSchema,
 	vschemaFile string,
+	traceFile *os.File,
 ) *Tester {
 	t := &Tester{
 		name:            name,
@@ -79,6 +83,7 @@ func NewTester(
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
+		traceFile:       traceFile,
 	}
 	return t
 }
@@ -187,34 +192,7 @@ func (t *Tester) Run() error {
 		case Q_WAIT_FOR_AUTHORITATIVE:
 			t.waitAuthoritative(q.Query)
 		case Q_QUERY:
-			if t.skipNext {
-				t.skipNext = false
-				continue
-			}
-			if t.skipBinary != "" {
-				okayToRun := utils.BinaryIsAtLeastAtVersion(t.skipVersion, t.skipBinary)
-				t.skipBinary = ""
-				if !okayToRun {
-					continue
-				}
-			}
-			t.reporter.AddTestCase(q.Query, q.Line)
-			if t.vexplain != "" {
-				result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+q.Query, -1, false)
-				t.vexplain = ""
-				if err != nil {
-					t.reporter.AddFailure(t.getVschema(), err)
-					continue
-				}
-
-				t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
-			}
-			if err = t.execute(q); err != nil && !t.expectedErrs {
-				t.reporter.AddFailure(t.getVschema(), err)
-			}
-			t.reporter.EndTestCase()
-			// clear expected errors and current query after we execute any query
-			t.expectedErrs = false
+			t.runQuery(q)
 		case Q_REMOVE_FILE:
 			err = os.Remove(strings.TrimSpace(q.Query))
 			if err != nil {
@@ -227,6 +205,37 @@ func (t *Tester) Run() error {
 	fmt.Printf("%s\n", t.reporter.Report())
 
 	return nil
+}
+
+func (t *Tester) runQuery(q query) {
+	if t.skipNext {
+		t.skipNext = false
+		return
+	}
+	if t.skipBinary != "" {
+		okayToRun := utils.BinaryIsAtLeastAtVersion(t.skipVersion, t.skipBinary)
+		t.skipBinary = ""
+		if !okayToRun {
+			return
+		}
+	}
+	t.reporter.AddTestCase(q.Query, q.Line)
+	if t.vexplain != "" {
+		result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+q.Query, -1, false)
+		t.vexplain = ""
+		if err != nil {
+			t.reporter.AddFailure(t.getVschema(), err)
+			return
+		}
+
+		t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
+	}
+	if err := t.execute(q); err != nil && !t.expectedErrs {
+		t.reporter.AddFailure(t.getVschema(), err)
+	}
+	t.reporter.EndTestCase()
+	// clear expected errors and current query after we execute any query
+	t.expectedErrs = false
 }
 
 func (t *Tester) findTable(name string) (ks string, err error) {
@@ -333,19 +342,92 @@ func (t *Tester) execute(query query) error {
 		return nil
 	}
 
-	err := t.executeStmt(query.Query)
-
+	parser := sqlparser.NewTestParser()
+	ast, err := parser.Parse(query.Query)
 	if err != nil {
+		return err
+	}
+
+	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !t.expectedErrs {
+		// we don't want to run DMLs twice, so we just run them once while tracing
+		var errs []error
+		err := t.trace(query)
+		if err != nil {
+			errs = append(errs, err)
+		}
+
+		// we need to run the DMLs on mysql as well
+		_, err = t.curr.MySQLConn.ExecuteFetch(query.Query, 10000, false)
+		if err != nil {
+			errs = append(errs, err)
+		}
+		return vterrors.Aggregate(errs)
+	}
+
+	if err = t.executeStmt(query.Query, ast); err != nil {
 		return errors.Trace(errors.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err))
 	}
-	// clear expected errors after we execute the first query
+	// clear expected errors after we execute
 	t.expectedErrs = false
 
-	if err != nil {
-		return errors.Trace(errors.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err))
+	if t.traceFile == nil {
+		return nil
 	}
 
-	return errors.Trace(err)
+	_, isDDL := ast.(sqlparser.DDLStatement)
+	if isDDL {
+		return nil
+	}
+
+	return t.trace(query)
+}
+
+// trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile
+func (t *Tester) trace(query query) error {
+	// If there are already written traces, prepend a comma for valid JSON separation
+	if t.alreadyWrittenTraces {
+		if _, err := t.traceFile.Write([]byte(",")); err != nil {
+			return err
+		}
+	}
+
+	// Mark that at least one trace has been written
+	t.alreadyWrittenTraces = true
+
+	// Marshal the query into JSON format for safe embedding
+	queryJSON, err := json.Marshal(query.Query)
+	if err != nil {
+		return err
+	}
+
+	// Write the "Query" part of the JSON entry
+	if _, err := fmt.Fprintf(t.traceFile, `{"Query": %s, "LineNumber": "%d", "Trace": `, queryJSON, query.Line); err != nil {
+		return err
+	}
+
+	// Fetch the trace for the query using "vexplain trace"
+	rs, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain trace %s", query.Query), 10000, false)
+	if err != nil {
+		return err
+	}
+
+	// Extract the trace result and format it with indentation for pretty printing
+	var prettyTrace bytes.Buffer
+	if err := json.Indent(&prettyTrace, []byte(rs.Rows[0][0].ToString()), "", "  "); err != nil {
+		return err
+	}
+
+	// Write the formatted trace JSON
+	if _, err := t.traceFile.Write(prettyTrace.Bytes()); err != nil {
+		return err
+	}
+
+	// Close the JSON object for this query/trace pair
+	if _, err := t.traceFile.Write([]byte("}")); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlparser.IndexDefinition {
@@ -359,12 +441,7 @@ func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlp
 	return index
 }
 
-func (t *Tester) executeStmt(query string) error {
-	parser := sqlparser.NewTestParser()
-	ast, err := parser.Parse(query)
-	if err != nil {
-		return err
-	}
+func (t *Tester) executeStmt(query string, ast sqlparser.Statement) error {
 	_, commentOnly := ast.(*sqlparser.CommentOnly)
 	if commentOnly {
 		return nil
@@ -389,7 +466,7 @@ func (t *Tester) executeStmt(query string) error {
 	}
 
 	if handleVSchema {
-		err = utils.WaitForAuthoritative(t, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
+		err := utils.WaitForAuthoritative(t, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
 		if err != nil {
 			panic(err)
 		}
