@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/alecthomas/chroma/quick"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
 	"math"
@@ -39,8 +40,8 @@ type (
 		OperatorType       string  `json:"OperatorType"`
 		Variant            string  `json:"Variant"`
 		NoOfCalls          int     `json:"NoOfCalls"`
-		AvgNumberOfRows    int     `json:"AvgNumberOfRows"`
-		MedianNumberOfRows int     `json:"MedianNumberOfRows"`
+		AvgNumberOfRows    float64 `json:"AvgNumberOfRows"`
+		MedianNumberOfRows float64 `json:"MedianNumberOfRows"`
 		Inputs             []Trace `json:"Inputs,omitempty"`
 	}
 
@@ -75,7 +76,7 @@ func summarizeTrace(t Trace) Summary {
 
 	visit(t, func(trace Trace) {
 		summary.RouteCalls += trace.NoOfCalls
-		summary.RowsSent += trace.AvgNumberOfRows * trace.NoOfCalls
+		summary.RowsSent += int(trace.AvgNumberOfRows * float64(trace.NoOfCalls))
 	})
 
 	return summary
@@ -145,14 +146,23 @@ func printSummary(file TraceFile) {
 	}
 	for _, query := range file.Queries {
 		querySummary := summary[query.Query]
+		printQuery(query.Query, termWidth)
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetAutoFormatHeaders(false)
 		table.SetHeader([]string{"Route Calls", "Rows Sent"})
 		table.Append([]string{strconv.Itoa(querySummary.RouteCalls), strconv.Itoa(querySummary.RowsSent)})
-		fmt.Printf("%s%s\n", queryPrefix, limitQueryLength(query.Query, termWidth))
 		table.Render()
 		fmt.Println()
 	}
+}
+
+func printQuery(query string, terminalWidth int) {
+	fmt.Printf("%s", queryPrefix)
+	err := quick.Highlight(os.Stdout, limitQueryLength(query, terminalWidth), "sql", "terminal", "monokai")
+	if err != nil {
+		return
+	}
+	fmt.Println()
 }
 
 const significantChangeThreshold = 10
@@ -183,7 +193,7 @@ func compareTraces(file1, file2 TraceFile) {
 
 		totalQueries++
 
-		fmt.Printf("Query: %s\n", limitQueryLength(query, termWidth))
+		printQuery(query, termWidth)
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{"Metric", file1.Name, file2.Name, "Diff", "% Change"})
 		table.SetAutoFormatHeaders(false)
