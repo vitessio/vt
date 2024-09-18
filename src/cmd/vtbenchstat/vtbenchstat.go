@@ -190,7 +190,9 @@ func compareTraces(file1, file2 TraceFile) {
 	for query := range allQueries {
 		s1, ok1 := summary1[query]
 		s2, ok2 := summary2[query]
-
+		if !(ok1 && ok2) {
+			continue
+		}
 		totalQueries++
 
 		printQuery(query, termWidth)
@@ -198,21 +200,15 @@ func compareTraces(file1, file2 TraceFile) {
 		table.SetHeader([]string{"Metric", file1.Name, file2.Name, "Diff", "% Change"})
 		table.SetAutoFormatHeaders(false)
 
-		if ok1 && ok2 {
-			routeCallsChange := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
-			dataSentChange := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
+		routeCallsChange := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
+		dataSentChange := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
 
-			totalRouteCallsChange += routeCallsChange
+		totalRouteCallsChange += routeCallsChange
+		if !math.IsNaN(dataSentChange) {
 			totalDataSentChange += dataSentChange
+		}
 
-			if math.Abs(routeCallsChange) > significantChangeThreshold || math.Abs(dataSentChange) > significantChangeThreshold {
-				significantChanges++
-			}
-		} else if ok1 {
-			addMissingMetrics(table, s1.RouteCalls, s1.RowsSent)
-			significantChanges++
-		} else if ok2 {
-			addMissingMetrics(table, s2.RouteCalls, s2.RowsSent)
+		if math.Abs(routeCallsChange) > significantChangeThreshold || math.Abs(dataSentChange) > significantChangeThreshold {
 			significantChanges++
 		}
 
