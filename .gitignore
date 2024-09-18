@@ -24,6 +24,8 @@ go.work
 report.xml
 errors/
 vitess-tester
+vtbenchstat
 
 # Do not ignore anything inside the src/vitess-tester directory
 !/src/vitess-tester/
+!/src/cmd/vtbenchstat

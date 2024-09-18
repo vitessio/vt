@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -32,6 +33,7 @@ type (
 		Trace Trace  `json:"Trace"`
 		Query string `json:"Query"`
 	}
+
 	// Trace represents the recursive structure of the Trace field
 	Trace struct {
 		OperatorType       string  `json:"OperatorType"`
@@ -47,22 +49,11 @@ type (
 		RowsSent   int
 	}
 
-	TraceFile []TracedQuery
+	TraceFile struct {
+		Name    string
+		Queries []TracedQuery
+	}
 )
-
-//func main() {
-//	if len(os.Args) != 3 {
-//		fmt.Println("Usage: vtbenchstat <trace-file1> <trace-file2>")
-//		os.Exit(1)
-//	}
-//	name1 := os.Args[1]
-//	summary1 := summarizeTraces(readTraceFile(name1))
-//	name2 := os.Args[2]
-//	summary2 := summarizeTraces(readTraceFile(name2))
-//	table := tablewriter.NewWriter(os.Stdout)
-//	table.SetHeader([]string{"", name1, name2, "Diff", "% Change"})
-//
-//}
 
 func visit(trace Trace, f func(Trace)) {
 	f(trace)
@@ -71,9 +62,9 @@ func visit(trace Trace, f func(Trace)) {
 	}
 }
 
-func summarizeTraces(traces TraceFile) map[string]Summary {
+func summarizeTraces(file TraceFile) map[string]Summary {
 	summary := make(map[string]Summary)
-	for _, traceElement := range traces {
+	for _, traceElement := range file.Queries {
 		summary[traceElement.Query] = summarizeTrace(traceElement.Trace)
 	}
 	return summary
@@ -90,7 +81,7 @@ func summarizeTrace(t Trace) Summary {
 	return summary
 }
 
-func readTraceFile(fileName string) []TracedQuery {
+func readTraceFile(fileName string) TraceFile {
 	// Open the JSON file
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -108,14 +99,14 @@ func readTraceFile(fileName string) []TracedQuery {
 	}
 
 	// Read the file contents
-	var elements []TracedQuery
+	var queries []TracedQuery
 	for decoder.More() {
 		var element TracedQuery
 		err := decoder.Decode(&element)
 		if err != nil {
 			panic(err.Error())
 		}
-		elements = append(elements, element)
+		queries = append(queries, element)
 	}
 
 	// Read the closing bracket
@@ -124,38 +115,129 @@ func readTraceFile(fileName string) []TracedQuery {
 		panic(err.Error())
 	}
 
-	return elements
+	return TraceFile{
+		Name:    fileName,
+		Queries: queries,
+	}
+}
+
+const queryPrefix = "Query: "
+
+func limitQueryLength(query string, termWidth int) string {
+	// Process the query string
+	processedQuery := strings.ReplaceAll(query, "\n", " ") // Replace newlines with spaces
+	processedQuery = strings.TrimSpace(processedQuery)     // Trim leading/trailing spaces
+
+	// Calculate available space for query
+	availableSpace := termWidth - len(queryPrefix) - 3 // 3 for ellipsis
+
+	if len(processedQuery) > availableSpace {
+		processedQuery = processedQuery[:availableSpace] + "..."
+	}
+	return processedQuery
 }
 
 func printSummary(file TraceFile) {
-	summary := summarizeTraces(file)
-
+	var summary map[string]Summary = summarizeTraces(file)
 	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		termWidth = 80 // default to 80 if we can't get the terminal width
 	}
-	for _, query := range file {
+	for _, query := range file.Queries {
+		querySummary := summary[query.Query]
 		table := tablewriter.NewWriter(os.Stdout)
+		table.SetAutoFormatHeaders(false)
 		table.SetHeader([]string{"Route Calls", "Rows Sent"})
-		table.Append([]string{strconv.Itoa(summary[query.Query].RouteCalls), strconv.Itoa(summary[query.Query].RowsSent)})
-		// Process the query string
-		processedQuery := strings.ReplaceAll(query.Query, "\n", " ") // Replace newlines with spaces
-		processedQuery = strings.TrimSpace(processedQuery)           // Trim leading/trailing spaces
-
-		// Calculate available space for query
-		const queryPrefix = "Query: "
-		availableSpace := termWidth - len(queryPrefix) - 3 // 3 for ellipsis
-
-		if len(processedQuery) > availableSpace {
-			processedQuery = processedQuery[:availableSpace] + "..."
-		}
-
-		fmt.Printf("%s%s\n", queryPrefix, processedQuery)
+		table.Append([]string{strconv.Itoa(querySummary.RouteCalls), strconv.Itoa(querySummary.RowsSent)})
+		fmt.Printf("%s%s\n", queryPrefix, limitQueryLength(query.Query, termWidth))
 		table.Render()
 		fmt.Println()
 	}
 }
 
-func compareTraces(file, file2 TraceFile) {
-	panic("not implemented")
+const significantChangeThreshold = 10
+
+func compareTraces(file1, file2 TraceFile) {
+	summary1 := summarizeTraces(file1)
+	summary2 := summarizeTraces(file2)
+
+	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		termWidth = 80 // default to 80 if we can't get the terminal width
+	}
+
+	allQueries := make(map[string]struct{})
+	for query := range summary1 {
+		allQueries[query] = struct{}{}
+	}
+	for query := range summary2 {
+		allQueries[query] = struct{}{}
+	}
+
+	var significantChanges, totalQueries int
+	var totalRouteCallsChange, totalDataSentChange float64
+
+	for query := range allQueries {
+		s1, ok1 := summary1[query]
+		s2, ok2 := summary2[query]
+
+		totalQueries++
+
+		fmt.Printf("Query: %s\n", limitQueryLength(query, termWidth))
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"Metric", file1.Name, file2.Name, "Diff", "% Change"})
+		table.SetAutoFormatHeaders(false)
+
+		if ok1 && ok2 {
+			routeCallsChange := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
+			dataSentChange := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
+
+			totalRouteCallsChange += routeCallsChange
+			totalDataSentChange += dataSentChange
+
+			if math.Abs(routeCallsChange) > significantChangeThreshold || math.Abs(dataSentChange) > significantChangeThreshold {
+				significantChanges++
+			}
+		} else if ok1 {
+			addMissingMetrics(table, s1.RouteCalls, s1.RowsSent)
+			significantChanges++
+		} else if ok2 {
+			addMissingMetrics(table, s2.RouteCalls, s2.RowsSent)
+			significantChanges++
+		}
+
+		table.Render()
+		fmt.Println()
+	}
+
+	// Print summary
+	fmt.Println("Summary:")
+	fmt.Printf("- %d out of %d queries showed significant change\n", significantChanges, totalQueries)
+	fmt.Printf("- Average change in Route Calls: %.2f%%\n", totalRouteCallsChange/float64(totalQueries))
+	fmt.Printf("- Average change in Data Sent: %.2f%%\n", totalDataSentChange/float64(totalQueries))
+}
+
+func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) float64 {
+	diff := val2 - val1
+	percentChange := float64(diff) / float64(val1) * 100
+	percentChangeStr := fmt.Sprintf("%.2f%%", percentChange)
+	if math.IsInf(percentChange, 0) {
+		percentChangeStr = "∞%"
+		percentChange = 0 // To not skew the average calculation
+	}
+
+	table.Append([]string{
+		metricName,
+		strconv.Itoa(val1),
+		strconv.Itoa(val2),
+		strconv.Itoa(diff),
+		percentChangeStr,
+	})
+
+	return percentChange
+}
+
+func addMissingMetrics(table *tablewriter.Table, routeCalls, rowsSent int) {
+	table.Append([]string{"Route Calls", strconv.Itoa(routeCalls), "N/A", "N/A", "N/A"})
+	table.Append([]string{"Rows Sent", strconv.Itoa(rowsSent), "N/A", "N/A", "N/A"})
 }
