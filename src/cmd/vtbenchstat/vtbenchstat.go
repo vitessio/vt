@@ -176,21 +176,12 @@ func compareTraces(file1, file2 TraceFile) {
 		termWidth = 80 // default to 80 if we can't get the terminal width
 	}
 
-	allQueries := make(map[string]struct{})
-	for query := range summary1 {
-		allQueries[query] = struct{}{}
-	}
-	for query := range summary2 {
-		allQueries[query] = struct{}{}
-	}
-
 	var significantChanges, totalQueries int
 	var totalRouteCallsChange, totalDataSentChange float64
 
-	for query := range allQueries {
-		s1, ok1 := summary1[query]
-		s2, ok2 := summary2[query]
-		if !(ok1 && ok2) {
+	for query, s1 := range summary1 {
+		s2, ok := summary2[query]
+		if !ok {
 			continue
 		}
 		totalQueries++
