@@ -4,8 +4,16 @@ Vitess tester tests Vitess using the same test files as the [MySQL Test Framewor
 
 ## Install
 
+If you only want the `vitess-tester` binary, install it using the following command:
+
 ```
 go install github.com/vitessio/vitess-tester@latest
+```
+
+The `vtbenchstat` binary can be had by running:
+
+```
+go install github.com/vitessio/vitess-tester/src/cmd/vtbenchstat@latest
 ```
 
 ## Testing methodology
@@ -76,6 +84,8 @@ Usage of ./vitess-tester:
         logs at or above this threshold go to stderr (default 2)
   -topo-flavor string
         choose a topo server from etcd2, zk2 or consul (default "etcd2")
+  -trace string
+        Do a vexplain trace on all queries and store the output in the given file.
   -v value
         log level for V logs
   -vmodule value

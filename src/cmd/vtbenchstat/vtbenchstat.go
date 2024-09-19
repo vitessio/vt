@@ -44,6 +44,7 @@ type (
 		NoOfCalls          int     `json:"NoOfCalls"`
 		AvgNumberOfRows    float64 `json:"AvgNumberOfRows"`
 		MedianNumberOfRows float64 `json:"MedianNumberOfRows"`
+		ShardsQueried      int     `json:"ShardsQueried"`
 		Inputs             []Trace `json:"Inputs,omitempty"`
 	}
 
@@ -51,7 +52,8 @@ type (
 		Q TracedQuery
 		RouteCalls,
 		RowsSent,
-		RowsInMemory int
+		RowsInMemory,
+		ShardsQueried int
 	}
 
 	TraceFile struct {
@@ -85,6 +87,7 @@ func summarizeTrace(t TracedQuery) QuerySummary {
 	}
 
 	visit(t.Trace, func(trace Trace) {
+		summary.ShardsQueried += trace.ShardsQueried
 		switch trace.OperatorType {
 		case "Route":
 			summary.RouteCalls += trace.NoOfCalls
@@ -104,11 +107,16 @@ func summarizeTrace(t TracedQuery) QuerySummary {
 	return summary
 }
 
+func exit(msg string) {
+	fmt.Println(msg)
+	os.Exit(1)
+}
+
 func readTraceFile(fileName string) TraceFile {
 	// Open the JSON file
 	file, err := os.Open(fileName)
 	if err != nil {
-		panic(err.Error())
+		exit("Error opening file: " + err.Error())
 	}
 	defer file.Close()
 
@@ -118,7 +126,7 @@ func readTraceFile(fileName string) TraceFile {
 	// Read the opening bracket
 	_, err = decoder.Token()
 	if err != nil {
-		panic(err.Error())
+		exit("Error reading json: " + err.Error())
 	}
 
 	// Read the file contents
@@ -127,7 +135,7 @@ func readTraceFile(fileName string) TraceFile {
 		var element TracedQuery
 		err := decoder.Decode(&element)
 		if err != nil {
-			panic(err.Error())
+			exit("Error reading json: " + err.Error())
 		}
 		queries = append(queries, element)
 	}
@@ -135,7 +143,7 @@ func readTraceFile(fileName string) TraceFile {
 	// Read the closing bracket
 	_, err = decoder.Token()
 	if err != nil {
-		panic(err.Error())
+		exit("Error reading json: " + err.Error())
 	}
 
 	sort.Slice(queries, func(i, j int) bool {
@@ -180,23 +188,37 @@ func printSummary(file TraceFile) {
 	}
 	for _, query := range file.Queries {
 		querySummary := summary[query.Query]
-		printQuery(query, termWidth)
+		printQuery(query, termWidth, false)
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetAutoFormatHeaders(false)
-		table.SetHeader([]string{"Route Calls", "Rows Sent", "Rows In Memory"})
-		table.Append([]string{strconv.Itoa(querySummary.RouteCalls), strconv.Itoa(querySummary.RowsSent), strconv.Itoa(querySummary.RowsInMemory)})
+		table.SetHeader([]string{
+			"Route Calls",
+			"Rows Sent",
+			"Rows In Memory",
+			"Shards Queried",
+		})
+		table.Append([]string{
+			strconv.Itoa(querySummary.RouteCalls),
+			strconv.Itoa(querySummary.RowsSent),
+			strconv.Itoa(querySummary.RowsInMemory),
+			strconv.Itoa(querySummary.ShardsQueried),
+		})
 		table.Render()
 		fmt.Println()
 	}
 }
 
-func printQuery(q TracedQuery, terminalWidth int) {
+func printQuery(q TracedQuery, terminalWidth int, significant bool) {
 	fmt.Printf("%s", queryPrefix)
 	err := quick.Highlight(os.Stdout, limitQueryLength(q.Query, terminalWidth), "sql", "terminal", "monokai")
 	if err != nil {
 		return
 	}
-	fmt.Printf("\nLine # %s\n", q.LineNumber)
+	improved := ""
+	if significant {
+		improved = " (significant)"
+	}
+	fmt.Printf("\nLine # %s%s\n", q.LineNumber, improved)
 }
 
 const significantChangeThreshold = 10
@@ -211,7 +233,8 @@ func compareTraces(file1, file2 TraceFile) {
 	}
 
 	var significantChanges, totalQueries int
-	var totalRouteCallsChange, totalDataSentChange, totalMemoryRowsChange float64
+	var s1RouteCalls, s1DataSent, s1MemoryRows, s1ShardsQueried int
+	var s2RouteCalls, s2DataSent, s2MemoryRows, s2ShardsQueried int
 
 	for query, s1 := range summary1 {
 		s2, ok := summary2[query]
@@ -220,43 +243,51 @@ func compareTraces(file1, file2 TraceFile) {
 		}
 		totalQueries++
 
-		printQuery(s1.Q, termWidth)
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{"Metric", file1.Name, file2.Name, "Diff", "% Change"})
 		table.SetAutoFormatHeaders(false)
 
-		routeCallsChange := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
-		if !math.IsNaN(routeCallsChange) {
-			totalRouteCallsChange += routeCallsChange
-		}
+		m1 := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
+		m2 := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
+		m3 := compareMetric(table, "Rows In Memory", s1.RowsInMemory, s2.RowsInMemory)
+		m4 := compareMetric(table, "Shards Queried", s1.ShardsQueried, s2.ShardsQueried)
 
-		dataSentChange := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
-		if !math.IsNaN(dataSentChange) {
-			totalDataSentChange += dataSentChange
-		}
-
-		memoryRowsChange := compareMetric(table, "Rows In Memory", s1.RowsInMemory, s2.RowsInMemory)
-		if !math.IsNaN(memoryRowsChange) {
-			totalMemoryRowsChange += memoryRowsChange
-		}
-
-		if math.Abs(routeCallsChange) > significantChangeThreshold || math.Abs(dataSentChange) > significantChangeThreshold {
+		// we introduce variables to make sure we don't shortcut the evaluation
+		significant := m1 || m2 || m3 || m4
+		if significant {
 			significantChanges++
 		}
 
+		s1RouteCalls += s1.RouteCalls
+		s1DataSent += s1.RowsSent
+		s1MemoryRows += s1.RowsInMemory
+		s1ShardsQueried += s1.ShardsQueried
+		s2RouteCalls += s2.RouteCalls
+		s2DataSent += s2.RowsSent
+		s2MemoryRows += s2.RowsInMemory
+		s2ShardsQueried += s2.ShardsQueried
+
+		printQuery(s1.Q, termWidth, significant)
 		table.Render()
 		fmt.Println()
 	}
 
+	totalRouteCallsChange := float64(s2RouteCalls-s1RouteCalls) / float64(s1RouteCalls) * 100
+	totalDataSentChange := float64(s2DataSent-s1DataSent) / float64(s1DataSent) * 100
+	totalMemoryRowsChange := float64(s2MemoryRows-s1MemoryRows) / float64(s1MemoryRows) * 100
+	totalShardsQueriedChange := float64(s2ShardsQueried-s1ShardsQueried) / float64(s1ShardsQueried) * 100
+
 	// Print summary
 	fmt.Println("Summary:")
 	fmt.Printf("- %d out of %d queries showed significant change\n", significantChanges, totalQueries)
-	fmt.Printf("- Average change in Route Calls: %.2f%%\n", totalRouteCallsChange/float64(totalQueries))
-	fmt.Printf("- Average change in Data Sent: %.2f%%\n", totalDataSentChange/float64(totalQueries))
-	fmt.Printf("- Average change in Rows In Memory: %.2f%%\n", totalMemoryRowsChange/float64(totalQueries))
+	fmt.Printf("- Average change in Route Calls: %.2f%%\n", totalRouteCallsChange)
+	fmt.Printf("- Average change in Data Sent: %.2f%%\n", totalDataSentChange)
+	fmt.Printf("- Average change in Rows In Memory: %.2f%%\n", totalMemoryRowsChange)
+	fmt.Printf("- Average change in Shards Queried: %.2f%%\n", totalShardsQueriedChange)
 }
 
-func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) float64 {
+// compareMetric compares two metrics and appends the result to the table, returning true if the change is significant
+func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) bool {
 	diff := val2 - val1
 	percentChange := float64(diff) / float64(val1) * 100
 	percentChangeStr := fmt.Sprintf("%.2f%%", percentChange)
@@ -273,5 +304,5 @@ func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) 
 		percentChangeStr,
 	})
 
-	return percentChange
+	return percentChange < -significantChangeThreshold
 }
