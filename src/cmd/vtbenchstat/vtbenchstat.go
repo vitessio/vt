@@ -236,9 +236,10 @@ func compareTraces(file1, file2 TraceFile) {
 	var s1RouteCalls, s1DataSent, s1MemoryRows, s1ShardsQueried int
 	var s2RouteCalls, s2DataSent, s2MemoryRows, s2ShardsQueried int
 
-	for query, s1 := range summary1 {
-		s2, ok := summary2[query]
-		if !ok {
+	for _, q := range file1.Queries {
+		s1, ok1 := summary1[q.Query]
+		s2, ok2 := summary2[q.Query]
+		if !ok1 || !ok2 {
 			continue
 		}
 		totalQueries++
