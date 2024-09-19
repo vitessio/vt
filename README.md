@@ -110,6 +110,31 @@ vitess-tester -vtexplain-vschema t/vtexplain-vschema.json t/vtexplain.test # run
 
 The test files can be amended with directives to control the testing process. Check out `directives.test` to see examples of what directives are available. 
 
+## Tracing and comparing execution plans
+
+`vitess-tester` can run in tracing mode. When it does, it will not only run the tests but also generate a trace of the query execution plan. 
+The trace is created using `vexplain trace`, a tool that provides detailed information about how a query is executed.
+
+To run `vitess-tester` in tracing mode, use the `-trace` flag:
+
+```bash
+vitess-tester --sharded -trace=trace-log.json t/tpch.test
+```
+
+This will create a trace log, which you can then either summarize using `vtbenchstat` or compare with another trace log.
+
+Running `vtbenchstat` will provide a summary of the trace log, including the number of queries, the number of rows returned, and the time taken to execute the queries.
+
+```bash
+vtbenchstat trace-log.json
+```
+
+To compare two trace logs, use the `vtbenchstat` command with two trace logs as arguments:
+
+```bash
+vtbenchstat trace-log1.json trace-log2.json
+```
+
 ## Contributing
 
 Contributions are welcomed and greatly appreciated. You can help by:
