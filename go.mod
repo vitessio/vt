@@ -1,6 +1,6 @@
 module github.com/vitessio/vitess-tester
 
-go 1.22.5
+go 1.23.1
 
 require (
 	github.com/pingcap/errors v0.11.5-0.20221009092201-b66cddb77c32
@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/alecthomas/chroma v0.10.0
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	golang.org/x/term v0.22.0
@@ -26,7 +27,6 @@ require (
 	github.com/DataDog/go-tuf v1.1.0-0.5.2 // indirect
 	github.com/DataDog/sketches-go v1.4.6 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/aquarapid/vaultlib v0.5.1 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
