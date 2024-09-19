@@ -22,6 +22,7 @@ import (
 	"github.com/alecthomas/chroma/quick"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
+	"io"
 	"math"
 	"os"
 	"sort"
@@ -180,16 +181,15 @@ func limitQueryLength(query string, termWidth int) string {
 	return processedQuery
 }
 
-func printSummary(file TraceFile) {
+func printSummary(out io.Writer, termWidth int, highLighter Highlighter, file TraceFile) {
 	summary := summarizeTraces(file)
-	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		termWidth = 80 // default to 80 if we can't get the terminal width
-	}
-	for _, query := range file.Queries {
+	for i, query := range file.Queries {
+		if i > 0 {
+			fmt.Fprintln(out)
+		}
 		querySummary := summary[query.Query]
-		printQuery(query, termWidth, false)
-		table := tablewriter.NewWriter(os.Stdout)
+		printQuery(out, termWidth, highLighter, query, false)
+		table := tablewriter.NewWriter(out)
 		table.SetAutoFormatHeaders(false)
 		table.SetHeader([]string{
 			"Route Calls",
@@ -204,13 +204,23 @@ func printSummary(file TraceFile) {
 			strconv.Itoa(querySummary.ShardsQueried),
 		})
 		table.Render()
-		fmt.Println()
 	}
 }
 
-func printQuery(q TracedQuery, terminalWidth int, significant bool) {
-	fmt.Printf("%s", queryPrefix)
-	err := quick.Highlight(os.Stdout, limitQueryLength(q.Query, terminalWidth), "sql", "terminal", "monokai")
+type Highlighter func(out io.Writer, query string) error
+
+func highlightQuery(out io.Writer, query string) error {
+	return quick.Highlight(out, query, "sql", "terminal", "monokai")
+}
+
+func noHighlight(out io.Writer, query string) error {
+	_, err := fmt.Fprint(out, query)
+	return err
+}
+
+func printQuery(out io.Writer, terminalWidth int, highLighter Highlighter, q TracedQuery, significant bool) {
+	fmt.Fprintf(out, "%s", queryPrefix)
+	err := highLighter(out, limitQueryLength(q.Query, terminalWidth))
 	if err != nil {
 		return
 	}
@@ -218,19 +228,22 @@ func printQuery(q TracedQuery, terminalWidth int, significant bool) {
 	if significant {
 		improved = " (significant)"
 	}
-	fmt.Printf("\nLine # %s%s\n", q.LineNumber, improved)
+	fmt.Fprintf(out, "\nLine # %s%s\n", q.LineNumber, improved)
 }
 
 const significantChangeThreshold = 10
 
-func compareTraces(file1, file2 TraceFile) {
-	summary1 := summarizeTraces(file1)
-	summary2 := summarizeTraces(file2)
-
+func terminalWidth() int {
 	termWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
-		termWidth = 80 // default to 80 if we can't get the terminal width
+		return 80 // default to 80 if we can't get the terminal width
 	}
+	return termWidth
+}
+
+func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, file1, file2 TraceFile) {
+	summary1 := summarizeTraces(file1)
+	summary2 := summarizeTraces(file2)
 
 	var significantChanges, totalQueries int
 	var s1RouteCalls, s1DataSent, s1MemoryRows, s1ShardsQueried int
@@ -244,7 +257,7 @@ func compareTraces(file1, file2 TraceFile) {
 		}
 		totalQueries++
 
-		table := tablewriter.NewWriter(os.Stdout)
+		table := tablewriter.NewWriter(out)
 		table.SetHeader([]string{"Metric", file1.Name, file2.Name, "Diff", "% Change"})
 		table.SetAutoFormatHeaders(false)
 
@@ -268,9 +281,9 @@ func compareTraces(file1, file2 TraceFile) {
 		s2MemoryRows += s2.RowsInMemory
 		s2ShardsQueried += s2.ShardsQueried
 
-		printQuery(s1.Q, termWidth, significant)
+		printQuery(out, termWidth, highLighter, s1.Q, significant)
 		table.Render()
-		fmt.Println()
+		fmt.Fprintln(out)
 	}
 
 	totalRouteCallsChange := float64(s2RouteCalls-s1RouteCalls) / float64(s1RouteCalls) * 100
@@ -279,12 +292,12 @@ func compareTraces(file1, file2 TraceFile) {
 	totalShardsQueriedChange := float64(s2ShardsQueried-s1ShardsQueried) / float64(s1ShardsQueried) * 100
 
 	// Print summary
-	fmt.Println("Summary:")
-	fmt.Printf("- %d out of %d queries showed significant change\n", significantChanges, totalQueries)
-	fmt.Printf("- Average change in Route Calls: %.2f%%\n", totalRouteCallsChange)
-	fmt.Printf("- Average change in Data Sent: %.2f%%\n", totalDataSentChange)
-	fmt.Printf("- Average change in Rows In Memory: %.2f%%\n", totalMemoryRowsChange)
-	fmt.Printf("- Average change in Shards Queried: %.2f%%\n", totalShardsQueriedChange)
+	fmt.Fprintln(out, "Summary:")
+	fmt.Fprintf(out, "- %d out of %d queries showed significant change\n", significantChanges, totalQueries)
+	fmt.Fprintf(out, "- Average change in Route Calls: %.2f%%\n", totalRouteCallsChange)
+	fmt.Fprintf(out, "- Average change in Data Sent: %.2f%%\n", totalDataSentChange)
+	fmt.Fprintf(out, "- Average change in Rows In Memory: %.2f%%\n", totalMemoryRowsChange)
+	fmt.Fprintf(out, "- Average change in Shards Queried: %.2f%%\n", totalShardsQueriedChange)
 }
 
 // compareMetric compares two metrics and appends the result to the table, returning true if the change is significant
