@@ -1,0 +1,312 @@
+[{"Query": "INSERT INTO users (user_id, username, email)\nVALUES (101, 'alice_smith', 'alice@example.com'),\n(102, 'bob_jones', 'bob@example.com'),\n(103, 'charlie_brown', 'charlie@example.com'),\n(104, 'diana_prince', 'diana@example.com'),\n(105, 'edward_stark', 'edward@example.com'),\n(106, 'fiona_gale', 'fiona@example.com'),\n(107, 'george_white', 'george@example.com'),\n(108, 'hannah_green', 'hannah@example.com'),\n(109, 'ian_blue', 'ian@example.com'),\n(110, 'julia_red', 'julia@example.com');", "LineNumber": "37", "Trace": {
+  "OperatorType": "Insert",
+  "Variant": "Sharded",
+  "Keyspace": {
+    "Name": "mysqltest",
+    "Sharded": true
+  },
+  "TargetTabletType": "PRIMARY",
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 0,
+  "MedianNumberOfRows": 0,
+  "ShardsQueried": 2,
+  "Query": "insert into users(user_id, username, email) values (:_user_id_0, 'alice_smith', 'alice@example.com'), (:_user_id_1, 'bob_jones', 'bob@example.com'), (:_user_id_2, 'charlie_brown', 'charlie@example.com'), (:_user_id_3, 'diana_prince', 'diana@example.com'), (:_user_id_4, 'edward_stark', 'edward@example.com'), (:_user_id_5, 'fiona_gale', 'fiona@example.com'), (:_user_id_6, 'george_white', 'george@example.com'), (:_user_id_7, 'hannah_green', 'hannah@example.com'), (:_user_id_8, 'ian_blue', 'ian@example.com'), (:_user_id_9, 'julia_red', 'julia@example.com')",
+  "TableName": "users",
+  "VindexValues": {
+    "xxhash": "101, 102, 103, 104, 105, 106, 107, 108, 109, 110"
+  }
+}},{"Query": "INSERT INTO products (product_id, name, price, category)\nVALUES (201, 'Laptop', 999.99, 'Electronics'),\n(202, 'Smartphone', 699.99, 'Electronics'),\n(203, 'Headphones', 149.99, 'Electronics'),\n(204, 'Running Shoes', 89.99, 'Sports'),\n(205, 'Yoga Mat', 29.99, 'Sports'),\n(206, 'Coffee Maker', 79.99, 'Home'),\n(207, 'Blender', 59.99, 'Home'),\n(208, 'Mystery Novel', 14.99, 'Books'),\n(209, 'Cookbook', 24.99, 'Books'),\n(210, 'Desk Chair', 199.99, 'Furniture');", "LineNumber": "49", "Trace": {
+  "OperatorType": "Insert",
+  "Variant": "Sharded",
+  "Keyspace": {
+    "Name": "mysqltest",
+    "Sharded": true
+  },
+  "TargetTabletType": "PRIMARY",
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 0,
+  "MedianNumberOfRows": 0,
+  "ShardsQueried": 2,
+  "Query": "insert into products(product_id, `name`, price, category) values (:_product_id_0, 'Laptop', 999.99, 'Electronics'), (:_product_id_1, 'Smartphone', 699.99, 'Electronics'), (:_product_id_2, 'Headphones', 149.99, 'Electronics'), (:_product_id_3, 'Running Shoes', 89.99, 'Sports'), (:_product_id_4, 'Yoga Mat', 29.99, 'Sports'), (:_product_id_5, 'Coffee Maker', 79.99, 'Home'), (:_product_id_6, 'Blender', 59.99, 'Home'), (:_product_id_7, 'Mystery Novel', 14.99, 'Books'), (:_product_id_8, 'Cookbook', 24.99, 'Books'), (:_product_id_9, 'Desk Chair', 199.99, 'Furniture')",
+  "TableName": "products",
+  "VindexValues": {
+    "xxhash": "201, 202, 203, 204, 205, 206, 207, 208, 209, 210"
+  }
+}},{"Query": "INSERT INTO orders (order_id, user_id, order_date, total_amount)\nVALUES (301, 101, '2024-09-01 10:00:00', 1149.98),\n(302, 102, '2024-09-02 11:30:00', 699.99),\n(303, 103, '2024-09-03 14:15:00', 239.97),\n(304, 104, '2024-09-04 16:45:00', 224.98),\n(305, 105, '2024-09-05 09:20:00', 1079.98),\n(306, 101, '2024-09-06 13:10:00', 174.98),\n(307, 106, '2024-09-07 17:30:00', 139.98),\n(308, 107, '2024-09-08 12:00:00', 999.99),\n(309, 108, '2024-09-09 10:45:00', 39.98),\n(310, 109, '2024-09-10 15:20:00', 279.98),\n(311, 110, '2024-09-11 11:00:00', 149.99),\n(312, 101, '2024-09-12 14:30:00', 89.99);", "LineNumber": "61", "Trace": {
+  "OperatorType": "Insert",
+  "Variant": "Sharded",
+  "Keyspace": {
+    "Name": "mysqltest",
+    "Sharded": true
+  },
+  "TargetTabletType": "PRIMARY",
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 0,
+  "MedianNumberOfRows": 0,
+  "ShardsQueried": 2,
+  "Query": "insert into orders(order_id, user_id, order_date, total_amount) values (:_order_id_0, 101, '2024-09-01 10:00:00', 1149.98), (:_order_id_1, 102, '2024-09-02 11:30:00', 699.99), (:_order_id_2, 103, '2024-09-03 14:15:00', 239.97), (:_order_id_3, 104, '2024-09-04 16:45:00', 224.98), (:_order_id_4, 105, '2024-09-05 09:20:00', 1079.98), (:_order_id_5, 101, '2024-09-06 13:10:00', 174.98), (:_order_id_6, 106, '2024-09-07 17:30:00', 139.98), (:_order_id_7, 107, '2024-09-08 12:00:00', 999.99), (:_order_id_8, 108, '2024-09-09 10:45:00', 39.98), (:_order_id_9, 109, '2024-09-10 15:20:00', 279.98), (:_order_id_10, 110, '2024-09-11 11:00:00', 149.99), (:_order_id_11, 101, '2024-09-12 14:30:00', 89.99)",
+  "TableName": "orders",
+  "VindexValues": {
+    "xxhash": "301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312"
+  }
+}},{"Query": "INSERT INTO order_items (order_id, product_id, quantity, price)\nVALUES (301, 201, 1, 999.99),\n(301, 203, 1, 149.99),\n(302, 202, 1, 699.99),\n(303, 204, 2, 89.99),\n(303, 205, 2, 29.99),\n(304, 206, 1, 79.99),\n(304, 208, 2, 14.99),\n(304, 209, 1, 24.99),\n(305, 201, 1, 999.99),\n(305, 207, 1, 59.99),\n(305, 205, 1, 29.99),\n(306, 208, 3, 14.99),\n(306, 209, 1, 24.99),\n(307, 203, 1, 149.99),\n(308, 201, 1, 999.99),\n(309, 208, 2, 14.99),\n(310, 210, 1, 199.99),\n(310, 207, 1, 59.99),\n(311, 203, 1, 149.99),\n(312, 204, 1, 89.99);", "LineNumber": "75", "Trace": {
+  "OperatorType": "Insert",
+  "Variant": "Sharded",
+  "Keyspace": {
+    "Name": "mysqltest",
+    "Sharded": true
+  },
+  "TargetTabletType": "PRIMARY",
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 0,
+  "MedianNumberOfRows": 0,
+  "ShardsQueried": 2,
+  "Query": "insert into order_items(order_id, product_id, quantity, price) values (:_order_id_0, :_product_id_0, 1, 999.99), (:_order_id_1, :_product_id_1, 1, 149.99), (:_order_id_2, :_product_id_2, 1, 699.99), (:_order_id_3, :_product_id_3, 2, 89.99), (:_order_id_4, :_product_id_4, 2, 29.99), (:_order_id_5, :_product_id_5, 1, 79.99), (:_order_id_6, :_product_id_6, 2, 14.99), (:_order_id_7, :_product_id_7, 1, 24.99), (:_order_id_8, :_product_id_8, 1, 999.99), (:_order_id_9, :_product_id_9, 1, 59.99), (:_order_id_10, :_product_id_10, 1, 29.99), (:_order_id_11, :_product_id_11, 3, 14.99), (:_order_id_12, :_product_id_12, 1, 24.99), (:_order_id_13, :_product_id_13, 1, 149.99), (:_order_id_14, :_product_id_14, 1, 999.99), (:_order_id_15, :_product_id_15, 2, 14.99), (:_order_id_16, :_product_id_16, 1, 199.99), (:_order_id_17, :_product_id_17, 1, 59.99), (:_order_id_18, :_product_id_18, 1, 149.99), (:_order_id_19, :_product_id_19, 1, 89.99)",
+  "TableName": "order_items",
+  "VindexValues": {
+    "xxhash": "301, 301, 302, 303, 303, 304, 304, 304, 305, 305, 305, 306, 306, 307, 308, 309, 310, 310, 311, 312, 201, 203, 202, 204, 205, 206, 208, 209, 201, 207, 205, 208, 209, 203, 201, 208, 210, 207, 203, 204"
+  }
+}},{"Query": "SELECT o.order_id, o.order_date, o.total_amount\nFROM orders o\nWHERE o.user_id = 123;", "LineNumber": "98", "Trace": {
+  "OperatorType": "Route",
+  "Variant": "Scatter",
+  "Keyspace": {
+    "Name": "mysqltest",
+    "Sharded": true
+  },
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 0,
+  "MedianNumberOfRows": 0,
+  "ShardsQueried": 2,
+  "FieldQuery": "select o.order_id, o.order_date, o.total_amount from orders as o where 1 != 1",
+  "Query": "select o.order_id, o.order_date, o.total_amount from orders as o where o.user_id = 123",
+  "Table": "orders"
+}},{"Query": "SELECT u.user_id, u.username, SUM(o.total_amount) as total_spent\nFROM users u\nJOIN orders o ON u.user_id = o.user_id\nGROUP BY u.user_id, u.username;", "LineNumber": "103", "Trace": {
+  "OperatorType": "Aggregate",
+  "Variant": "Ordered",
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 10,
+  "MedianNumberOfRows": 10,
+  "Aggregates": "sum(2) AS total_spent",
+  "GroupBy": "0, 1 COLLATE utf8mb4_0900_ai_ci",
+  "Inputs": [
+    {
+      "OperatorType": "Projection",
+      "NoOfCalls": 1,
+      "AvgNumberOfRows": 11,
+      "MedianNumberOfRows": 11,
+      "Expressions": [
+        ":2 as user_id",
+        ":3 as username",
+        "sum(o.total_amount) * count(*) as total_spent"
+      ],
+      "Inputs": [
+        {
+          "OperatorType": "Sort",
+          "Variant": "Memory",
+          "NoOfCalls": 1,
+          "AvgNumberOfRows": 11,
+          "MedianNumberOfRows": 11,
+          "OrderBy": "2 ASC, 3 ASC COLLATE utf8mb4_0900_ai_ci",
+          "Inputs": [
+            {
+              "OperatorType": "Join",
+              "Variant": "Join",
+              "NoOfCalls": 1,
+              "AvgNumberOfRows": 11,
+              "MedianNumberOfRows": 11,
+              "JoinColumnIndexes": "L:0,R:0,R:1,R:2",
+              "JoinVars": {
+                "o_user_id": 1
+              },
+              "TableName": "orders_users",
+              "Inputs": [
+                {
+                  "OperatorType": "Route",
+                  "Variant": "Scatter",
+                  "Keyspace": {
+                    "Name": "mysqltest",
+                    "Sharded": true
+                  },
+                  "NoOfCalls": 1,
+                  "AvgNumberOfRows": 11,
+                  "MedianNumberOfRows": 11,
+                  "ShardsQueried": 2,
+                  "FieldQuery": "select sum(o.total_amount) as total_spent, o.user_id from orders as o where 1 != 1 group by o.user_id",
+                  "Query": "select sum(o.total_amount) as total_spent, o.user_id from orders as o group by o.user_id",
+                  "Table": "orders"
+                },
+                {
+                  "OperatorType": "Route",
+                  "Variant": "EqualUnique",
+                  "Keyspace": {
+                    "Name": "mysqltest",
+                    "Sharded": true
+                  },
+                  "NoOfCalls": 11,
+                  "AvgNumberOfRows": 1,
+                  "MedianNumberOfRows": 1,
+                  "ShardsQueried": 11,
+                  "FieldQuery": "select count(*), u.user_id, u.username from users as u where 1 != 1 group by u.user_id, u.username",
+                  "Query": "select count(*), u.user_id, u.username from users as u where u.user_id = :o_user_id /* INT32 */ group by u.user_id, u.username",
+                  "Table": "users",
+                  "Values": [
+                    ":o_user_id"
+                  ],
+                  "Vindex": "xxhash"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}},{"Query": "SELECT p.product_id, p.name, SUM(oi.quantity) as total_sold\nFROM products p\nJOIN order_items oi ON p.product_id = oi.product_id\nGROUP BY p.product_id, p.name\nORDER BY total_sold DESC\nLIMIT 10;", "LineNumber": "109", "Trace": {
+  "OperatorType": "Limit",
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 10,
+  "MedianNumberOfRows": 10,
+  "Count": "10",
+  "Inputs": [
+    {
+      "OperatorType": "Sort",
+      "Variant": "Memory",
+      "NoOfCalls": 1,
+      "AvgNumberOfRows": 10,
+      "MedianNumberOfRows": 10,
+      "OrderBy": "2 DESC",
+      "Inputs": [
+        {
+          "OperatorType": "Aggregate",
+          "Variant": "Ordered",
+          "NoOfCalls": 1,
+          "AvgNumberOfRows": 10,
+          "MedianNumberOfRows": 10,
+          "Aggregates": "sum(2) AS total_sold",
+          "GroupBy": "0, 1 COLLATE utf8mb4_0900_ai_ci",
+          "Inputs": [
+            {
+              "OperatorType": "Projection",
+              "NoOfCalls": 1,
+              "AvgNumberOfRows": 13,
+              "MedianNumberOfRows": 13,
+              "Expressions": [
+                ":2 as product_id",
+                ":3 as name",
+                "sum(oi.quantity) * count(*) as total_sold"
+              ],
+              "Inputs": [
+                {
+                  "OperatorType": "Sort",
+                  "Variant": "Memory",
+                  "NoOfCalls": 1,
+                  "AvgNumberOfRows": 13,
+                  "MedianNumberOfRows": 13,
+                  "OrderBy": "2 ASC, 3 ASC COLLATE utf8mb4_0900_ai_ci",
+                  "Inputs": [
+                    {
+                      "OperatorType": "Join",
+                      "Variant": "Join",
+                      "NoOfCalls": 1,
+                      "AvgNumberOfRows": 13,
+                      "MedianNumberOfRows": 13,
+                      "JoinColumnIndexes": "L:0,R:0,R:1,R:2",
+                      "JoinVars": {
+                        "oi_product_id": 1
+                      },
+                      "TableName": "order_items_products",
+                      "Inputs": [
+                        {
+                          "OperatorType": "Route",
+                          "Variant": "Scatter",
+                          "Keyspace": {
+                            "Name": "mysqltest",
+                            "Sharded": true
+                          },
+                          "NoOfCalls": 1,
+                          "AvgNumberOfRows": 13,
+                          "MedianNumberOfRows": 13,
+                          "ShardsQueried": 2,
+                          "FieldQuery": "select sum(oi.quantity) as total_sold, oi.product_id from order_items as oi where 1 != 1 group by oi.product_id",
+                          "Query": "select sum(oi.quantity) as total_sold, oi.product_id from order_items as oi group by oi.product_id",
+                          "Table": "order_items"
+                        },
+                        {
+                          "OperatorType": "Route",
+                          "Variant": "EqualUnique",
+                          "Keyspace": {
+                            "Name": "mysqltest",
+                            "Sharded": true
+                          },
+                          "NoOfCalls": 13,
+                          "AvgNumberOfRows": 1,
+                          "MedianNumberOfRows": 1,
+                          "ShardsQueried": 13,
+                          "FieldQuery": "select count(*), p.product_id, p.`name` from products as p where 1 != 1 group by p.product_id, p.`name`",
+                          "Query": "select count(*), p.product_id, p.`name` from products as p where p.product_id = :oi_product_id /* INT32 */ group by p.product_id, p.`name`",
+                          "Table": "products",
+                          "Values": [
+                            ":oi_product_id"
+                          ],
+                          "Vindex": "xxhash"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}},{"Query": "SELECT oi.product_id, p.name, oi.quantity, oi.price\nFROM order_items oi\nJOIN products p ON oi.product_id = p.product_id\nWHERE oi.order_id = 456;", "LineNumber": "117", "Trace": {
+  "OperatorType": "Join",
+  "Variant": "Join",
+  "NoOfCalls": 1,
+  "AvgNumberOfRows": 0,
+  "MedianNumberOfRows": 0,
+  "JoinColumnIndexes": "L:0,R:0,L:1,L:2",
+  "JoinVars": {
+    "oi_product_id": 0
+  },
+  "TableName": "order_items_products",
+  "Inputs": [
+    {
+      "OperatorType": "Route",
+      "Variant": "EqualUnique",
+      "Keyspace": {
+        "Name": "mysqltest",
+        "Sharded": true
+      },
+      "NoOfCalls": 1,
+      "AvgNumberOfRows": 0,
+      "MedianNumberOfRows": 0,
+      "ShardsQueried": 1,
+      "FieldQuery": "select oi.product_id, oi.quantity, oi.price from order_items as oi where 1 != 1",
+      "Query": "select oi.product_id, oi.quantity, oi.price from order_items as oi where oi.order_id = 456",
+      "Table": "order_items",
+      "Values": [
+        "456"
+      ],
+      "Vindex": "xxhash"
+    },
+    {
+      "OperatorType": "Route",
+      "Variant": "EqualUnique",
+      "Keyspace": {
+        "Name": "mysqltest",
+        "Sharded": true
+      },
+      "ShardsQueried": 1,
+      "FieldQuery": "select p.`name` from products as p where 1 != 1",
+      "Query": "select p.`name` from products as p where p.product_id = :oi_product_id /* INT32 */",
+      "Table": "products",
+      "Values": [
+        ":oi_product_id"
+      ],
+      "Vindex": "xxhash"
+    }
+  ]
+}}]

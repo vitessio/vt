@@ -1,0 +1,120 @@
+CREATE TABLE users
+(
+    user_id    INT          NOT NULL,
+    username   VARCHAR(50)  NOT NULL,
+    email      VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id)
+);
+
+CREATE TABLE products
+(
+    product_id INT            NOT NULL,
+    name       VARCHAR(100)   NOT NULL,
+    price      DECIMAL(10, 2) NOT NULL,
+    category   VARCHAR(50)    NOT NULL,
+    PRIMARY KEY (product_id)
+);
+
+CREATE TABLE orders
+(
+    order_id     INT            NOT NULL,
+    user_id      INT            NOT NULL,
+    order_date   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    PRIMARY KEY (order_id)
+);
+
+CREATE TABLE order_items
+(
+    order_id   INT            NOT NULL,
+    product_id INT            NOT NULL,
+    quantity   INT            NOT NULL,
+    price      DECIMAL(10, 2) NOT NULL,
+    PRIMARY KEY (order_id, product_id)
+);
+
+INSERT INTO users (user_id, username, email)
+VALUES (101, 'alice_smith', 'alice@example.com'),
+       (102, 'bob_jones', 'bob@example.com'),
+       (103, 'charlie_brown', 'charlie@example.com'),
+       (104, 'diana_prince', 'diana@example.com'),
+       (105, 'edward_stark', 'edward@example.com'),
+       (106, 'fiona_gale', 'fiona@example.com'),
+       (107, 'george_white', 'george@example.com'),
+       (108, 'hannah_green', 'hannah@example.com'),
+       (109, 'ian_blue', 'ian@example.com'),
+       (110, 'julia_red', 'julia@example.com');
+
+INSERT INTO products (product_id, name, price, category)
+VALUES (201, 'Laptop', 999.99, 'Electronics'),
+       (202, 'Smartphone', 699.99, 'Electronics'),
+       (203, 'Headphones', 149.99, 'Electronics'),
+       (204, 'Running Shoes', 89.99, 'Sports'),
+       (205, 'Yoga Mat', 29.99, 'Sports'),
+       (206, 'Coffee Maker', 79.99, 'Home'),
+       (207, 'Blender', 59.99, 'Home'),
+       (208, 'Mystery Novel', 14.99, 'Books'),
+       (209, 'Cookbook', 24.99, 'Books'),
+       (210, 'Desk Chair', 199.99, 'Furniture');
+
+INSERT INTO orders (order_id, user_id, order_date, total_amount)
+VALUES (301, 101, '2024-09-01 10:00:00', 1149.98),
+       (302, 102, '2024-09-02 11:30:00', 699.99),
+       (303, 103, '2024-09-03 14:15:00', 239.97),
+       (304, 104, '2024-09-04 16:45:00', 224.98),
+       (305, 105, '2024-09-05 09:20:00', 1079.98),
+       (306, 101, '2024-09-06 13:10:00', 174.98),
+       (307, 106, '2024-09-07 17:30:00', 139.98),
+       (308, 107, '2024-09-08 12:00:00', 999.99),
+       (309, 108, '2024-09-09 10:45:00', 39.98),
+       (310, 109, '2024-09-10 15:20:00', 279.98),
+       (311, 110, '2024-09-11 11:00:00', 149.99),
+       (312, 101, '2024-09-12 14:30:00', 89.99);
+
+INSERT INTO order_items (order_id, product_id, quantity, price)
+VALUES (301, 201, 1, 999.99),
+       (301, 203, 1, 149.99),
+       (302, 202, 1, 699.99),
+       (303, 204, 2, 89.99),
+       (303, 205, 2, 29.99),
+       (304, 206, 1, 79.99),
+       (304, 208, 2, 14.99),
+       (304, 209, 1, 24.99),
+       (305, 201, 1, 999.99),
+       (305, 207, 1, 59.99),
+       (305, 205, 1, 29.99),
+       (306, 208, 3, 14.99),
+       (306, 209, 1, 24.99),
+       (307, 203, 1, 149.99),
+       (308, 201, 1, 999.99),
+       (309, 208, 2, 14.99),
+       (310, 210, 1, 199.99),
+       (310, 207, 1, 59.99),
+       (311, 203, 1, 149.99),
+       (312, 204, 1, 89.99);
+
+# Query 1: Get all orders for a specific user
+SELECT o.order_id, o.order_date, o.total_amount
+FROM orders o
+WHERE o.user_id = 123;
+
+# Query 2: Get the total amount spent by each user
+SELECT u.user_id, u.username, SUM(o.total_amount) as total_spent
+FROM users u
+         JOIN orders o ON u.user_id = o.user_id
+GROUP BY u.user_id, u.username;
+
+# Query 3: Get the top 10 selling products
+SELECT p.product_id, p.name, SUM(oi.quantity) as total_sold
+FROM products p
+         JOIN order_items oi ON p.product_id = oi.product_id
+GROUP BY p.product_id, p.name
+ORDER BY total_sold DESC
+LIMIT 10;
+
+# Query 4: Get all order items for a specific order
+SELECT oi.product_id, p.name, oi.quantity, oi.price
+FROM order_items oi
+         JOIN products p ON oi.product_id = p.product_id
+WHERE oi.order_id = 456;

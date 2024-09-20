@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 
 	"vitess.io/vitess/go/mysql"
@@ -110,11 +111,19 @@ func SetupCluster(
 	}
 
 	keyspaces := getKeyspaces(vschemaFile, vtexplainVschemaFile, defaultKeyspaceName, sharded)
+	if len(keyspaces) == 0 {
+		panic("no keyspaces found")
+	}
 	for _, keyspace := range keyspaces {
 		ksNames = append(ksNames, keyspace.Name)
 		vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
 		if !ok {
-			panic(fmt.Sprintf("keyspace '%s' not found in vschema", keyspace.Name))
+			var ks []string
+			for v := range maps.Keys(vschema.Keyspaces) {
+				ks = append(ks, v)
+			}
+
+			panic(fmt.Sprintf("keyspace '%s' not found in vschema (%v)", keyspace.Name, ks))
 		}
 
 		if vschemaKs.Keyspace.Sharded {
@@ -271,16 +280,15 @@ func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema, error
 	return vschemaStr, &srvVSchema, nil
 }
 
-func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rkv RawKeyspaceVindex, err error) {
+func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (RawKeyspaceVindex, error) {
 	vschema := *(vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser()))
 	if len(vschema.Keyspaces) == 0 {
-		err = fmt.Errorf("no keyspace defined in vschema")
-		return
+		return RawKeyspaceVindex{}, fmt.Errorf("no keyspace defined in vschema")
 	}
 
 	var rk RawKeyspaceVindex
-	err = json.Unmarshal(rawVschema, &rk)
-	return
+	err := json.Unmarshal(rawVschema, &rk)
+	return rk, err
 }
 
 type hashVindex struct {
