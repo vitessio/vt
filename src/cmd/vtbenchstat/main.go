@@ -37,9 +37,8 @@ func main() {
 	}
 
 	if len(traces) == 1 {
-		printSummary(traces[0])
+		printSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
 	} else {
-		compareTraces(traces[0], traces[1])
+		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
 	}
 }
-
