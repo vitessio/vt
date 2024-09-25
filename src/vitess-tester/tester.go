@@ -83,7 +83,9 @@ func NewTester(
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
-		traceFile:       traceFile,
+	}
+	if traceFile != nil {
+		t.traceFile = traceFile
 	}
 	return t
 }
