@@ -29,22 +29,24 @@ type (
 	// ComparingQueryRunner is a QueryRunner that compares the results of the queries between MySQL and Vitess
 	ComparingQueryRunner struct {
 		reporter          Reporter
-		curr              utils.MySQLCompare
-		handleCreateTable createTableHandler
+		handleCreateTable CreateTableHandler
 		comparer          utils.MySQLCompare
 	}
-	createTableHandler func(create *sqlparser.CreateTable) func()
+	CreateTableHandler          func(create *sqlparser.CreateTable) func()
+	ComparingQueryRunnerFactory struct{}
 )
+
+func (f ComparingQueryRunnerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner {
+	return newComparingQueryRunner(reporter, handleCreateTable, comparer)
+}
 
 func newComparingQueryRunner(
 	reporter Reporter,
-	curr utils.MySQLCompare,
-	handleCreateTable createTableHandler,
+	handleCreateTable CreateTableHandler,
 	comparer utils.MySQLCompare,
 ) *ComparingQueryRunner {
 	return &ComparingQueryRunner{
 		reporter:          reporter,
-		curr:              curr,
 		handleCreateTable: handleCreateTable,
 		comparer:          comparer,
 	}
@@ -127,13 +129,13 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 
 	switch {
 	case expectedErrs:
-		_, err := nqr.curr.ExecAllowAndCompareError(query, utils.CompareOptions{CompareColumnNames: true})
+		_, err := nqr.comparer.ExecAllowAndCompareError(query, utils.CompareOptions{CompareColumnNames: true})
 		if err == nil {
 			// If we expected an error, but didn't get one, return an error
 			return fmt.Errorf("expected error, but got none")
 		}
 	default:
-		_ = nqr.curr.Exec(query)
+		_ = nqr.comparer.Exec(query)
 	}
 	return nil
 }

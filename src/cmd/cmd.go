@@ -54,7 +54,8 @@ func ExecuteTests(
 	vschemaFile, vtexplainVschemaFile string,
 	olap bool,
 	traceFile string,
-) (failed bool) {
+	factory vitess_tester.QueryRunnerFactory,
+) (failed bool, resultFile string) {
 	vschemaF := vschemaFile
 	if vschemaF == "" {
 		vschemaF = vtexplainVschemaFile
@@ -74,7 +75,7 @@ func ExecuteTests(
 	}
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, writer)
+		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, writer, factory)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
@@ -83,6 +84,7 @@ func ExecuteTests(
 		failed = failed || errReporter.Failed()
 		s.CloseReportForFile()
 	}
+
 	if writer != nil {
 		_, err := writer.Write([]byte("]"))
 		if err != nil {
@@ -93,7 +95,8 @@ func ExecuteTests(
 			panic(err.Error())
 		}
 	}
-	return
+
+	return failed, s.Close()
 }
 
 func SetupCluster(

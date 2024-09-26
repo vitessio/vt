@@ -98,8 +98,7 @@ func main() {
 	} else {
 		reporterSuite = vitess_tester.NewFileReporterSuite(getVschema(clusterInstance))
 	}
-	failed := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap, traceFile)
-	outputFile := reporterSuite.Close()
+	failed, outputFile := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap, traceFile, vitess_tester.ComparingQueryRunnerFactory{})
 	if failed {
 		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
 		os.Exit(1)

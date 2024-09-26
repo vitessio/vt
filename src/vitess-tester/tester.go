@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
 	"io"
 	"net/http"
 	"os"
@@ -36,36 +37,42 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
-type Tester struct {
-	name string
+type (
+	Tester struct {
+		name string
 
-	clusterInstance       *cluster.LocalProcessCluster
-	vtParams, mysqlParams mysql.ConnParams
-	curr                  utils.MySQLCompare
+		clusterInstance       *cluster.LocalProcessCluster
+		vtParams, mysqlParams mysql.ConnParams
+		curr                  utils.MySQLCompare
 
-	skipBinary  string
-	skipVersion int
-	skipNext    bool
-	olap        bool
-	ksNames     []string
-	vschema     vindexes.VSchema
-	vschemaFile string
-	vexplain    string
+		skipBinary  string
+		skipVersion int
+		skipNext    bool
+		olap        bool
+		ksNames     []string
+		vschema     vindexes.VSchema
+		vschemaFile string
+		vexplain    string
 
-	// check expected error, use --error before the statement
-	// we only care if an error is returned, not the exact error message.
-	expectedErrs bool
+		// check expected error, use --error before the statement
+		// we only care if an error is returned, not the exact error message.
+		expectedErrs bool
 
-	reporter             Reporter
-	traceFile            io.Writer
-	alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
+		reporter             Reporter
+		traceFile            io.Writer
+		alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
 
-	qr QueryRunner
-}
+		qr QueryRunner
+	}
 
-type QueryRunner interface {
-	runQuery(q query, expectedErrs bool)
-}
+	QueryRunner interface {
+		runQuery(q query, expectedErrs bool)
+	}
+
+	QueryRunnerFactory interface {
+		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner
+	}
+)
 
 func NewTester(
 	name string,
@@ -77,6 +84,7 @@ func NewTester(
 	vschema vindexes.VSchema,
 	vschemaFile string,
 	traceFile *os.File,
+	factory QueryRunnerFactory,
 ) *Tester {
 	t := &Tester{
 		name:            name,
@@ -95,12 +103,7 @@ func NewTester(
 		panic(err.Error())
 	}
 	t.curr = mcmp
-
-	t.qr = &ComparingQueryRunner{
-		reporter:          reporter,
-		handleCreateTable: t.handleCreateTable,
-		curr:              mcmp,
-	}
+	t.qr = factory.NewQueryRunner(reporter, t.handleCreateTable, mcmp)
 
 	if traceFile != nil {
 		t.traceFile = traceFile
@@ -129,10 +132,6 @@ func (t *Tester) postProcess() {
 }
 
 var PERM os.FileMode = 0755
-
-func (t *Tester) addSuccess() {
-
-}
 
 func (t *Tester) getVschema() func() []byte {
 	return func() []byte {

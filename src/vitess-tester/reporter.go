@@ -30,7 +30,7 @@ import (
 type Suite interface {
 	NewReporterForFile(name string) Reporter
 	CloseReportForFile()
-	Close() string
+	Close() string // returns the path to the file or directory with files
 }
 
 type Reporter interface {
