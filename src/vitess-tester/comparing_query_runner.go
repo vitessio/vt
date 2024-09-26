@@ -36,6 +36,9 @@ type (
 	ComparingQueryRunnerFactory struct{}
 )
 
+func (f ComparingQueryRunnerFactory) Close() error {
+	return nil
+}
 func (f ComparingQueryRunnerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner {
 	return newComparingQueryRunner(reporter, handleCreateTable, comparer)
 }
@@ -52,62 +55,22 @@ func newComparingQueryRunner(
 	}
 }
 
-func (nqr ComparingQueryRunner) runQuery(q query, expectedErrs bool) {
-	// if t.vexplain != "" {
-	// 	result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+query, -1, false)
-	// 	t.vexplain = ""
-	// 	if err != nil {
-	// 		t.reporter.AddFailure(	// 		return
-	// 	}
-	//
-	// 	t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
-	// }
-	if err := nqr.execute(q, expectedErrs); err != nil {
-		nqr.reporter.AddFailure(err)
-	}
+func (nqr ComparingQueryRunner) runQuery(q query, expectedErrs bool, ast sqlparser.Statement) error {
+	return nqr.execute(q, expectedErrs, ast)
 }
 
-func (nqr *ComparingQueryRunner) execute(query query, expectedErrs bool) error {
+func (nqr *ComparingQueryRunner) execute(query query, expectedErrs bool, ast sqlparser.Statement) error {
 	if len(query.Query) == 0 {
 		return nil
 	}
 
-	parser := sqlparser.NewTestParser()
-	ast, err := parser.Parse(query.Query)
-	if err != nil {
-		return err
-	}
-
-	// if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !t.expectedErrs {
-	// 	// we don't want to run DMLs twice, so we just run them once while tracing
-	// 	var errs []error
-	// 	err := t.trace(query)
-	// 	if err != nil {
-	// 		errs = append(errs, err)
-	// 	}
-	//
-	// 	// we need to run the DMLs on mysql as well
-	// 	_, err = t.curr.MySQLConn.ExecuteFetch(query.Query, 10000, false)
-	// 	if err != nil {
-	// 		errs = append(errs, err)
-	// 	}
-	// 	return vterrors.Aggregate(errs)
-	// }
-
-	if err = nqr.executeStmt(query.Query, ast, expectedErrs); err != nil {
+	if err := nqr.executeStmt(query.Query, ast, expectedErrs); err != nil {
 		return errors.Trace(errors.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err))
 	}
 	// clear expected errors after we execute
 	expectedErrs = false
 
 	return nil
-
-	// _, isDDL := ast.(sqlparser.DDLStatement)
-	// if isDDL {
-	// 	return nil
-	// }
-
-	// return t.trace(query)
 }
 
 func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Statement, expectedErrs bool) (err error) {

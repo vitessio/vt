@@ -98,12 +98,30 @@ func main() {
 	} else {
 		reporterSuite = vitess_tester.NewFileReporterSuite(getVschema(clusterInstance))
 	}
-	failed, outputFile := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap, traceFile, vitess_tester.ComparingQueryRunnerFactory{})
+	failed, outputFile := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap, getQueryRunnerFactory())
 	if failed {
 		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
 		os.Exit(1)
 	}
 	println("Great, All tests passed")
+}
+
+func getQueryRunnerFactory() vitess_tester.QueryRunnerFactory {
+	inner := vitess_tester.ComparingQueryRunnerFactory{}
+	if traceFile == "" {
+		return inner
+	}
+
+	var err error
+	writer, err := os.Create(traceFile)
+	if err != nil {
+		panic(err)
+	}
+	_, err = writer.Write([]byte("["))
+	if err != nil {
+		panic(err.Error())
+	}
+	return vitess_tester.NewTracerFactory(writer, inner)
 }
 
 func getVschema(clusterInstance *cluster.LocalProcessCluster) func() []byte {

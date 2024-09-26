@@ -59,18 +59,18 @@ type (
 		expectedErrs bool
 
 		reporter             Reporter
-		traceFile            io.Writer
 		alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
 
 		qr QueryRunner
 	}
 
 	QueryRunner interface {
-		runQuery(q query, expectedErrs bool)
+		runQuery(q query, expectedErrs bool, ast sqlparser.Statement) error
 	}
 
 	QueryRunnerFactory interface {
 		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner
+		// Close() error
 	}
 )
 
@@ -83,7 +83,6 @@ func NewTester(
 	ksNames []string,
 	vschema vindexes.VSchema,
 	vschemaFile string,
-	traceFile *os.File,
 	factory QueryRunnerFactory,
 ) *Tester {
 	t := &Tester{
@@ -105,9 +104,6 @@ func NewTester(
 	t.curr = mcmp
 	t.qr = factory.NewQueryRunner(reporter, t.handleCreateTable, mcmp)
 
-	if traceFile != nil {
-		t.traceFile = traceFile
-	}
 	return t
 }
 
@@ -208,6 +204,16 @@ func (t *Tester) Run() error {
 		case Q_WAIT_FOR_AUTHORITATIVE:
 			t.waitAuthoritative(q.Query)
 		case Q_QUERY:
+			if t.vexplain != "" {
+				result, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain %s %s", t.vexplain, q.Query), -1, false)
+				t.vexplain = ""
+				if err != nil {
+					t.reporter.AddFailure(err)
+				}
+
+				t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
+			}
+
 			t.runQuery(q)
 		case Q_REMOVE_FILE:
 			err = os.Remove(strings.TrimSpace(q.Query))
@@ -236,7 +242,17 @@ func (t *Tester) runQuery(q query) {
 		}
 	}
 	t.reporter.AddTestCase(q.Query, q.Line)
-	t.qr.runQuery(q, t.expectedErrs)
+	parser := sqlparser.NewTestParser()
+	ast, err := parser.Parse(q.Query)
+	if err != nil {
+		t.reporter.AddFailure(err)
+		return
+	}
+
+	err = t.qr.runQuery(q, t.expectedErrs, ast)
+	if err != nil {
+		t.reporter.AddFailure(err)
+	}
 	t.reporter.EndTestCase()
 	// clear expected errors and current query after we execute any query
 	t.expectedErrs = false
@@ -339,46 +355,6 @@ func (t *Tester) readData() ([]byte, error) {
 		return io.ReadAll(res.Body)
 	}
 	return os.ReadFile(t.name)
-}
-
-// trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile
-func (t *Tester) trace(query query) error {
-	// Marshal the query into JSON format for safe embedding
-	queryJSON, err := json.Marshal(query.Query)
-	if err != nil {
-		return err
-	}
-
-	// Fetch the trace for the query using "vexplain trace"
-	rs, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain trace %s", query.Query), 10000, false)
-	if err != nil {
-		return err
-	}
-
-	// Extract the trace result and format it with indentation for pretty printing
-	var prettyTrace bytes.Buffer
-	if err := json.Indent(&prettyTrace, []byte(rs.Rows[0][0].ToString()), "", "  "); err != nil {
-		return err
-	}
-
-	// Construct the entire JSON entry in memory
-	var traceEntry bytes.Buffer
-	if t.alreadyWrittenTraces {
-		traceEntry.WriteString(",") // Prepend a comma if there are already written traces
-	}
-	traceEntry.WriteString(fmt.Sprintf(`{"Query": %s, "LineNumber": "%d", "Trace": `, queryJSON, query.Line))
-	traceEntry.Write(prettyTrace.Bytes()) // Add the formatted trace
-	traceEntry.WriteString("}")           // Close the JSON object
-
-	// Mark that at least one trace has been written
-	t.alreadyWrittenTraces = true
-
-	// Write the fully constructed JSON entry to the file
-	if _, err := t.traceFile.Write(traceEntry.Bytes()); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlparser.IndexDefinition {
