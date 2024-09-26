@@ -23,27 +23,32 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"vitess.io/vitess/go/test/endtoend/utils"
 )
 
 type Suite interface {
 	NewReporterForFile(name string) Reporter
 	CloseReportForFile()
-	Close() string
+	Close() string // returns the path to the file or directory with files
 }
 
 type Reporter interface {
+	utils.TestingT
 	AddTestCase(query string, lineNo int)
 	EndTestCase()
-	AddFailure(vschema []byte, err error)
+	AddFailure(err error)
 	AddInfo(info string)
 	Report() string
 	Failed() bool
 }
 
-type FileReporterSuite struct{}
+type FileReporterSuite struct {
+	getVschema func() []byte
+}
 
 func (frs *FileReporterSuite) NewReporterForFile(name string) Reporter {
-	return newFileReporter(name)
+	return newFileReporter(name, frs.getVschema)
 }
 
 func (frs *FileReporterSuite) CloseReportForFile() {}
@@ -52,8 +57,10 @@ func (frs *FileReporterSuite) Close() string {
 	return "errors"
 }
 
-func NewFileReporterSuite() *FileReporterSuite {
-	return &FileReporterSuite{}
+func NewFileReporterSuite(getVschema func() []byte) *FileReporterSuite {
+	return &FileReporterSuite{
+		getVschema: getVschema,
+	}
 }
 
 type FileReporter struct {
@@ -69,12 +76,15 @@ type FileReporter struct {
 	failureCount int
 	queryCount   int
 	successCount int
+
+	getVschema func() []byte
 }
 
-func newFileReporter(name string) *FileReporter {
+func newFileReporter(name string, getVschema func() []byte) *FileReporter {
 	return &FileReporter{
-		name:      name,
-		startTime: time.Now(),
+		name:       name,
+		startTime:  time.Now(),
+		getVschema: getVschema,
 	}
 
 }
@@ -115,7 +125,7 @@ func (e *FileReporter) EndTestCase() {
 	}
 }
 
-func (e *FileReporter) AddFailure(vschema []byte, err error) {
+func (e *FileReporter) AddFailure(err error) {
 	e.failureCount++
 	e.currentQueryFailed = true
 	if e.currentQuery == "" {
@@ -130,7 +140,7 @@ func (e *FileReporter) AddFailure(vschema []byte, err error) {
 		panic("failed to write error file\n" + err.Error())
 	}
 
-	e.createVSchemaDump(vschema)
+	e.createVSchemaDump()
 }
 
 func (e *FileReporter) AddInfo(info string) {
@@ -162,14 +172,14 @@ func (e *FileReporter) createErrorFileFor() *os.File {
 	return file
 }
 
-func (e *FileReporter) createVSchemaDump(vschema []byte) {
+func (e *FileReporter) createVSchemaDump() {
 	errorDir := e.errorDir()
 	err := os.MkdirAll(errorDir, PERM)
 	if err != nil {
 		panic("failed to create vschema directory\n" + err.Error())
 	}
 
-	err = os.WriteFile(path.Join(errorDir, "vschema.json"), vschema, PERM)
+	err = os.WriteFile(path.Join(errorDir, "vschema.json"), e.getVschema(), PERM)
 	if err != nil {
 		panic("failed to write vschema\n" + err.Error())
 	}
@@ -188,5 +198,15 @@ func (e *FileReporter) errorDir() string {
 	}
 	return path.Join("errors", errFileName)
 }
+
+func (e *FileReporter) Errorf(format string, args ...interface{}) {
+	e.AddFailure(fmt.Errorf(format, args...))
+}
+
+func (e *FileReporter) FailNow() {
+	// we don't need to do anything here
+}
+
+func (e *FileReporter) Helper() {}
 
 var _ Reporter = (*FileReporter)(nil)
