@@ -36,9 +36,8 @@ type (
 	ComparingQueryRunnerFactory struct{}
 )
 
-func (f ComparingQueryRunnerFactory) Close() error {
-	return nil
-}
+func (f ComparingQueryRunnerFactory) Close() {}
+
 func (f ComparingQueryRunnerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner {
 	return newComparingQueryRunner(reporter, handleCreateTable, comparer)
 }

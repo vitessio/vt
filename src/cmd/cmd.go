@@ -54,7 +54,7 @@ func ExecuteTests(
 	vschemaFile, vtexplainVschemaFile string,
 	olap bool,
 	factory vitess_tester.QueryRunnerFactory,
-) (failed bool, resultFile string) {
+) (failed bool) {
 	vschemaF := vschemaFile
 	if vschemaF == "" {
 		vschemaF = vtexplainVschemaFile
@@ -72,7 +72,9 @@ func ExecuteTests(
 		s.CloseReportForFile()
 	}
 
-	return failed, s.Close()
+	factory.Close()
+
+	return failed
 }
 
 func SetupCluster(

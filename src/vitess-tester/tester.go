@@ -70,7 +70,7 @@ type (
 
 	QueryRunnerFactory interface {
 		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner
-		// Close() error
+		Close()
 	}
 )
 

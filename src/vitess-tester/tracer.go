@@ -40,12 +40,15 @@ func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable Crea
 	return newTracer(t.traceFile, comparer.MySQLConn, comparer.VtConn, reporter, inner)
 }
 
-func (t *TracerFactory) Close() error {
+func (t *TracerFactory) Close() {
 	_, err := t.traceFile.Write([]byte("]"))
 	if err != nil {
 		panic(err.Error())
 	}
-	return t.traceFile.Close()
+	err = t.traceFile.Close()
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 func newTracer(traceFile *os.File,
