@@ -77,10 +77,10 @@ func (xml *XMLTestSuite) EndTestCase() {
 	xml.currTestCase = nil
 }
 
-func (xml *XMLTestSuite) AddFailure(vschema []byte, err error) {
+func (xml *XMLTestSuite) AddFailure(err error) {
 	if xml.currTestCase == nil {
 		xml.AddTestCase("SETUP", 0)
-		xml.AddFailure(vschema, err)
+		xml.AddFailure(err)
 		xml.EndTestCase()
 		return
 	}
@@ -118,3 +118,13 @@ func (xml *XMLTestSuite) AddInfo(info string) {
 		xml.currTestCase.SystemOut.Data += info + "\n"
 	}
 }
+
+func (xml *XMLTestSuite) Errorf(format string, args ...interface{}) {
+	xml.AddFailure(fmt.Errorf(format, args...))
+}
+
+func (xml *XMLTestSuite) FailNow() {
+	// we don't need to do anything here
+}
+
+func (xml *XMLTestSuite) Helper() {}

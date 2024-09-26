@@ -16,9 +16,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"time"
 
 	log "github.com/sirupsen/logrus"
+	"vitess.io/vitess/go/test/endtoend/cluster"
 
 	"github.com/vitessio/vitess-tester/src/cmd"
 	vitess_tester "github.com/vitessio/vitess-tester/src/vitess-tester"
@@ -92,7 +96,7 @@ func main() {
 	if xunit {
 		reporterSuite = vitess_tester.NewXMLTestSuite()
 	} else {
-		reporterSuite = vitess_tester.NewFileReporterSuite()
+		reporterSuite = vitess_tester.NewFileReporterSuite(getVschema(clusterInstance))
 	}
 	failed := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap, traceFile)
 	outputFile := reporterSuite.Close()
@@ -101,4 +105,23 @@ func main() {
 		os.Exit(1)
 	}
 	println("Great, All tests passed")
+}
+
+func getVschema(clusterInstance *cluster.LocalProcessCluster) func() []byte {
+	return func() []byte {
+		httpClient := &http.Client{Timeout: 5 * time.Second}
+		resp, err := httpClient.Get(clusterInstance.VtgateProcess.VSchemaURL)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
+		defer resp.Body.Close()
+		res, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
+
+		return res
+	}
 }

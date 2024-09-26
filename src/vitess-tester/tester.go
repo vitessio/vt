@@ -26,7 +26,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"vitess.io/vitess/go/vt/vterrors"
 
 	"github.com/pingcap/errors"
 	log "github.com/sirupsen/logrus"
@@ -60,6 +59,12 @@ type Tester struct {
 	reporter             Reporter
 	traceFile            io.Writer
 	alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
+
+	qr QueryRunner
+}
+
+type QueryRunner interface {
+	runQuery(q query, expectedErrs bool)
 }
 
 func NewTester(
@@ -84,6 +89,19 @@ func NewTester(
 		vschemaFile:     vschemaFile,
 		olap:            olap,
 	}
+
+	mcmp, err := utils.NewMySQLCompare(t.reporter, t.vtParams, t.mysqlParams)
+	if err != nil {
+		panic(err.Error())
+	}
+	t.curr = mcmp
+
+	t.qr = &ComparingQueryRunner{
+		reporter:          reporter,
+		handleCreateTable: t.handleCreateTable,
+		curr:              mcmp,
+	}
+
 	if traceFile != nil {
 		t.traceFile = traceFile
 	}
@@ -91,11 +109,6 @@ func NewTester(
 }
 
 func (t *Tester) preProcess() {
-	mcmp, err := utils.NewMySQLCompare(t, t.vtParams, t.mysqlParams)
-	if err != nil {
-		panic(err.Error())
-	}
-	t.curr = mcmp
 	if t.olap {
 		_, err := t.curr.VtConn.ExecuteFetch("set workload = 'olap'", 0, false)
 		if err != nil {
@@ -121,21 +134,23 @@ func (t *Tester) addSuccess() {
 
 }
 
-func (t *Tester) getVschema() []byte {
-	httpClient := &http.Client{Timeout: 5 * time.Second}
-	resp, err := httpClient.Get(t.clusterInstance.VtgateProcess.VSchemaURL)
-	if err != nil {
-		log.Errorf(err.Error())
-		return nil
-	}
-	defer resp.Body.Close()
-	res, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Errorf(err.Error())
-		return nil
-	}
+func (t *Tester) getVschema() func() []byte {
+	return func() []byte {
+		httpClient := &http.Client{Timeout: 5 * time.Second}
+		resp, err := httpClient.Get(t.clusterInstance.VtgateProcess.VSchemaURL)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
+		defer resp.Body.Close()
+		res, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Errorf(err.Error())
+			return nil
+		}
 
-	return res
+		return res
+	}
 }
 
 func (t *Tester) Run() error {
@@ -145,7 +160,7 @@ func (t *Tester) Run() error {
 	}
 	queries, err := t.loadQueries()
 	if err != nil {
-		t.reporter.AddFailure(t.getVschema(), err)
+		t.reporter.AddFailure(err)
 		return err
 	}
 
@@ -167,18 +182,18 @@ func (t *Tester) Run() error {
 		case Q_SKIP:
 			t.skipNext = true
 		case Q_BEGIN_CONCURRENT, Q_END_CONCURRENT, Q_CONNECT, Q_CONNECTION, Q_DISCONNECT, Q_LET, Q_REPLACE_COLUMN:
-			t.reporter.AddFailure(t.getVschema(), fmt.Errorf("%s not supported", String(q.tp)))
+			t.reporter.AddFailure(fmt.Errorf("%s not supported", String(q.tp)))
 		case Q_SKIP_IF_BELOW_VERSION:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
-				t.reporter.AddFailure(t.getVschema(), fmt.Errorf("incorrect syntax for Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
+				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
 				continue
 			}
 			t.skipBinary = strs[1]
 			var err error
 			t.skipVersion, err = strconv.Atoi(strs[2])
 			if err != nil {
-				t.reporter.AddFailure(t.getVschema(), err)
+				t.reporter.AddFailure(err)
 				continue
 			}
 		case Q_ERROR:
@@ -186,7 +201,7 @@ func (t *Tester) Run() error {
 		case Q_VEXPLAIN:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 2 {
-				t.reporter.AddFailure(t.getVschema(), fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
+				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
 				continue
 			}
 
@@ -201,7 +216,7 @@ func (t *Tester) Run() error {
 				return errors.Annotate(err, "failed to remove file")
 			}
 		default:
-			t.reporter.AddFailure(t.getVschema(), fmt.Errorf("%s not supported", String(q.tp)))
+			t.reporter.AddFailure(fmt.Errorf("%s not supported", String(q.tp)))
 		}
 	}
 	fmt.Printf("%s\n", t.reporter.Report())
@@ -222,19 +237,7 @@ func (t *Tester) runQuery(q query) {
 		}
 	}
 	t.reporter.AddTestCase(q.Query, q.Line)
-	if t.vexplain != "" {
-		result, err := t.curr.VtConn.ExecuteFetch("vexplain "+t.vexplain+" "+q.Query, -1, false)
-		t.vexplain = ""
-		if err != nil {
-			t.reporter.AddFailure(t.getVschema(), err)
-			return
-		}
-
-		t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
-	}
-	if err := t.execute(q); err != nil && !t.expectedErrs {
-		t.reporter.AddFailure(t.getVschema(), err)
-	}
+	t.qr.runQuery(q, t.expectedErrs)
 	t.reporter.EndTestCase()
 	// clear expected errors and current query after we execute any query
 	t.expectedErrs = false
@@ -266,7 +269,7 @@ func (t *Tester) waitAuthoritative(query string) {
 		var err error
 		ksName, err = t.findTable(tblName)
 		if err != nil {
-			t.reporter.AddFailure(t.getVschema(), err)
+			t.reporter.AddFailure(err)
 			return
 		}
 	case 3:
@@ -274,13 +277,13 @@ func (t *Tester) waitAuthoritative(query string) {
 		ksName = strs[2]
 
 	default:
-		t.reporter.AddFailure(t.getVschema(), fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", query))
+		t.reporter.AddFailure(fmt.Errorf("expected table name and keyspace for wait_authoritative in: %v", query))
 	}
 
 	log.Infof("Waiting for authoritative schema for table %s", tblName)
-	err := utils.WaitForAuthoritative(t, ksName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
+	err := utils.WaitForAuthoritative(t.reporter, ksName, tblName, t.clusterInstance.VtgateProcess.ReadVSchema)
 	if err != nil {
-		t.reporter.AddFailure(t.getVschema(), fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
+		t.reporter.AddFailure(fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
 	}
 }
 
@@ -339,51 +342,6 @@ func (t *Tester) readData() ([]byte, error) {
 	return os.ReadFile(t.name)
 }
 
-func (t *Tester) execute(query query) error {
-	if len(query.Query) == 0 {
-		return nil
-	}
-
-	parser := sqlparser.NewTestParser()
-	ast, err := parser.Parse(query.Query)
-	if err != nil {
-		return err
-	}
-
-	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !t.expectedErrs {
-		// we don't want to run DMLs twice, so we just run them once while tracing
-		var errs []error
-		err := t.trace(query)
-		if err != nil {
-			errs = append(errs, err)
-		}
-
-		// we need to run the DMLs on mysql as well
-		_, err = t.curr.MySQLConn.ExecuteFetch(query.Query, 10000, false)
-		if err != nil {
-			errs = append(errs, err)
-		}
-		return vterrors.Aggregate(errs)
-	}
-
-	if err = t.executeStmt(query.Query, ast); err != nil {
-		return errors.Trace(errors.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err))
-	}
-	// clear expected errors after we execute
-	t.expectedErrs = false
-
-	if t.traceFile == nil {
-		return nil
-	}
-
-	_, isDDL := ast.(sqlparser.DDLStatement)
-	if isDDL {
-		return nil
-	}
-
-	return t.trace(query)
-}
-
 // trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile
 func (t *Tester) trace(query query) error {
 	// Marshal the query into JSON format for safe embedding
@@ -435,39 +393,6 @@ func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlp
 	return index
 }
 
-func (t *Tester) executeStmt(query string, ast sqlparser.Statement) error {
-	_, commentOnly := ast.(*sqlparser.CommentOnly)
-	if commentOnly {
-		return nil
-	}
-
-	log.Debugf("executeStmt: %s", query)
-	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	handleVSchema := isCreateStatement && !t.expectedErrs && t.autoVSchema()
-	if handleVSchema {
-		t.handleCreateTable(create)
-	}
-
-	switch {
-	case t.expectedErrs:
-		_, err := t.curr.ExecAllowAndCompareError(query, utils.CompareOptions{CompareColumnNames: true})
-		if err == nil {
-			// If we expected an error, but didn't get one, return an error
-			return fmt.Errorf("expected error, but got none")
-		}
-	default:
-		_ = t.curr.Exec(query)
-	}
-
-	if handleVSchema {
-		err := utils.WaitForAuthoritative(t, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
-		if err != nil {
-			panic(err)
-		}
-	}
-	return nil
-}
-
 func (t *Tester) autoVSchema() bool {
 	return t.vschemaFile == ""
 }
@@ -499,7 +424,7 @@ func getShardingKeysForTable(create *sqlparser.CreateTable) (sks []sqlparser.Ide
 	return
 }
 
-func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) {
+func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) func() {
 	sks := getShardingKeysForTable(create)
 
 	shardingKeys := &vindexes.ColumnVindex{
@@ -525,14 +450,11 @@ func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) {
 	if err != nil {
 		panic(err)
 	}
-}
 
-func (t *Tester) Errorf(format string, args ...interface{}) {
-	t.reporter.AddFailure(t.getVschema(), errors.Errorf(format, args...))
+	return func() {
+		err := utils.WaitForAuthoritative(t.reporter, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
+		if err != nil {
+			panic(err)
+		}
+	}
 }
-
-func (t *Tester) FailNow() {
-	// we don't need to do anything here
-}
-
-func (t *Tester) Helper() {}
