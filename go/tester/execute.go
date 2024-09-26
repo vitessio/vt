@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package tester
 
 import (
 	"context"
@@ -28,8 +28,6 @@ import (
 	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
-
-	vitess_tester "github.com/vitessio/vitess-tester/src/vitess-tester"
 )
 
 type RawKeyspaceVindex struct {
@@ -49,11 +47,11 @@ func ExecuteTests(
 	clusterInstance *cluster.LocalProcessCluster,
 	vtParams, mysqlParams mysql.ConnParams,
 	fileNames []string,
-	s vitess_tester.Suite,
+	s Suite,
 	ksNames []string,
 	vschemaFile, vtexplainVschemaFile string,
 	olap bool,
-	factory vitess_tester.QueryRunnerFactory,
+	factory QueryRunnerFactory,
 ) (failed bool) {
 	vschemaF := vschemaFile
 	if vschemaF == "" {
@@ -62,7 +60,7 @@ func ExecuteTests(
 
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := vitess_tester.NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, factory)
+		vTester := NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, factory)
 		err := vTester.Run()
 		if err != nil {
 			failed = true

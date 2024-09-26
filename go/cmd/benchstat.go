@@ -14,12 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmd
 
 import (
-	"github.com/vitessio/vitess-tester/go/cmd"
+	"github.com/spf13/cobra"
+	vtbenchstat "github.com/vitessio/vitess-tester/go/benchstat"
 )
 
-func main() {
-	cmd.Execute()
+var benchstat = &cobra.Command{
+	Use:     "benchstat old_file.json [new_file.json]",
+	Short:   "Compares and analyses a trace output",
+	Example: "vt benchstat old.json new.json",
+	Args:    cobra.RangeArgs(1, 2),
+	Run: func(cmd *cobra.Command, args []string) {
+		vtbenchstat.Run(args)
+	},
 }
