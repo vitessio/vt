@@ -14,31 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmd
 
 import (
-	"flag"
-	"fmt"
-	"os"
+	"github.com/spf13/cobra"
+	vtbenchstat "github.com/vitessio/vitess-tester/go/benchstat"
 )
 
-func main() {
-	flag.Parse()
-	args := flag.Args()
-
-	if len(args) < 1 || len(args) > 2 {
-		fmt.Println("Usage: vtbenchstat <trace_file1> [trace_file2]")
-		os.Exit(1)
-	}
-
-	traces := make([]TraceFile, len(args))
-	for i, arg := range args {
-		traces[i] = readTraceFile(arg)
-	}
-
-	if len(traces) == 1 {
-		printSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
-	} else {
-		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
-	}
+var benchstat = &cobra.Command{
+	Use:     "benchstat old_file.json [new_file.json]",
+	Short:   "Compares and analyses a trace output",
+	Example: "vt benchstat old.json new.json",
+	Args:    cobra.RangeArgs(1, 2),
+	Run: func(cmd *cobra.Command, args []string) {
+		vtbenchstat.Run(args)
+	},
 }

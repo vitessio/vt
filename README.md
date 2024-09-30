@@ -1,19 +1,17 @@
-# Vitess Tester
+# VT utils
 
-Vitess tester tests Vitess using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test).
+The `vt` binary encapsulates several utils tools for Vitess.
+It includes the following utilities:
+
+- `vt tester`, a testing utility, using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test).
+- `vt benchstat`, a benchmark utility that compares the query planning performance of two Vitess versions.
 
 ## Install
 
-If you only want the `vitess-tester` binary, install it using the following command:
+Install `vt` using the following command:
 
 ```
 go install github.com/vitessio/vitess-tester@latest
-```
-
-The `vtbenchstat` binary can be had by running:
-
-```
-go install github.com/vitessio/vitess-tester/src/cmd/vtbenchstat@latest
 ```
 
 ## Testing methodology
@@ -37,8 +35,8 @@ This method allows us to thoroughly test queries within a sharded environment, e
 
 ## How to use
 
-After installing the `vitess-tester` binary, you need to have Vitess installed and in your path. 
-To run `vitess-tester` and Vitess, you will need to set the `VTDATAROOT` and `VTROOT` environment variables.
+After installing the `vt` binary, you need to have Vitess installed and in your path. 
+To run `vt tester` and Vitess, you will need to set the `VTDATAROOT` and `VTROOT` environment variables.
 You can do this, and set up the Vitess environment by running the following command:
 
 ```sh
@@ -47,92 +45,59 @@ source build.env
 
 Basic usage:
 ```
-Usage of ./vitess-tester:
-  -alsologtostderr
-        log to standard error as well as files
-  -force-base-tablet-uid int
-        force assigning tablet ports based on this seed
-  -force-port-start int
-        force assigning ports based on this seed
-  -force-vtdataroot string
-        force path for VTDATAROOT, which may already be populated
-  -is-coverage
-        whether coverage is required
-  -keep-data
-        don't delete the per-test VTDATAROOT subfolders (default true)
-  -log-level string
-        The log level of vitess-tester: info, warn, error, debug. (default "error")
-  -log_backtrace_at value
-        when logging hits line file:N, emit a stack trace
-  -log_dir string
-        If non-empty, write log files in this directory
-  -log_link string
-        If non-empty, add symbolic links in this directory to the log files
-  -logbuflevel int
-        Buffer log messages logged at this level or lower (-1 means don't buffer; 0 means buffer INFO only; ...). Has limited applicability on non-prod platforms.
-  -logtostderr
-        log to standard error instead of files
-  -olap
-        Use OLAP to run the queries.
-  -partial-keyspace
-        add a second keyspace for sharded tests and mark first shard as moved to this keyspace in the shard routing rules
-  -perf-test
-        include end-to-end performance tests
-  -sharded
-        Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.
-  -stderrthreshold value
-        logs at or above this threshold go to stderr (default 2)
-  -topo-flavor string
-        choose a topo server from etcd2, zk2 or consul (default "etcd2")
-  -trace string
-        Do a vexplain trace on all queries and store the output in the given file.
-  -v value
-        log level for V logs
-  -vmodule value
-        comma-separated list of pattern=N settings for file-filtered logging
-  -vschema string
-        Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.
-  -vtexplain-vschema string
-        Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.
-  -xunit
-        Get output in an xml file instead of errors directory
-```
+Test the given workload against both Vitess and MySQL.
 
+Usage:
+  vt tester  [flags]
+
+Examples:
+vt tester 
+
+Flags:
+  -h, --help                       help for tester
+      --log-level string           The log level of vitess-tester: info, warn, error, debug. (default "error")
+      --olap                       Use OLAP to run the queries.
+      --sharded                    Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.
+      --trace-file string          Do a vexplain trace on all queries and store the output in the given file.
+      --vschema string             Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.
+      --vtexplain-vschema string   Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.
+      --xunit                      Get output in an xml file instead of errors directory
+```
 It will bring up an entire Vitess cluster on 127.0.0.1, unsharded or sharded depending on the configuration. MySQL and VTGate both start with root and no password configured.
 
 ```sh
-vitess-tester t/example.test # run a specified test
-vitess-tester t/example1.test t/example2.test  t/example3.test # separate different tests with one or more spaces
-vitess-tester t/*.test   # wildcards can be used
-vitess-tester https://raw.githubusercontent.com/vitessio/vitess-tester/main/t/basic.test # can also be run against an URL
-vitess-tester -vtexplain-vschema t/vtexplain-vschema.json t/vtexplain.test # run a test with a custom vschema
+vt tester t/example.test # run a specified test
+vt tester t/example1.test t/example2.test  t/example3.test # separate different tests with one or more spaces
+vt tester t/*.test   # wildcards can be used
+vt tester https://raw.githubusercontent.com/vitessio/vitess-tester/main/t/basic.test # can also be run against an URL
+vt tester --vtexplain-vschema t/vtexplain-vschema.json t/vtexplain.test # run a test with a custom vschema
 ```
 
 The test files can be amended with directives to control the testing process. Check out `directives.test` to see examples of what directives are available. 
 
 ## Tracing and comparing execution plans
 
-`vitess-tester` can run in tracing mode. When it does, it will not only run the tests but also generate a trace of the query execution plan. 
+`vt tester` can run in tracing mode. When it does, it will not only run the tests but also generate a trace of the query execution plan. 
 The trace is created using `vexplain trace`, a tool that provides detailed information about how a query is executed.
 
-To run `vitess-tester` in tracing mode, use the `-trace` flag:
+To run `vt tester` in tracing mode, use the `--trace` flag:
 
 ```bash
-vitess-tester --sharded -trace=trace-log.json t/tpch.test
+vt tester --sharded --trace=trace-log.json t/tpch.test
 ```
 
-This will create a trace log, which you can then either summarize using `vtbenchstat` or compare with another trace log.
+This will create a trace log, which you can then either summarize using `vt benchstat` or compare with another trace log.
 
-Running `vtbenchstat` will provide a summary of the trace log, including the number of queries, the number of rows returned, and the time taken to execute the queries.
+Running `vt benchstat` will provide a summary of the trace log, including the number of queries, the number of rows returned, and the time taken to execute the queries.
 
 ```bash
-vtbenchstat trace-log.json
+vt benchstat trace-log.json
 ```
 
-To compare two trace logs, use the `vtbenchstat` command with two trace logs as arguments:
+To compare two trace logs, use the `vt benchstat` command with two trace logs as arguments:
 
 ```bash
-vtbenchstat trace-log1.json trace-log2.json
+vt benchstat trace-log1.json trace-log2.json
 ```
 
 ## Contributing

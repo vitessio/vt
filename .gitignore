@@ -23,9 +23,7 @@ go.work
 # the produced binary
 report.xml
 errors/
-vitess-tester
-vtbenchstat
+/vt
 
 # Do not ignore anything inside the src/vitess-tester directory
-!/src/vitess-tester/
-!/src/cmd/vtbenchstat
+!/go

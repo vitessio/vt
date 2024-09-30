@@ -14,20 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package benchstat
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alecthomas/chroma/quick"
-	"github.com/olekukonko/tablewriter"
-	"golang.org/x/term"
 	"io"
 	"math"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/alecthomas/chroma/quick"
+	"github.com/olekukonko/tablewriter"
+	"golang.org/x/term"
 )
 
 type (
@@ -62,6 +63,19 @@ type (
 		Queries []TracedQuery
 	}
 )
+
+func Run(args []string) {
+	traces := make([]TraceFile, len(args))
+	for i, arg := range args {
+		traces[i] = readTraceFile(arg)
+	}
+
+	if len(traces) == 1 {
+		printSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
+	} else {
+		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
+	}
+}
 
 func visit(trace Trace, f func(Trace)) {
 	f(trace)

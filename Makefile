@@ -17,21 +17,15 @@ check_version:
 
 default: check_version build
 
-build: vitess-tester vtbenchstat
-
-vitess-tester:
-	$(GO) build -o $@ ./
-
-vtbenchstat:
-	$(GO) build -o $@ ./src/cmd/vtbenchstat
+build:
+	$(GO) build -o vt ./
 
 test: build
 	$(GO) test -cover ./...
-	#./vitess-tester -check-error
 
 tidy:
 	$(GO) mod tidy
 
 clean:
 	$(GO) clean -i ./...
-	rm -f vitess-tester vtbenchstat
+	rm -f vt

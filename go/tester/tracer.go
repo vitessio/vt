@@ -1,10 +1,11 @@
-package vitess_tester
+package tester
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
+
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"

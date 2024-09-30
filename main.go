@@ -1,145 +1,25 @@
-// Copyright 2020 PingCAP, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+Copyright 2024 The Vitess Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package main
 
 import (
-	"flag"
-	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"time"
-
-	log "github.com/sirupsen/logrus"
-	"vitess.io/vitess/go/test/endtoend/cluster"
-
-	"github.com/vitessio/vitess-tester/src/cmd"
-	vitess_tester "github.com/vitessio/vitess-tester/src/vitess-tester"
+	"github.com/vitessio/vitess-tester/go/cmd"
 )
-
-var (
-	logLevel             string
-	sharded, olap, xunit bool
-	vschemaFile          string
-	vtexplainVschemaFile string
-	traceFile            string
-)
-
-func init() {
-	flag.BoolVar(&olap, "olap", false, "Use OLAP to run the queries.")
-	flag.StringVar(&logLevel, "log-level", "error", "The log level of vitess-tester: info, warn, error, debug.")
-	flag.BoolVar(&xunit, "xunit", false, "Get output in an xml file instead of errors directory")
-	flag.StringVar(&traceFile, "trace", "", "Do a vexplain trace on all queries and store the output in the given file.")
-
-	flag.BoolVar(&sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
-	flag.StringVar(&vschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
-	flag.StringVar(&vtexplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")
-}
 
 func main() {
-	flag.Parse()
-	tests := flag.Args()
-
-	err := vitess_tester.CheckEnvironment()
-	if err != nil {
-		fmt.Println("Fatal error:")
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
-	a := vschemaFile != ""
-	b := vtexplainVschemaFile != ""
-	if a && b || a && sharded || b && sharded {
-		log.Errorf("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
-		os.Exit(1)
-	}
-
-	if ll := os.Getenv("LOG_LEVEL"); ll != "" {
-		logLevel = ll
-	}
-	if logLevel != "" {
-		ll, err := log.ParseLevel(logLevel)
-		if err != nil {
-			log.Errorf("error parsing log level %s: %v", logLevel, err)
-		}
-		log.SetLevel(ll)
-	}
-
-	if len(tests) == 0 {
-		log.Errorf("no tests specified")
-		os.Exit(1)
-	}
-
-	log.Infof("running tests: %v", tests)
-
-	clusterInstance, vtParams, mysqlParams, ksNames, closer := cmd.SetupCluster(vschemaFile, vtexplainVschemaFile, sharded)
-	defer closer()
-
-	// remove errors folder if exists
-	err = os.RemoveAll("errors")
-	if err != nil {
-		panic(err.Error())
-	}
-
-	var reporterSuite vitess_tester.Suite
-	if xunit {
-		reporterSuite = vitess_tester.NewXMLTestSuite()
-	} else {
-		reporterSuite = vitess_tester.NewFileReporterSuite(getVschema(clusterInstance))
-	}
-	failed := cmd.ExecuteTests(clusterInstance, vtParams, mysqlParams, tests, reporterSuite, ksNames, vschemaFile, vtexplainVschemaFile, olap, getQueryRunnerFactory())
-	outputFile := reporterSuite.Close()
-	if failed {
-		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
-		os.Exit(1)
-	}
-	println("Great, All tests passed")
-}
-
-func getQueryRunnerFactory() vitess_tester.QueryRunnerFactory {
-	inner := vitess_tester.ComparingQueryRunnerFactory{}
-	if traceFile == "" {
-		return inner
-	}
-
-	var err error
-	writer, err := os.Create(traceFile)
-	if err != nil {
-		panic(err)
-	}
-	_, err = writer.Write([]byte("["))
-	if err != nil {
-		panic(err.Error())
-	}
-	return vitess_tester.NewTracerFactory(writer, inner)
-}
-
-func getVschema(clusterInstance *cluster.LocalProcessCluster) func() []byte {
-	return func() []byte {
-		httpClient := &http.Client{Timeout: 5 * time.Second}
-		resp, err := httpClient.Get(clusterInstance.VtgateProcess.VSchemaURL)
-		if err != nil {
-			log.Errorf(err.Error())
-			return nil
-		}
-		defer resp.Body.Close()
-		res, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Errorf(err.Error())
-			return nil
-		}
-
-		return res
-	}
+	cmd.Execute()
 }
