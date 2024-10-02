@@ -17,30 +17,16 @@ limitations under the License.
 package cmd
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
+	"github.com/vitessio/vitess-tester/go/keys"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var root = &cobra.Command{
-	Use:   "vt",
-	Short: "Utils tools for testing, running and benchmarking Vitess.",
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := root.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
-func init() {
-	root.CompletionOptions.HiddenDefaultCmd = true
-
-	root.AddCommand(benchstat)
-	root.AddCommand(testerCmd())
-	root.AddCommand(keysCmd)
+var keysCmd = &cobra.Command{
+	Use:     "keys file.test",
+	Short:   "Runs vexplain keys on all queries of the test file",
+	Example: "vt benchstat file.test",
+	Args:    cobra.ExactArgs(1),
+	RunE: func(_ *cobra.Command, args []string) error {
+		return keys.Run(args[0])
+	},
 }
