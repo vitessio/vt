@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/vitessio/vitess-tester/go/tools"
 	"os"
 
 	"vitess.io/vitess/go/mysql"
@@ -66,7 +67,7 @@ func newTracer(traceFile *os.File,
 	}
 }
 
-func (t *Tracer) runQuery(q query, expectErr bool, ast sqlparser.Statement) error {
+func (t *Tracer) runQuery(q tools.Query, expectErr bool, ast sqlparser.Statement) error {
 	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !expectErr {
 		// we don't want to run DMLs twice, so we just run them once while tracing
 		var errs []error
@@ -99,7 +100,7 @@ func (t *Tracer) runQuery(q query, expectErr bool, ast sqlparser.Statement) erro
 }
 
 // trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile
-func (t *Tracer) trace(query query) error {
+func (t *Tracer) trace(query tools.Query) error {
 	// Marshal the query into JSON format for safe embedding
 	queryJSON, err := json.Marshal(query.Query)
 	if err != nil {

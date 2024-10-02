@@ -1,20 +1,129 @@
-// Copyright 2020 PingCAP, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+Copyright 2024 The Vitess Authors.
 
-package tester
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-import (
-	"strings"
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package typ
+
+import "strings"
+
+type CmdType int
+
+const (
+	Q_CONNECTION CmdType = iota + 1
+	Q_QUERY
+	Q_CONNECT
+	Q_SLEEP
+	Q_REAL_SLEEP
+	Q_INC
+	Q_DEC
+	Q_SOURCE
+	Q_DISCONNECT
+	Q_LET
+	Q_ECHO
+	Q_WHILE
+	Q_END_BLOCK
+	Q_SYSTEM
+	Q_RESULT
+	Q_REQUIRE
+	Q_SAVE_MASTER_POS
+	Q_SYNC_WITH_MASTER
+	Q_SYNC_SLAVE_WITH_MASTER
+	Q_ERROR
+	Q_SEND
+	Q_REAP
+	Q_DIRTY_CLOSE
+	Q_REPLACE
+	Q_REPLACE_COLUMN
+	Q_PING
+	Q_EVAL
+	Q_EVAL_RESULT
+	Q_ENABLE_QUERY_LOG
+	Q_DISABLE_QUERY_LOG
+	Q_ENABLE_RESULT_LOG
+	Q_DISABLE_RESULT_LOG
+	Q_ENABLE_CONNECT_LOG
+	Q_DISABLE_CONNECT_LOG
+	Q_WAIT_FOR_SLAVE_TO_STOP
+	Q_ENABLE_WARNINGS
+	Q_DISABLE_WARNINGS
+	Q_ENABLE_INFO
+	Q_DISABLE_INFO
+	Q_ENABLE_SESSION_TRACK_INFO
+	Q_DISABLE_SESSION_TRACK_INFO
+	Q_ENABLE_METADATA
+	Q_DISABLE_METADATA
+	Q_EXEC
+	Q_EXECW
+	Q_DELIMITER
+	Q_DISABLE_ABORT_ON_ERROR
+	Q_ENABLE_ABORT_ON_ERROR
+	Q_DISPLAY_VERTICAL_RESULTS
+	Q_DISPLAY_HORIZONTAL_RESULTS
+	Q_QUERY_VERTICAL
+	Q_QUERY_HORIZONTAL
+	Q_SORTED_RESULT
+	Q_LOWERCASE
+	Q_START_TIMER
+	Q_END_TIMER
+	Q_CHARACTER_SET
+	Q_DISABLE_PS_PROTOCOL
+	Q_ENABLE_PS_PROTOCOL
+	Q_DISABLE_RECONNECT
+	Q_ENABLE_RECONNECT
+	Q_IF
+	Q_DISABLE_PARSING
+	Q_ENABLE_PARSING
+	Q_REPLACE_REGEX
+	Q_REPLACE_NUMERIC_ROUND
+	Q_REMOVE_FILE
+	Q_FILE_EXIST
+	Q_WRITE_FILE
+	Q_COPY_FILE
+	Q_PERL
+	Q_DIE
+	Q_EXIT
+	Q_SKIP
+	Q_CHMOD_FILE
+	Q_APPEND_FILE
+	Q_CAT_FILE
+	Q_DIFF_FILES
+	Q_SEND_QUIT
+	Q_CHANGE_USER
+	Q_MKDIR
+	Q_RMDIR
+	Q_LIST_FILES
+	Q_LIST_FILES_WRITE_FILE
+	Q_LIST_FILES_APPEND_FILE
+	Q_SEND_SHUTDOWN
+	Q_SHUTDOWN_SERVER
+	Q_RESULT_FORMAT_VERSION
+	Q_MOVE_FILE
+	Q_REMOVE_FILES_WILDCARD
+	Q_SEND_EVAL
+	Q_OUTPUT /* redirect output to a file */
+	Q_RESET_CONNECTION
+	Q_SINGLE_QUERY
+	Q_BEGIN_CONCURRENT
+	Q_END_CONCURRENT
+	Q_UNKNOWN
+	Q_COMMENT
+	Q_COMMENT_WITH_COMMAND
+	Q_EMPTY_LINE
+	Q_SKIP_IF_BELOW_VERSION
+	Q_VEXPLAIN
+	Q_WAIT_FOR_AUTHORITATIVE
 )
 
 var commandMap = map[string]CmdType{
@@ -119,20 +228,20 @@ var commandMap = map[string]CmdType{
 	"wait_authoritative":         Q_WAIT_FOR_AUTHORITATIVE,
 }
 
-func findType(cmdName string) CmdType {
-	key := strings.ToLower(cmdName)
-	if v, ok := commandMap[key]; ok {
-		return v
-	}
-
-	return -1
-}
-
-func String(cmd CmdType) string {
+func (cmd CmdType) String() string {
 	for s, cmdType := range commandMap {
 		if cmdType == cmd {
 			return s
 		}
 	}
 	return "Unknown command type"
+}
+
+func FindType(cmdName string) CmdType {
+	key := strings.ToLower(cmdName)
+	if v, ok := commandMap[key]; ok {
+		return v
+	}
+
+	return -1
 }
