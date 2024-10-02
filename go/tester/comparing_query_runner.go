@@ -18,10 +18,9 @@ package tester
 
 import (
 	"fmt"
-	"github.com/vitessio/vitess-tester/go/tools"
-
 	"github.com/pingcap/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/vitessio/vitess-tester/go/data"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 )
@@ -55,11 +54,11 @@ func newComparingQueryRunner(
 	}
 }
 
-func (nqr ComparingQueryRunner) runQuery(q tools.Query, expectedErrs bool, ast sqlparser.Statement) error {
+func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement) error {
 	return nqr.execute(q, expectedErrs, ast)
 }
 
-func (nqr *ComparingQueryRunner) execute(query tools.Query, expectedErrs bool, ast sqlparser.Statement) error {
+func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, ast sqlparser.Statement) error {
 	if len(query.Query) == 0 {
 		return nil
 	}

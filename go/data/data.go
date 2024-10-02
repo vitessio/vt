@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tools
+package data
 
 import (
 	"bytes"
@@ -36,7 +36,7 @@ type (
 	}
 )
 
-func ReadData(url string) ([]byte, error) {
+func readData(url string) ([]byte, error) {
 	if strings.HasPrefix(url, "http") {
 		client := http.Client{}
 		res, err := client.Get(url)
@@ -52,7 +52,11 @@ func ReadData(url string) ([]byte, error) {
 	return os.ReadFile(url)
 }
 
-func LoadQueries(data []byte) ([]Query, error) {
+func LoadQueries(url string) ([]Query, error) {
+	data, err := readData(url)
+	if err != nil {
+		return nil, err
+	}
 	seps := bytes.Split(data, []byte("\n"))
 	queries := make([]Query, 0, len(seps))
 	newStmt := true
@@ -94,7 +98,7 @@ func ParseQueries(qs ...Query) ([]Query, error) {
 		realS := rs.Query
 		s := rs.Query
 		q := Query{}
-		q.Type = typ.Q_UNKNOWN
+		q.Type = typ.Unknown
 		q.Line = rs.Line
 		// a valid Query's length should be at least 3.
 		if len(s) < 3 {
@@ -102,19 +106,19 @@ func ParseQueries(qs ...Query) ([]Query, error) {
 		}
 		// we will skip #comment and line with zero characters here
 		if s[0] == '#' {
-			q.Type = typ.Q_COMMENT
+			q.Type = typ.Comment
 		} else if s[0:2] == "--" {
-			q.Type = typ.Q_COMMENT_WITH_COMMAND
+			q.Type = typ.CommentWithCommand
 			if s[2] == ' ' {
 				s = s[3:]
 			} else {
 				s = s[2:]
 			}
 		} else if s[0] == '\n' {
-			q.Type = typ.Q_EMPTY_LINE
+			q.Type = typ.EmptyLine
 		}
 
-		if q.Type != typ.Q_COMMENT {
+		if q.Type != typ.Comment {
 			// Calculate first word length(the command), terminated
 			// by 'space' , '(' or 'delimiter'
 			var i int
@@ -126,7 +130,7 @@ func ParseQueries(qs ...Query) ([]Query, error) {
 			s = s[i:]
 
 			q.Query = s
-			if q.Type == typ.Q_UNKNOWN || q.Type == typ.Q_COMMENT_WITH_COMMAND {
+			if q.Type == typ.Unknown || q.Type == typ.CommentWithCommand {
 				if err := q.getQueryType(realS); err != nil {
 					return nil, err
 				}
@@ -143,16 +147,13 @@ func ParseQueries(qs ...Query) ([]Query, error) {
 func (q *Query) getQueryType(qu string) error {
 	tp := typ.FindType(q.FirstWord)
 	if tp > 0 {
-		if tp == typ.Q_ECHO || tp == typ.Q_SORTED_RESULT {
-			q.Query = strings.TrimSpace(q.Query)
-		}
 		q.Type = tp
 	} else {
 		// No mysqltest command matched
-		if q.Type != typ.Q_COMMENT_WITH_COMMAND {
+		if q.Type != typ.CommentWithCommand {
 			// A query that will sent to vitess
 			q.Query = qu
-			q.Type = typ.Q_QUERY
+			q.Type = typ.Query
 		} else {
 			log.WithFields(log.Fields{"line": q.Line, "command": q.FirstWord, "arguments": q.Query}).Error("invalid command")
 			return fmt.Errorf("invalid command %s", q.FirstWord)

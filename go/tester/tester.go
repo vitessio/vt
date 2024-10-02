@@ -19,7 +19,7 @@ package tester
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vitessio/vitess-tester/go/tools"
+	"github.com/vitessio/vitess-tester/go/data"
 	"github.com/vitessio/vitess-tester/go/typ"
 
 	"io"
@@ -66,7 +66,7 @@ type (
 	}
 
 	QueryRunner interface {
-		runQuery(q tools.Query, expectedErrs bool, ast sqlparser.Statement) error
+		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement) error
 	}
 
 	QueryRunnerFactory interface {
@@ -154,12 +154,7 @@ func (t *Tester) Run() error {
 	if t.autoVSchema() {
 		defer t.postProcess()
 	}
-	data, err := tools.ReadData(t.name)
-	if err != nil {
-		return err
-	}
-
-	queries, err := tools.LoadQueries(data)
+	queries, err := data.LoadQueries(t.name)
 	if err != nil {
 		t.reporter.AddFailure(err)
 		return err
@@ -167,24 +162,9 @@ func (t *Tester) Run() error {
 
 	for _, q := range queries {
 		switch q.Type {
-		// no-ops
-		case typ.Q_ENABLE_QUERY_LOG,
-			typ.Q_DISABLE_QUERY_LOG,
-			typ.Q_ECHO,
-			typ.Q_DISABLE_WARNINGS,
-			typ.Q_ENABLE_WARNINGS,
-			typ.Q_ENABLE_INFO,
-			typ.Q_DISABLE_INFO,
-			typ.Q_ENABLE_RESULT_LOG,
-			typ.Q_DISABLE_RESULT_LOG,
-			typ.Q_SORTED_RESULT,
-			typ.Q_REPLACE_REGEX:
-			// do nothing
-		case typ.Q_SKIP:
+		case typ.Skip:
 			t.skipNext = true
-		case typ.Q_BEGIN_CONCURRENT, typ.Q_END_CONCURRENT, typ.Q_CONNECT, typ.Q_CONNECTION, typ.Q_DISCONNECT, typ.Q_LET, typ.Q_REPLACE_COLUMN:
-			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
-		case typ.Q_SKIP_IF_BELOW_VERSION:
+		case typ.SkipIfBelowVersion:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
 				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
@@ -197,19 +177,19 @@ func (t *Tester) Run() error {
 				t.reporter.AddFailure(err)
 				continue
 			}
-		case typ.Q_ERROR:
+		case typ.Error:
 			t.expectedErrs = true
-		case typ.Q_VEXPLAIN:
+		case typ.VExplain:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 2 {
-				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.Q_VEXPLAIN in: %v", q.Query))
+				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.VExplain in: %v", q.Query))
 				continue
 			}
 
 			t.vexplain = strs[1]
-		case typ.Q_WAIT_FOR_AUTHORITATIVE:
+		case typ.WaitForAuthoritative:
 			t.waitAuthoritative(q.Query)
-		case typ.Q_QUERY:
+		case typ.Query:
 			if t.vexplain != "" {
 				result, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain %s %s", t.vexplain, q.Query), -1, false)
 				t.vexplain = ""
@@ -221,7 +201,7 @@ func (t *Tester) Run() error {
 			}
 
 			t.runQuery(q)
-		case typ.Q_REMOVE_FILE:
+		case typ.RemoveFile:
 			err = os.Remove(strings.TrimSpace(q.Query))
 			if err != nil {
 				return errors.Annotate(err, "failed to remove file")
@@ -235,7 +215,7 @@ func (t *Tester) Run() error {
 	return nil
 }
 
-func (t *Tester) runQuery(q tools.Query) {
+func (t *Tester) runQuery(q data.Query) {
 	if t.skipNext {
 		t.skipNext = false
 		return
