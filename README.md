@@ -61,9 +61,9 @@ The generated trace logs can be summarized or compared using `vt benchstat`:
 
 ## Key Analysis Workflow
 
-`vt key` analyzes a query log and outputs detailed information about table and column usage in queries. This data can be summarized using `vt benchstat`. Here's a typical workflow:
+`vt keys` analyzes a query log and outputs detailed information about table and column usage in queries. This data can be summarized using `vt benchstat`. Here's a typical workflow:
 
-1. **Run `vt key` to analyze the query log**:
+1. **Run `vt keys` to analyze the query log**:
 
    ```bash
    vt keys t/tpch.test > keys-log.json
@@ -122,4 +122,4 @@ Vitess Tester started as a fork from [pingcap/mysql-tester](https://github.com/p
 
 ---
 
-This version includes an example workflow for `vt key` and clarifies the role of `vt benchstat`. Let me know if anything else needs adjustment.
+This version includes an example workflow for `vt keys` and clarifies the role of `vt benchstat`. Let me know if anything else needs adjustment.
