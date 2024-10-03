@@ -17,9 +17,9 @@ limitations under the License.
 package benchstat
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
+	"iter"
 	"math"
 	"os"
 	"sort"
@@ -29,6 +29,8 @@ import (
 	"github.com/alecthomas/chroma/quick"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
+
+	"github.com/vitessio/vitess-tester/go/keys"
 )
 
 type (
@@ -59,8 +61,11 @@ type (
 	}
 
 	TraceFile struct {
-		Name    string
-		Queries []TracedQuery
+		Name string
+
+		// Only one of these fields will be populated
+		TracedQueries   []TracedQuery
+		AnalysedQueries []keys.QueryAnalysisResult
 	}
 )
 
@@ -70,10 +75,15 @@ func Run(args []string) {
 		traces[i] = readTraceFile(arg)
 	}
 
+	firstTrace := traces[0]
 	if len(traces) == 1 {
-		printSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
+		if firstTrace.AnalysedQueries == nil {
+			printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
+		} else {
+			printKeysSummary(os.Stdout, firstTrace)
+		}
 	} else {
-		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
+		compareTraces(os.Stdout, terminalWidth(), highlightQuery, firstTrace, traces[1])
 	}
 }
 
@@ -86,7 +96,7 @@ func visit(trace Trace, f func(Trace)) {
 
 func summarizeTraces(file TraceFile) map[string]QuerySummary {
 	summary := make(map[string]QuerySummary)
-	for _, traceElement := range file.Queries {
+	for _, traceElement := range file.TracedQueries {
 		summary[traceElement.Query] = summarizeTrace(traceElement)
 	}
 	return summary
@@ -127,58 +137,6 @@ func exit(msg string) {
 	os.Exit(1)
 }
 
-func readTraceFile(fileName string) TraceFile {
-	// Open the JSON file
-	file, err := os.Open(fileName)
-	if err != nil {
-		exit("Error opening file: " + err.Error())
-	}
-	defer file.Close()
-
-	// Create a decoder
-	decoder := json.NewDecoder(file)
-
-	// Read the opening bracket
-	_, err = decoder.Token()
-	if err != nil {
-		exit("Error reading json: " + err.Error())
-	}
-
-	// Read the file contents
-	var queries []TracedQuery
-	for decoder.More() {
-		var element TracedQuery
-		err := decoder.Decode(&element)
-		if err != nil {
-			exit("Error reading json: " + err.Error())
-		}
-		queries = append(queries, element)
-	}
-
-	// Read the closing bracket
-	_, err = decoder.Token()
-	if err != nil {
-		exit("Error reading json: " + err.Error())
-	}
-
-	sort.Slice(queries, func(i, j int) bool {
-		a, err := strconv.Atoi(queries[i].LineNumber)
-		if err != nil {
-			return false
-		}
-		b, err := strconv.Atoi(queries[j].LineNumber)
-		if err != nil {
-			return false
-		}
-		return a < b
-	})
-
-	return TraceFile{
-		Name:    fileName,
-		Queries: queries,
-	}
-}
-
 const queryPrefix = "Query: "
 
 func limitQueryLength(query string, termWidth int) string {
@@ -195,9 +153,9 @@ func limitQueryLength(query string, termWidth int) string {
 	return processedQuery
 }
 
-func printSummary(out io.Writer, termWidth int, highLighter Highlighter, file TraceFile) {
+func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, file TraceFile) {
 	summary := summarizeTraces(file)
-	for i, query := range file.Queries {
+	for i, query := range file.TracedQueries {
 		if i > 0 {
 			fmt.Fprintln(out)
 		}
@@ -263,7 +221,7 @@ func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, file1,
 	var s1RouteCalls, s1DataSent, s1MemoryRows, s1ShardsQueried int
 	var s2RouteCalls, s2DataSent, s2MemoryRows, s2ShardsQueried int
 
-	for _, q := range file1.Queries {
+	for _, q := range file1.TracedQueries {
 		s1, ok1 := summary1[q.Query]
 		s2, ok2 := summary2[q.Query]
 		if !ok1 || !ok2 {
@@ -333,4 +291,114 @@ func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) 
 	})
 
 	return percentChange < -significantChangeThreshold
+}
+
+// printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
+// and prints this summary information to the output.
+func printKeysSummary(out io.Writer, file TraceFile) {
+	_, _ = fmt.Fprintf(out, "Summary from trace file %s\n", file.Name)
+	tableSummaries := summarizeQueries(file.AnalysedQueries)
+	for _, summary := range tableSummaries {
+		table := tablewriter.NewWriter(out)
+		table.SetAutoFormatHeaders(false)
+		table.SetHeader([]string{"Column", "Filter %", "Grouping %", "Join %"})
+		for colName, usage := range summary.GetColumns() {
+			table.Append([]string{
+				colName,
+				fmt.Sprintf("%.2f%%", usage.FilterPercentage),
+				fmt.Sprintf("%.2f%%", usage.GroupingPercentage),
+				fmt.Sprintf("%.2f%%", usage.JoinPercentage),
+			})
+		}
+		fmt.Fprintf(out, "Table: %s used in %d queries\n", summary.Table, summary.QueryCount)
+		table.Render()
+		_, _ = fmt.Fprintln(out)
+	}
+}
+
+type ColumnUsage struct {
+	FilterPercentage   float64
+	GroupingPercentage float64
+	JoinPercentage     float64
+}
+
+type TableSummary struct {
+	Table      string
+	QueryCount int
+	Columns    map[string]ColumnUsage
+}
+
+func (ts TableSummary) GetColumns() iter.Seq2[string, ColumnUsage] {
+	columns := make([][2]interface{}, 0, len(ts.Columns))
+	for colName, usage := range ts.Columns {
+		columns = append(columns, [2]interface{}{colName, usage})
+	}
+	sort.Slice(columns, func(i, j int) bool {
+		return columns[i][0].(string) < columns[j][0].(string)
+	})
+	return func(yield func(string, ColumnUsage) bool) {
+		for _, col := range columns {
+			if !yield(col[0].(string), col[1].(ColumnUsage)) {
+				break
+			}
+		}
+	}
+}
+
+func summarizeQueries(queries []keys.QueryAnalysisResult) []TableSummary {
+	tableSummaries := make(map[string]*TableSummary)
+	tableUsageCounts := make(map[string]int)
+
+	// First pass: collect all data and count occurrences
+	for _, query := range queries {
+		for _, table := range query.TableName {
+			if _, exists := tableSummaries[table]; !exists {
+				tableSummaries[table] = &TableSummary{
+					Table:   table,
+					Columns: make(map[string]ColumnUsage),
+				}
+			}
+			tableUsageCounts[table] += query.UsageCount
+
+			updateColumnUsage := func(columns []string, usageType func(*ColumnUsage) *float64) {
+				for _, col := range columns {
+					if strings.HasPrefix(col, table+".") {
+						colName := strings.TrimPrefix(col, table+".")
+						usage := tableSummaries[table].Columns[colName]
+						*usageType(&usage) += float64(query.UsageCount)
+						tableSummaries[table].Columns[colName] = usage
+					}
+				}
+			}
+
+			updateColumnUsage(query.FilterColumns, func(cu *ColumnUsage) *float64 { return &cu.FilterPercentage })
+			updateColumnUsage(query.GroupingColumns, func(cu *ColumnUsage) *float64 { return &cu.GroupingPercentage })
+			updateColumnUsage(query.JoinColumns, func(cu *ColumnUsage) *float64 { return &cu.JoinPercentage })
+		}
+	}
+
+	// Second pass: calculate percentages
+	for _, summary := range tableSummaries {
+		count := tableUsageCounts[summary.Table]
+		summary.QueryCount = count
+		for colName, usage := range summary.Columns {
+			countF := float64(count)
+			usage.FilterPercentage = (usage.FilterPercentage / countF) * 100
+			usage.GroupingPercentage = (usage.GroupingPercentage / countF) * 100
+			usage.JoinPercentage = (usage.JoinPercentage / countF) * 100
+			summary.Columns[colName] = usage
+		}
+	}
+
+	// Convert map to slice
+	result := make([]TableSummary, 0, len(tableSummaries))
+	for _, summary := range tableSummaries {
+		result = append(result, *summary)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Table < result[j].Table
+	})
+
+	return result
 }

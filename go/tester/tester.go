@@ -17,10 +17,8 @@ limitations under the License.
 package tester
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-
 	"io"
 	"net/http"
 	"os"
@@ -35,6 +33,9 @@ import (
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
+
+	"github.com/vitessio/vitess-tester/go/data"
+	"github.com/vitessio/vitess-tester/go/typ"
 )
 
 type (
@@ -65,7 +66,7 @@ type (
 	}
 
 	QueryRunner interface {
-		runQuery(q query, expectedErrs bool, ast sqlparser.Statement) error
+		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement) error
 	}
 
 	QueryRunnerFactory interface {
@@ -153,35 +154,20 @@ func (t *Tester) Run() error {
 	if t.autoVSchema() {
 		defer t.postProcess()
 	}
-	queries, err := t.loadQueries()
+	queries, err := data.LoadQueries(t.name)
 	if err != nil {
 		t.reporter.AddFailure(err)
 		return err
 	}
 
 	for _, q := range queries {
-		switch q.tp {
-		// no-ops
-		case Q_ENABLE_QUERY_LOG,
-			Q_DISABLE_QUERY_LOG,
-			Q_ECHO,
-			Q_DISABLE_WARNINGS,
-			Q_ENABLE_WARNINGS,
-			Q_ENABLE_INFO,
-			Q_DISABLE_INFO,
-			Q_ENABLE_RESULT_LOG,
-			Q_DISABLE_RESULT_LOG,
-			Q_SORTED_RESULT,
-			Q_REPLACE_REGEX:
-			// do nothing
-		case Q_SKIP:
+		switch q.Type {
+		case typ.Skip:
 			t.skipNext = true
-		case Q_BEGIN_CONCURRENT, Q_END_CONCURRENT, Q_CONNECT, Q_CONNECTION, Q_DISCONNECT, Q_LET, Q_REPLACE_COLUMN:
-			t.reporter.AddFailure(fmt.Errorf("%s not supported", String(q.tp)))
-		case Q_SKIP_IF_BELOW_VERSION:
+		case typ.SkipIfBelowVersion:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
-				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
+				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
 				continue
 			}
 			t.skipBinary = strs[1]
@@ -191,19 +177,19 @@ func (t *Tester) Run() error {
 				t.reporter.AddFailure(err)
 				continue
 			}
-		case Q_ERROR:
+		case typ.Error:
 			t.expectedErrs = true
-		case Q_VEXPLAIN:
+		case typ.VExplain:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 2 {
-				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for Q_VEXPLAIN in: %v", q.Query))
+				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.VExplain in: %v", q.Query))
 				continue
 			}
 
 			t.vexplain = strs[1]
-		case Q_WAIT_FOR_AUTHORITATIVE:
+		case typ.WaitForAuthoritative:
 			t.waitAuthoritative(q.Query)
-		case Q_QUERY:
+		case typ.Query:
 			if t.vexplain != "" {
 				result, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain %s %s", t.vexplain, q.Query), -1, false)
 				t.vexplain = ""
@@ -215,13 +201,13 @@ func (t *Tester) Run() error {
 			}
 
 			t.runQuery(q)
-		case Q_REMOVE_FILE:
+		case typ.RemoveFile:
 			err = os.Remove(strings.TrimSpace(q.Query))
 			if err != nil {
 				return errors.Annotate(err, "failed to remove file")
 			}
 		default:
-			t.reporter.AddFailure(fmt.Errorf("%s not supported", String(q.tp)))
+			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
 		}
 	}
 	fmt.Printf("%s\n", t.reporter.Report())
@@ -229,7 +215,7 @@ func (t *Tester) Run() error {
 	return nil
 }
 
-func (t *Tester) runQuery(q query) {
+func (t *Tester) runQuery(q data.Query) {
 	if t.skipNext {
 		t.skipNext = false
 		return
@@ -300,61 +286,6 @@ func (t *Tester) waitAuthoritative(query string) {
 	if err != nil {
 		t.reporter.AddFailure(fmt.Errorf("failed to wait for authoritative schema for table %s: %v", tblName, err))
 	}
-}
-
-func (t *Tester) loadQueries() ([]query, error) {
-	data, err := t.readData()
-	if err != nil {
-		return nil, err
-	}
-
-	seps := bytes.Split(data, []byte("\n"))
-	queries := make([]query, 0, len(seps))
-	newStmt := true
-	for i, v := range seps {
-		v := bytes.TrimSpace(v)
-		s := string(v)
-		// we will skip # comment here
-		if strings.HasPrefix(s, "#") {
-			newStmt = true
-			continue
-		} else if strings.HasPrefix(s, "--") {
-			queries = append(queries, query{Query: s, Line: i + 1})
-			newStmt = true
-			continue
-		} else if len(s) == 0 {
-			continue
-		}
-
-		if newStmt {
-			queries = append(queries, query{Query: s, Line: i + 1})
-		} else {
-			lastQuery := queries[len(queries)-1]
-			lastQuery = query{Query: fmt.Sprintf("%s\n%s", lastQuery.Query, s), Line: lastQuery.Line}
-			queries[len(queries)-1] = lastQuery
-		}
-
-		// if the line has a ; in the end, we will treat new line as the new statement.
-		newStmt = strings.HasSuffix(s, ";")
-	}
-
-	return ParseQueries(queries...)
-}
-
-func (t *Tester) readData() ([]byte, error) {
-	if strings.HasPrefix(t.name, "http") {
-		client := http.Client{}
-		res, err := client.Get(t.name)
-		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != http.StatusOK {
-			return nil, errors.Errorf("failed to get data from %s, status code %d", t.name, res.StatusCode)
-		}
-		defer res.Body.Close()
-		return io.ReadAll(res.Body)
-	}
-	return os.ReadFile(t.name)
 }
 
 func newPrimaryKeyIndexDefinitionSingleColumn(name sqlparser.IdentifierCI) *sqlparser.IndexDefinition {

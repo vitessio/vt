@@ -19,15 +19,15 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	vtbenchstat "github.com/vitessio/vitess-tester/go/benchstat"
+	"github.com/vitessio/vitess-tester/go/keys"
 )
 
-var benchstat = &cobra.Command{
-	Use:     "benchstat old_file.json [new_file.json]",
-	Short:   "Compares and analyses a trace output",
-	Example: "vt benchstat old.json new.json",
-	Args:    cobra.RangeArgs(1, 2),
-	Run: func(cmd *cobra.Command, args []string) {
-		vtbenchstat.Run(args)
+var keysCmd = &cobra.Command{
+	Use:     "keys file.test",
+	Short:   "Runs vexplain keys on all queries of the test file",
+	Example: "vt benchstat file.test",
+	Args:    cobra.ExactArgs(1),
+	RunE: func(_ *cobra.Command, args []string) error {
+		return keys.Run(args[0])
 	},
 }

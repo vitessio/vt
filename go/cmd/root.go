@@ -42,4 +42,5 @@ func init() {
 
 	root.AddCommand(benchstat)
 	root.AddCommand(testerCmd())
+	root.AddCommand(keysCmd)
 }

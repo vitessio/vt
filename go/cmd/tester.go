@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+
 	vttester "github.com/vitessio/vitess-tester/go/tester"
 )
 
