@@ -32,9 +32,15 @@ import (
 
 	"github.com/vitessio/vitess-tester/go/data"
 	"github.com/vitessio/vitess-tester/go/typ"
+
+	querypb "vitess.io/vitess/go/vt/proto/query"
 )
 
 func Run(fileName string) error {
+	return run(os.Stdout, fileName)
+}
+
+func run(out io.Writer, fileName string) error {
 	si := &schemaInfo{
 		tables: make(map[string]columns),
 	}
@@ -64,13 +70,12 @@ func Run(fileName string) error {
 		}
 	}
 
-	ql.writeJsonTo(os.Stdout)
-
+	ql.writeJsonTo(out)
 	return nil
 }
 
 func process(q data.Query, si *schemaInfo, ql *queryList) {
-	ast, err := sqlparser.NewTestParser().Parse(q.Query)
+	ast, bv, err := sqlparser.NewTestParser().Parse2(q.Query)
 	if err != nil {
 		panic(err) // TODO: write this to the json output
 	}
@@ -84,7 +89,8 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 			panic(err) // TODO: write this to the json output
 		}
 		ctx := &plancontext.PlanningContext{
-			SemTable: st,
+			ReservedVars: sqlparser.NewReservedVars("", bv),
+			SemTable:     st,
 		}
 		ql.processQuery(ctx, ast, q)
 	}
@@ -95,6 +101,11 @@ type queryList struct {
 }
 
 func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparser.Statement, q data.Query) {
+	bv := make(map[string]*querypb.BindVariable)
+	err := sqlparser.Normalize(ast, ctx.ReservedVars, bv)
+	if err != nil {
+		panic("oh no")
+	}
 	structure := sqlparser.CanonicalString(ast)
 	r, found := ql.queries[structure]
 	if found {
@@ -132,19 +143,19 @@ func (ql *queryList) writeJsonTo(w io.Writer) error {
 		return values[i].LineNumbers[0] < values[j].LineNumbers[0]
 	})
 
-	_, err := fmt.Fprint(w, "[")
+	_, err := fmt.Fprint(w, "[\n  ")
 	if err != nil {
 		return err
 	}
 
 	for i, q := range values {
 		if i > 0 {
-			_, err = fmt.Fprint(w, ",")
+			_, err = fmt.Fprint(w, ",\n  ")
 			if err != nil {
 				return err
 			}
 		}
-		jsonData, err := json.Marshal(q)
+		jsonData, err := json.MarshalIndent(q, "  ", "  ")
 		if err != nil {
 			return err
 		}
@@ -153,7 +164,7 @@ func (ql *queryList) writeJsonTo(w io.Writer) error {
 			return err
 		}
 	}
-	_, err = fmt.Fprint(w, "]")
+	_, err = fmt.Fprint(w, "\n]")
 	return err
 }
 
