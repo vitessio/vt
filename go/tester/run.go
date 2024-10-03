@@ -17,7 +17,7 @@ limitations under the License.
 package tester
 
 import (
-	"fmt"
+	"github.com/fatih/color"
 	"io"
 	"net/http"
 	"os"
@@ -129,7 +129,7 @@ func exitIf(err error, message string) {
 	if err == nil {
 		return
 	}
-	fmt.Println(message)
-	fmt.Println(err.Error())
+	c := color.New(color.FgRed)
+	_, _ = c.Fprintf(os.Stderr, "%s: %s\n", message, err.Error())
 	os.Exit(1)
 }
