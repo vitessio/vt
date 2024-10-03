@@ -99,9 +99,7 @@ func NewTester(
 	}
 
 	mcmp, err := utils.NewMySQLCompare(t.reporter, t.vtParams, t.mysqlParams)
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIf(err, "creating MySQLCompare")
 	t.curr = mcmp
 	t.qr = factory.NewQueryRunner(reporter, t.handleCreateTable, mcmp)
 
@@ -111,17 +109,13 @@ func NewTester(
 func (t *Tester) preProcess() {
 	if t.olap {
 		_, err := t.curr.VtConn.ExecuteFetch("set workload = 'olap'", 0, false)
-		if err != nil {
-			panic(err)
-		}
+		exitIf(err, "setting workload to olap by executing query")
 	}
 }
 
 func (t *Tester) postProcess() {
 	r, err := t.curr.MySQLConn.ExecuteFetch("show tables", 1000, true)
-	if err != nil {
-		panic(err)
-	}
+	exitIf(err, "running show tables")
 	for _, row := range r.Rows {
 		t.curr.Exec(fmt.Sprintf("drop table %s", row[0].ToString()))
 	}
@@ -348,19 +342,13 @@ func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) func() {
 	}
 
 	ksJson, err := json.Marshal(ks)
-	if err != nil {
-		panic(err)
-	}
+	exitIf(err, "marshalling keyspace schema")
 
 	err = t.clusterInstance.VtctldClientProcess.ApplyVSchema(t.ksNames[0], string(ksJson))
-	if err != nil {
-		panic(err)
-	}
+	exitIf(err, "applying vschema")
 
 	return func() {
 		err := utils.WaitForAuthoritative(t.reporter, t.ksNames[0], create.Table.Name.String(), t.clusterInstance.VtgateProcess.ReadVSchema)
-		if err != nil {
-			panic(err)
-		}
+		exitIf(err, "waiting for authoritative schema after auto-vschema update ")
 	}
 }

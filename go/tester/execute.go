@@ -81,43 +81,45 @@ func SetupCluster(
 ) (clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, ksNames []string, close func()) {
 	clusterInstance = cluster.NewCluster(defaultCellName, "localhost")
 
+	errCheck := func(err error) {
+		if err == nil {
+			return
+		}
+		clusterInstance.Teardown()
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	// Start topo server
 	err := clusterInstance.StartTopo()
-	if err != nil {
-		clusterInstance.Teardown()
-		panic(err)
-	}
+	errCheck(err)
 
 	keyspaces := getKeyspaces(vschemaFile, vtexplainVschemaFile, defaultKeyspaceName, sharded)
 	for _, keyspace := range keyspaces {
 		ksNames = append(ksNames, keyspace.Name)
 		vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
 		if !ok {
-			panic(fmt.Sprintf("keyspace '%s' not found in vschema", keyspace.Name))
+			errCheck(fmt.Errorf("keyspace '%s' not found in vschema", keyspace.Name))
 		}
 
 		if vschemaKs.Keyspace.Sharded {
 			fmt.Printf("starting sharded keyspace: '%s'\n", keyspace.Name)
 			err = clusterInstance.StartKeyspace(*keyspace, []string{"-80", "80-"}, 0, false)
-			if err != nil {
-				clusterInstance.Teardown()
-				panic(err.Error())
-			}
+			errCheck(err)
 		} else {
 			fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)
 			err = clusterInstance.StartUnshardedKeyspace(*keyspace, 0, false)
-			if err != nil {
-				clusterInstance.Teardown()
-				panic(err.Error())
-			}
+			errCheck(err)
 		}
 	}
 
 	// Start vtgate
 	err = clusterInstance.StartVtgate()
-	if err != nil {
-		clusterInstance.Teardown()
-		panic(err)
+	errCheck(err)
+
+	if len(ksNames) == 0 {
+		fmt.Println("no keyspaces found in vschema")
+		os.Exit(1)
 	}
 
 	vtParams = clusterInstance.GetVTParams(ksNames[0])
@@ -138,20 +140,19 @@ func SetupCluster(
 	for i, keyspace := range keyspaces {
 		if i > 0 {
 			_, err = conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", keyspace.Name), 0, false)
-			if err != nil {
-				panic(err.Error())
-			}
+			errCheck(err)
 			break
 		}
 
 		mysqlParams, closer, err = utils.NewMySQL(clusterInstance, keyspace.Name, "")
 		if err != nil {
 			clusterInstance.Teardown()
-			panic(err)
+			errCheck(err)
 		}
 		conn, err = mysql.Connect(context.Background(), &mysqlParams)
 		if err != nil {
-			panic(err.Error())
+			clusterInstance.Teardown()
+			errCheck(err)
 		}
 	}
 
@@ -190,9 +191,7 @@ func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharde
 		vschema = defaultVschema(keyspaceName)
 		vschema.Keyspaces[keyspaceName].Keyspace.Sharded = sharded
 		ksSchema, err := json.Marshal(vschema.Keyspaces[keyspaceName])
-		if err != nil {
-			panic(err.Error())
-		}
+		exitIf(err, "marshalling vschema")
 		ksRaw.Keyspaces[keyspaceName] = ksSchema
 	}
 
@@ -202,9 +201,7 @@ func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharde
 		valueRaw, ok := value.([]uint8)
 		if !ok {
 			valueRaw, err = json.Marshal(value)
-			if err != nil {
-				panic(err.Error())
-			}
+			exitIf(err, "marshalling keyspace schema")
 		}
 		ksSchema = string(valueRaw)
 		keyspaces = append(keyspaces, &cluster.Keyspace{
@@ -216,22 +213,15 @@ func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharde
 }
 
 func readVschema(file string, vtexplain bool) RawKeyspaceVindex {
-	rawVschema, srvVschema, err := getSrvVschema(file, vtexplain)
-	if err != nil {
-		panic(err.Error())
-	}
+	rawVschema, srvVschema := getSrvVschema(file, vtexplain)
 	ksRaw, err := loadVschema(srvVschema, rawVschema)
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIf(err, "loading vschema")
 	return ksRaw
 }
 
-func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema, error) {
+func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema) {
 	vschemaStr, err := os.ReadFile(file)
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIf(err, "reading vschema file")
 
 	if wrap {
 		vschemaStr = []byte(fmt.Sprintf(`{"keyspaces": %s}`, vschemaStr))
@@ -239,15 +229,13 @@ func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema, error
 
 	var srvVSchema vschemapb.SrvVSchema
 	err = json.Unmarshal(vschemaStr, &srvVSchema)
-	if err != nil {
-		return nil, nil, err
-	}
+	exitIf(err, "unmarshalling vschema")
 
 	if len(srvVSchema.Keyspaces) == 0 {
-		return nil, nil, fmt.Errorf("no keyspaces found")
+		exitIf(fmt.Errorf("no keyspaces found"), "loading vschema")
 	}
 
-	return vschemaStr, &srvVSchema, nil
+	return vschemaStr, &srvVSchema
 }
 
 func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rkv RawKeyspaceVindex, err error) {

@@ -54,14 +54,10 @@ func (xml *XMLTestSuite) CloseReportForFile() {
 func (xml *XMLTestSuite) Close() string {
 	fileName := "report.xml"
 	file, err := os.Create(fileName)
-	if err != nil {
-		panic(err)
-	}
+	exitIf(err, "creating report.xml file")
 	defer file.Close()
 	err = xml.ts.WriteXML(file)
-	if err != nil {
-		panic(err)
-	}
+	exitIf(err, "writing report.xml file")
 	return fileName
 }
 
