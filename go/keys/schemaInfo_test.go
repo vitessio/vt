@@ -17,8 +17,9 @@ limitations under the License.
 package keys
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 	"vitess.io/vitess/go/slice"
 	"vitess.io/vitess/go/test/utils"
 	"vitess.io/vitess/go/vt/sqlparser"

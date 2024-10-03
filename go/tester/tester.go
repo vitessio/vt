@@ -19,9 +19,6 @@ package tester
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vitessio/vitess-tester/go/data"
-	"github.com/vitessio/vitess-tester/go/typ"
-
 	"io"
 	"net/http"
 	"os"
@@ -36,6 +33,9 @@ import (
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
+
+	"github.com/vitessio/vitess-tester/go/data"
+	"github.com/vitessio/vitess-tester/go/typ"
 )
 
 type (

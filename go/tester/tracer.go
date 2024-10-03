@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/vitessio/vitess-tester/go/data"
 	"os"
 
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vterrors"
+
+	"github.com/vitessio/vitess-tester/go/data"
 )
 
 var _ QueryRunner = (*Tracer)(nil)

@@ -19,12 +19,14 @@ package data
 import (
 	"bytes"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"github.com/vitessio/vitess-tester/go/typ"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/vitessio/vitess-tester/go/typ"
 )
 
 type (

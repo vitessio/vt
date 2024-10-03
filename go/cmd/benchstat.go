@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+
 	vtbenchstat "github.com/vitessio/vitess-tester/go/benchstat"
 )
 

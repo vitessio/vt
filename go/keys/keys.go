@@ -19,17 +19,19 @@ package keys
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vitessio/vitess-tester/go/data"
-	"github.com/vitessio/vitess-tester/go/typ"
 	"io"
 	"maps"
 	"os"
 	"slices"
 	"sort"
+
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/plancontext"
 	"vitess.io/vitess/go/vt/vtgate/semantics"
+
+	"github.com/vitessio/vitess-tester/go/data"
+	"github.com/vitessio/vitess-tester/go/typ"
 )
 
 func Run(fileName string) error {
@@ -37,7 +39,7 @@ func Run(fileName string) error {
 		tables: make(map[string]columns),
 	}
 	ql := &queryList{
-		queries: make(map[string]*keysResult),
+		queries: make(map[string]*QueryAnalysisResult),
 	}
 	queries, err := data.LoadQueries(fileName)
 	if err != nil {
@@ -89,7 +91,7 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 }
 
 type queryList struct {
-	queries map[string]*keysResult
+	queries map[string]*QueryAnalysisResult
 }
 
 func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparser.Statement, q data.Query) {
@@ -101,13 +103,22 @@ func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparse
 		return
 	}
 
+	var tableNames []string
+	for _, t := range ctx.SemTable.Tables {
+		rtbl, ok := t.(*semantics.RealTable)
+		if !ok {
+			continue
+		}
+		tableNames = append(tableNames, rtbl.Table.Name.String())
+	}
+
 	result := operators.GetVExplainKeys(ctx, ast)
-	ql.queries[structure] = &keysResult{
+	ql.queries[structure] = &QueryAnalysisResult{
 		QueryStructure:  structure,
 		StatementType:   result.StatementType,
 		UsageCount:      1,
 		LineNumbers:     []int{q.Line},
-		TableName:       result.TableName,
+		TableName:       tableNames,
 		GroupingColumns: result.GroupingColumns,
 		JoinColumns:     result.JoinColumns,
 		FilterColumns:   result.FilterColumns,
@@ -146,11 +157,14 @@ func (ql *queryList) writeJsonTo(w io.Writer) error {
 	return err
 }
 
-type keysResult struct {
+// QueryAnalysisResult represents the result of analyzing a query in a query log. It contains the query structure, the number of
+// times the query was used, the line numbers where the query was used, the table name, grouping columns, join columns,
+// filter columns, and the statement type.
+type QueryAnalysisResult struct {
 	QueryStructure  string   `json:"queryStructure"`
 	UsageCount      int      `json:"usageCount"`
 	LineNumbers     []int    `json:"lineNumbers"`
-	TableName       []string `json:"tables,omitempty"`
+	TableName       []string `json:"tableName,omitempty"`
 	GroupingColumns []string `json:"groupingColumns,omitempty"`
 	JoinColumns     []string `json:"joinColumns,omitempty"`
 	FilterColumns   []string `json:"filterColumns,omitempty"`

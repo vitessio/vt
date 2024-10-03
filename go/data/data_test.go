@@ -15,9 +15,11 @@ package data
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/vitessio/vitess-tester/go/typ"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/vitessio/vitess-tester/go/typ"
 )
 
 func TestParseQueries(t *testing.T) {
