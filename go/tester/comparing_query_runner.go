@@ -18,8 +18,6 @@ package tester
 
 import (
 	"fmt"
-
-	"github.com/pingcap/errors"
 	log "github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
@@ -66,7 +64,7 @@ func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, as
 	}
 
 	if err := nqr.executeStmt(query.Query, ast, expectedErrs); err != nil {
-		return errors.Trace(errors.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err))
+		return fmt.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err)
 	}
 	// clear expected errors after we execute
 	expectedErrs = false

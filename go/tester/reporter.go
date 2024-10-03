@@ -118,9 +118,7 @@ func (e *FileReporter) EndTestCase() {
 	}
 	if e.errorFile != nil {
 		err := e.errorFile.Close()
-		if err != nil {
-			panic("failed to close error file\n" + err.Error())
-		}
+		exitIf(err, "closing error file")
 		e.errorFile = nil
 	}
 }
@@ -136,9 +134,7 @@ func (e *FileReporter) AddFailure(err error) {
 	}
 
 	_, err = e.errorFile.WriteString(err.Error())
-	if err != nil {
-		panic("failed to write error file\n" + err.Error())
-	}
+	exitIf(err, "writing to error file")
 
 	e.createVSchemaDump()
 }
@@ -148,26 +144,18 @@ func (e *FileReporter) AddInfo(info string) {
 		e.errorFile = e.createErrorFileFor()
 	}
 	_, err := e.errorFile.WriteString(info + "\n")
-	if err != nil {
-		panic("failed to write info to error file\n" + err.Error())
-	}
+	exitIf(err, "failed to write info to error file")
 }
 
 func (e *FileReporter) createErrorFileFor() *os.File {
 	qc := fmt.Sprintf("%d", e.currentQueryLineNum)
 	err := os.MkdirAll(e.errorDir(), PERM)
-	if err != nil {
-		panic("failed to create error directory\n" + err.Error())
-	}
+	exitIf(err, "creating error directory")
 	errorPath := path.Join(e.errorDir(), qc)
 	file, err := os.Create(errorPath)
-	if err != nil {
-		panic("failed to create error file\n" + err.Error())
-	}
+	exitIf(err, "creating error file")
 	_, err = file.WriteString(fmt.Sprintf("Error log for query on line %d:\n%s\n\n", e.currentQueryLineNum, e.currentQuery))
-	if err != nil {
-		panic("failed to write to error file\n" + err.Error())
-	}
+	exitIf(err, "writing to error file")
 
 	return file
 }
@@ -175,14 +163,10 @@ func (e *FileReporter) createErrorFileFor() *os.File {
 func (e *FileReporter) createVSchemaDump() {
 	errorDir := e.errorDir()
 	err := os.MkdirAll(errorDir, PERM)
-	if err != nil {
-		panic("failed to create vschema directory\n" + err.Error())
-	}
+	exitIf(err, "creating error directory")
 
 	err = os.WriteFile(path.Join(errorDir, "vschema.json"), e.getVschema(), PERM)
-	if err != nil {
-		panic("failed to write vschema\n" + err.Error())
-	}
+	exitIf(err, "writing vschema")
 }
 
 func (e *FileReporter) errorDir() string {

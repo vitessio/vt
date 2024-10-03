@@ -45,13 +45,9 @@ func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable Crea
 
 func (t *TracerFactory) Close() {
 	_, err := t.traceFile.Write([]byte("]"))
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIf(err, "failed to write closing bracket")
 	err = t.traceFile.Close()
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIf(err, "failed to close trace file")
 }
 
 func newTracer(traceFile *os.File,

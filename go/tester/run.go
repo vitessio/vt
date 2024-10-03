@@ -41,9 +41,7 @@ type Config struct {
 func Run(cfg Config) {
 	err := CheckEnvironment()
 	if err != nil {
-		fmt.Println("Fatal error:")
-		fmt.Println(err.Error())
-		os.Exit(1)
+		exitIf(err, "reading environment variables")
 	}
 
 	a := cfg.VschemaFile != ""
@@ -76,9 +74,7 @@ func Run(cfg Config) {
 
 	// remove errors folder if exists
 	err = os.RemoveAll("errors")
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIf(err, "removing errors folder")
 
 	var reporterSuite Suite
 	if cfg.XUnit {
@@ -103,13 +99,10 @@ func getQueryRunnerFactory(traceFile string) QueryRunnerFactory {
 
 	var err error
 	writer, err := os.Create(traceFile)
-	if err != nil {
-		panic(err)
-	}
+	exitIf(err, "creating trace file")
+
 	_, err = writer.Write([]byte("["))
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIf(err, "writing to trace file")
 	return NewTracerFactory(writer, inner)
 }
 
@@ -130,4 +123,13 @@ func getVschema(clusterInstance *cluster.LocalProcessCluster) func() []byte {
 
 		return res
 	}
+}
+
+func exitIf(err error, message string) {
+	if err == nil {
+		return
+	}
+	fmt.Println(message)
+	fmt.Println(err.Error())
+	os.Exit(1)
 }
