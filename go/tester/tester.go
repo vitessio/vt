@@ -26,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pingcap/errors"
 	log "github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
@@ -198,7 +197,7 @@ func (t *Tester) Run() error {
 		case typ.RemoveFile:
 			err = os.Remove(strings.TrimSpace(q.Query))
 			if err != nil {
-				return errors.Annotate(err, "failed to remove file")
+				return fmt.Errorf("failed to remove file: %w", err)
 			}
 		default:
 			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))

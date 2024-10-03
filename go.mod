@@ -3,7 +3,6 @@ module github.com/vitessio/vitess-tester
 go 1.23.1
 
 require (
-	github.com/pingcap/errors v0.11.5-0.20221009092201-b66cddb77c32
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 )
