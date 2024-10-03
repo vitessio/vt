@@ -103,7 +103,11 @@ func NewTester(
 		panic(err.Error())
 	}
 	t.curr = mcmp
-	t.qr = factory.NewQueryRunner(reporter, t.handleCreateTable, mcmp)
+	createTableHandler := t.handleCreateTable
+	if !t.autoVSchema() {
+		createTableHandler = func(*sqlparser.CreateTable) func() { return func() {} }
+	}
+	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp)
 
 	return t
 }
