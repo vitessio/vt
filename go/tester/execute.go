@@ -251,14 +251,13 @@ func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema, error
 }
 
 func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rkv RawKeyspaceVindex, err error) {
-	vschema := *(vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser()))
+	vschema = *(vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser()))
 	if len(vschema.Keyspaces) == 0 {
 		err = fmt.Errorf("no keyspace defined in vschema")
 		return
 	}
 
-	var rk RawKeyspaceVindex
-	err = json.Unmarshal(rawVschema, &rk)
+	err = json.Unmarshal(rawVschema, &rkv)
 	return
 }
 
