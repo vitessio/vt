@@ -1,6 +1,6 @@
 [
   {
-    "queryStructure": "INSERT INTO `region`(`R_REGIONKEY`, `R_NAME`, `R_COMMENT`) VALUES (1, 'ASIA', 'Eastern Asia'), (2, 'MIDDLE EAST', 'Rich cultural heritage')",
+    "queryStructure": "INSERT INTO `region`(`R_REGIONKEY`, `R_NAME`, `R_COMMENT`) VALUES (:1 /* INT64 */, :2 /* VARCHAR */, :3 /* VARCHAR */), (:4 /* INT64 */, :5 /* VARCHAR */, :6 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       80
@@ -11,7 +11,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "INSERT INTO `nation`(`N_NATIONKEY`, `N_NAME`, `N_REGIONKEY`, `N_COMMENT`) VALUES (1, 'China', 1, 'Large population'), (2, 'India', 1, 'Large variety of cultures'), (3, 'Nation A', 2, 'Historic sites'), (4, 'Nation B', 2, 'Beautiful landscapes')",
+    "queryStructure": "INSERT INTO `nation`(`N_NATIONKEY`, `N_NAME`, `N_REGIONKEY`, `N_COMMENT`) VALUES (:1 /* INT64 */, :2 /* VARCHAR */, :3 /* INT64 */, :4 /* VARCHAR */), (:5 /* INT64 */, :6 /* VARCHAR */, :7 /* INT64 */, :8 /* VARCHAR */), (:9 /* INT64 */, :10 /* VARCHAR */, :11 /* INT64 */, :12 /* VARCHAR */), (:13 /* INT64 */, :14 /* VARCHAR */, :15 /* INT64 */, :16 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       84
@@ -22,7 +22,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "INSERT INTO `supplier`(`S_SUPPKEY`, `S_NAME`, `S_ADDRESS`, `S_NATIONKEY`, `S_PHONE`, `S_ACCTBAL`, `S_COMMENT`) VALUES (1, 'Supplier A', '123 Square', 1, '86-123-4567', 5000.00, 'High quality steel'), (2, 'Supplier B', '456 Ganges St', 2, '91-789-4561', 5500.00, 'Efficient production'), (3, 'Supplier 1', 'Supplier Address 1', 3, '91-789-4562', 3000.00, 'Supplier Comment 1'), (4, 'Supplier 2', 'Supplier Address 2', 2, '91-789-4563', 4000.00, 'Supplier Comment 2')",
+    "queryStructure": "INSERT INTO `supplier`(`S_SUPPKEY`, `S_NAME`, `S_ADDRESS`, `S_NATIONKEY`, `S_PHONE`, `S_ACCTBAL`, `S_COMMENT`) VALUES (:1 /* INT64 */, :2 /* VARCHAR */, :3 /* VARCHAR */, :4 /* INT64 */, :5 /* VARCHAR */, :6 /* DECIMAL(6,2) */, :7 /* VARCHAR */), (:8 /* INT64 */, :9 /* VARCHAR */, :10 /* VARCHAR */, :11 /* INT64 */, :12 /* VARCHAR */, :13 /* DECIMAL(6,2) */, :14 /* VARCHAR */), (:15 /* INT64 */, :16 /* VARCHAR */, :17 /* VARCHAR */, :18 /* INT64 */, :19 /* VARCHAR */, :20 /* DECIMAL(6,2) */, :21 /* VARCHAR */), (:22 /* INT64 */, :23 /* VARCHAR */, :24 /* VARCHAR */, :25 /* INT64 */, :26 /* VARCHAR */, :27 /* DECIMAL(6,2) */, :28 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       90
@@ -33,7 +33,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "INSERT INTO `part`(`P_PARTKEY`, `P_NAME`, `P_MFGR`, `P_BRAND`, `P_TYPE`, `P_SIZE`, `P_CONTAINER`, `P_RETAILPRICE`, `P_COMMENT`) VALUES (100, 'Part 100', 'MFGR A', 'Brand X', 'BOLT STEEL', 30, 'SM BOX', 45.00, 'High strength'), (101, 'Part 101', 'MFGR B', 'Brand Y', 'NUT STEEL', 30, 'LG BOX', 30.00, 'Rust resistant')",
+    "queryStructure": "INSERT INTO `part`(`P_PARTKEY`, `P_NAME`, `P_MFGR`, `P_BRAND`, `P_TYPE`, `P_SIZE`, `P_CONTAINER`, `P_RETAILPRICE`, `P_COMMENT`) VALUES (:1 /* INT64 */, :2 /* VARCHAR */, :3 /* VARCHAR */, :4 /* VARCHAR */, :5 /* VARCHAR */, :6 /* INT64 */, :7 /* VARCHAR */, :8 /* DECIMAL(4,2) */, :9 /* VARCHAR */), (:10 /* INT64 */, :11 /* VARCHAR */, :12 /* VARCHAR */, :13 /* VARCHAR */, :14 /* VARCHAR */, :15 /* INT64 */, :16 /* VARCHAR */, :17 /* DECIMAL(4,2) */, :18 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       96
@@ -44,7 +44,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "INSERT INTO `partsupp`(`PS_PARTKEY`, `PS_SUPPKEY`, `PS_AVAILQTY`, `PS_SUPPLYCOST`, `PS_COMMENT`) VALUES (100, 1, 500, 10.00, 'Deliveries on time'), (101, 2, 300, 9.00, 'Back orders possible'), (100, 2, 600, 8.50, 'Bulk discounts available')",
+    "queryStructure": "INSERT INTO `partsupp`(`PS_PARTKEY`, `PS_SUPPKEY`, `PS_AVAILQTY`, `PS_SUPPLYCOST`, `PS_COMMENT`) VALUES (:1 /* INT64 */, :2 /* INT64 */, :3 /* INT64 */, :4 /* DECIMAL(4,2) */, :5 /* VARCHAR */), (:6 /* INT64 */, :7 /* INT64 */, :8 /* INT64 */, :9 /* DECIMAL(3,2) */, :10 /* VARCHAR */), (:11 /* INT64 */, :12 /* INT64 */, :13 /* INT64 */, :14 /* DECIMAL(3,2) */, :15 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       100
@@ -55,7 +55,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "INSERT INTO `customer`(`C_CUSTKEY`, `C_NAME`, `C_ADDRESS`, `C_NATIONKEY`, `C_PHONE`, `C_ACCTBAL`, `C_MKTSEGMENT`, `C_COMMENT`) VALUES (1, 'Customer A', '1234 Drive Lane', 1, '123-456-7890', 1000.00, 'AUTOMOBILE', 'Frequent orders'), (2, 'Customer B', '5678 Park Ave', 2, '234-567-8901', 2000.00, 'AUTOMOBILE', 'Large orders'), (3, 'Customer 1', 'Address 1', 1, 'Phone 1', 1000.00, 'Segment 1', 'Comment 1'), (4, 'Customer 2', 'Address 2', 2, 'Phone 2', 2000.00, 'Segment 2', 'Comment 2')",
+    "queryStructure": "INSERT INTO `customer`(`C_CUSTKEY`, `C_NAME`, `C_ADDRESS`, `C_NATIONKEY`, `C_PHONE`, `C_ACCTBAL`, `C_MKTSEGMENT`, `C_COMMENT`) VALUES (:1 /* INT64 */, :2 /* VARCHAR */, :3 /* VARCHAR */, :4 /* INT64 */, :5 /* VARCHAR */, :6 /* DECIMAL(6,2) */, :7 /* VARCHAR */, :8 /* VARCHAR */), (:9 /* INT64 */, :10 /* VARCHAR */, :11 /* VARCHAR */, :12 /* INT64 */, :13 /* VARCHAR */, :14 /* DECIMAL(6,2) */, :15 /* VARCHAR */, :16 /* VARCHAR */), (:17 /* INT64 */, :18 /* VARCHAR */, :19 /* VARCHAR */, :20 /* INT64 */, :21 /* VARCHAR */, :22 /* DECIMAL(6,2) */, :23 /* VARCHAR */, :24 /* VARCHAR */), (:25 /* INT64 */, :26 /* VARCHAR */, :27 /* VARCHAR */, :28 /* INT64 */, :29 /* VARCHAR */, :30 /* DECIMAL(6,2) */, :31 /* VARCHAR */, :32 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       105
@@ -66,7 +66,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "INSERT INTO `orders`(`O_ORDERKEY`, `O_CUSTKEY`, `O_ORDERSTATUS`, `O_TOTALPRICE`, `O_ORDERDATE`, `O_ORDERPRIORITY`, `O_CLERK`, `O_SHIPPRIORITY`, `O_COMMENT`) VALUES (100, 1, 'O', 15000.00, '1995-03-10', '1-URGENT', 'Clerk#0001', 1, 'N/A'), (101, 2, 'O', 25000.00, '1995-03-05', '2-HIGH', 'Clerk#0002', 2, 'N/A'), (1, 3, 'O', 10000.00, '1994-01-10', 'Priority 1', 'Clerk 1', 1, 'Order Comment 1'), (2, 4, 'O', 20000.00, '1994-06-15', 'Priority 2', 'Clerk 2', 1, 'Order Comment 2')",
+    "queryStructure": "INSERT INTO `orders`(`O_ORDERKEY`, `O_CUSTKEY`, `O_ORDERSTATUS`, `O_TOTALPRICE`, `O_ORDERDATE`, `O_ORDERPRIORITY`, `O_CLERK`, `O_SHIPPRIORITY`, `O_COMMENT`) VALUES (:1 /* INT64 */, :2 /* INT64 */, :3 /* VARCHAR */, :4 /* DECIMAL(7,2) */, :5 /* VARCHAR */, :6 /* VARCHAR */, :7 /* VARCHAR */, :8 /* INT64 */, :9 /* VARCHAR */), (:10 /* INT64 */, :11 /* INT64 */, :12 /* VARCHAR */, :13 /* DECIMAL(7,2) */, :14 /* VARCHAR */, :15 /* VARCHAR */, :16 /* VARCHAR */, :17 /* INT64 */, :18 /* VARCHAR */), (:19 /* INT64 */, :20 /* INT64 */, :21 /* VARCHAR */, :22 /* DECIMAL(7,2) */, :23 /* VARCHAR */, :24 /* VARCHAR */, :25 /* VARCHAR */, :26 /* INT64 */, :27 /* VARCHAR */), (:28 /* INT64 */, :29 /* INT64 */, :30 /* VARCHAR */, :31 /* DECIMAL(7,2) */, :32 /* VARCHAR */, :33 /* VARCHAR */, :34 /* VARCHAR */, :35 /* INT64 */, :36 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       111
@@ -77,7 +77,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "INSERT INTO `lineitem`(`L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT`) VALUES (100, 200, 300, 1, 10, 5000.00, 0.05, 0.10, 'N', 'O', '1995-03-15', '1995-03-14', '1995-03-16', 'DELIVER IN PERSON', 'TRUCK', 'Urgent delivery'), (100, 201, 301, 2, 20, 10000.00, 0.10, 0.10, 'R', 'F', '1995-03-17', '1995-03-15', '1995-03-18', 'NONE', 'MAIL', 'Handle with care'), (101, 202, 302, 1, 30, 15000.00, 0.00, 0.10, 'A', 'F', '1995-03-20', '1995-03-18', '1995-03-21', 'TAKE BACK RETURN', 'SHIP', 'Standard delivery'), (101, 203, 303, 2, 40, 10000.00, 0.20, 0.10, 'N', 'O', '1995-03-22', '1995-03-20', '1995-03-23', 'DELIVER IN PERSON', 'RAIL', 'Expedite'), (1, 101, 1, 1, 5, 5000.00, 0.1, 0.05, 'N', 'O', '1994-01-12', '1994-01-11', '1994-01-13', 'Deliver in person', 'TRUCK', 'Lineitem Comment 1'), (2, 102, 2, 1, 3, 15000.00, 0.2, 0.05, 'R', 'F', '1994-06-17', '1994-06-15', '1994-06-18', 'Leave at front door', 'AIR', 'Lineitem Comment 2'), (11, 100, 2, 1, 30, 10000.00, 0.05, 0.07, 'A', 'F', '1998-07-21', '1998-07-22', '1998-07-23', 'DELIVER IN PERSON', 'TRUCK', 'N/A'), (12, 101, 3, 1, 50, 15000.00, 0.10, 0.08, 'N', 'O', '1998-08-10', '1998-08-11', '1998-08-12', 'NONE', 'AIR', 'N/A'), (13, 102, 4, 1, 70, 21000.00, 0.02, 0.04, 'R', 'F', '1998-06-30', '1998-07-01', '1998-07-02', 'TAKE BACK RETURN', 'MAIL', 'N/A'), (14, 103, 5, 1, 90, 30000.00, 0.15, 0.10, 'A', 'O', '1998-05-15', '1998-05-16', '1998-05-17', 'DELIVER IN PERSON', 'RAIL', 'N/A'), (15, 104, 2, 1, 45, 45000.00, 0.20, 0.15, 'N', 'F', '1998-07-15', '1998-07-16', '1998-07-17', 'NONE', 'SHIP', 'N/A')",
+    "queryStructure": "INSERT INTO `lineitem`(`L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT`) VALUES (:1 /* INT64 */, :2 /* INT64 */, :3 /* INT64 */, :4 /* INT64 */, :5 /* INT64 */, :6 /* DECIMAL(6,2) */, :7 /* DECIMAL(3,2) */, :8 /* DECIMAL(3,2) */, :9 /* VARCHAR */, :10 /* VARCHAR */, :11 /* VARCHAR */, :12 /* VARCHAR */, :13 /* VARCHAR */, :14 /* VARCHAR */, :15 /* VARCHAR */, :16 /* VARCHAR */), (:17 /* INT64 */, :18 /* INT64 */, :19 /* INT64 */, :20 /* INT64 */, :21 /* INT64 */, :22 /* DECIMAL(7,2) */, :23 /* DECIMAL(3,2) */, :24 /* DECIMAL(3,2) */, :25 /* VARCHAR */, :26 /* VARCHAR */, :27 /* VARCHAR */, :28 /* VARCHAR */, :29 /* VARCHAR */, :30 /* VARCHAR */, :31 /* VARCHAR */, :32 /* VARCHAR */), (:33 /* INT64 */, :34 /* INT64 */, :35 /* INT64 */, :36 /* INT64 */, :37 /* INT64 */, :38 /* DECIMAL(7,2) */, :39 /* DECIMAL(3,2) */, :40 /* DECIMAL(3,2) */, :41 /* VARCHAR */, :42 /* VARCHAR */, :43 /* VARCHAR */, :44 /* VARCHAR */, :45 /* VARCHAR */, :46 /* VARCHAR */, :47 /* VARCHAR */, :48 /* VARCHAR */), (:49 /* INT64 */, :50 /* INT64 */, :51 /* INT64 */, :52 /* INT64 */, :53 /* INT64 */, :54 /* DECIMAL(7,2) */, :55 /* DECIMAL(3,2) */, :56 /* DECIMAL(3,2) */, :57 /* VARCHAR */, :58 /* VARCHAR */, :59 /* VARCHAR */, :60 /* VARCHAR */, :61 /* VARCHAR */, :62 /* VARCHAR */, :63 /* VARCHAR */, :64 /* VARCHAR */), (:65 /* INT64 */, :66 /* INT64 */, :67 /* INT64 */, :68 /* INT64 */, :69 /* INT64 */, :70 /* DECIMAL(6,2) */, :71 /* DECIMAL(2,1) */, :72 /* DECIMAL(3,2) */, :73 /* VARCHAR */, :74 /* VARCHAR */, :75 /* VARCHAR */, :76 /* VARCHAR */, :77 /* VARCHAR */, :78 /* VARCHAR */, :79 /* VARCHAR */, :80 /* VARCHAR */), (:81 /* INT64 */, :82 /* INT64 */, :83 /* INT64 */, :84 /* INT64 */, :85 /* INT64 */, :86 /* DECIMAL(7,2) */, :87 /* DECIMAL(2,1) */, :88 /* DECIMAL(3,2) */, :89 /* VARCHAR */, :90 /* VARCHAR */, :91 /* VARCHAR */, :92 /* VARCHAR */, :93 /* VARCHAR */, :94 /* VARCHAR */, :95 /* VARCHAR */, :96 /* VARCHAR */), (:97 /* INT64 */, :98 /* INT64 */, :99 /* INT64 */, :100 /* INT64 */, :101 /* INT64 */, :102 /* DECIMAL(7,2) */, :103 /* DECIMAL(3,2) */, :104 /* DECIMAL(3,2) */, :105 /* VARCHAR */, :106 /* VARCHAR */, :107 /* VARCHAR */, :108 /* VARCHAR */, :109 /* VARCHAR */, :110 /* VARCHAR */, :111 /* VARCHAR */, :112 /* VARCHAR */), (:113 /* INT64 */, :114 /* INT64 */, :115 /* INT64 */, :116 /* INT64 */, :117 /* INT64 */, :118 /* DECIMAL(7,2) */, :119 /* DECIMAL(3,2) */, :120 /* DECIMAL(3,2) */, :121 /* VARCHAR */, :122 /* VARCHAR */, :123 /* VARCHAR */, :124 /* VARCHAR */, :125 /* VARCHAR */, :126 /* VARCHAR */, :127 /* VARCHAR */, :128 /* VARCHAR */), (:129 /* INT64 */, :130 /* INT64 */, :131 /* INT64 */, :132 /* INT64 */, :133 /* INT64 */, :134 /* DECIMAL(7,2) */, :135 /* DECIMAL(3,2) */, :136 /* DECIMAL(3,2) */, :137 /* VARCHAR */, :138 /* VARCHAR */, :139 /* VARCHAR */, :140 /* VARCHAR */, :141 /* VARCHAR */, :142 /* VARCHAR */, :143 /* VARCHAR */, :144 /* VARCHAR */), (:145 /* INT64 */, :146 /* INT64 */, :147 /* INT64 */, :148 /* INT64 */, :149 /* INT64 */, :150 /* DECIMAL(7,2) */, :151 /* DECIMAL(3,2) */, :152 /* DECIMAL(3,2) */, :153 /* VARCHAR */, :154 /* VARCHAR */, :155 /* VARCHAR */, :156 /* VARCHAR */, :157 /* VARCHAR */, :158 /* VARCHAR */, :159 /* VARCHAR */, :160 /* VARCHAR */), (:161 /* INT64 */, :162 /* INT64 */, :163 /* INT64 */, :164 /* INT64 */, :165 /* INT64 */, :166 /* DECIMAL(7,2) */, :167 /* DECIMAL(3,2) */, :168 /* DECIMAL(3,2) */, :169 /* VARCHAR */, :170 /* VARCHAR */, :171 /* VARCHAR */, :172 /* VARCHAR */, :173 /* VARCHAR */, :174 /* VARCHAR */, :175 /* VARCHAR */, :176 /* VARCHAR */)",
     "usageCount": 1,
     "lineNumbers": [
       117
@@ -88,7 +88,7 @@
     "statementType": "INSERT"
   },
   {
-    "queryStructure": "SELECT `l_returnflag`, `l_linestatus`, sum(`l_quantity`) AS `sum_qty`, sum(`l_extendedprice`) AS `sum_base_price`, sum(`l_extendedprice` * (1 - `l_discount`)) AS `sum_disc_price`, sum(`l_extendedprice` * (1 - `l_discount`) * (1 + `l_tax`)) AS `sum_charge`, avg(`l_quantity`) AS `avg_qty`, avg(`l_extendedprice`) AS `avg_price`, avg(`l_discount`) AS `avg_disc`, count(*) AS `count_order` FROM `lineitem` WHERE `l_shipdate` \u003c= DATE_SUB('1998-12-01', INTERVAL 108 day) GROUP BY `l_returnflag`, `l_linestatus` ORDER BY `l_returnflag` ASC, `l_linestatus` ASC",
+    "queryStructure": "SELECT `l_returnflag`, `l_linestatus`, sum(`l_quantity`) AS `sum_qty`, sum(`l_extendedprice`) AS `sum_base_price`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `sum_disc_price`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`) * (:1 /* INT64 */ + `l_tax`)) AS `sum_charge`, avg(`l_quantity`) AS `avg_qty`, avg(`l_extendedprice`) AS `avg_price`, avg(`l_discount`) AS `avg_disc`, count(*) AS `count_order` FROM `lineitem` WHERE `l_shipdate` \u003c= DATE_SUB(:2 /* VARCHAR */, INTERVAL :3 /* INT64 */ day) GROUP BY `l_returnflag`, `l_linestatus` ORDER BY `l_returnflag` ASC, `l_linestatus` ASC",
     "usageCount": 1,
     "lineNumbers": [
       131
@@ -99,7 +99,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `l_orderkey`, sum(`l_extendedprice` * (1 - `l_discount`)) AS `revenue`, `o_orderdate`, `o_shippriority` FROM `customer`, `orders`, `lineitem` WHERE `c_mktsegment` = 'AUTOMOBILE' AND `c_custkey` = `o_custkey` AND `l_orderkey` = `o_orderkey` AND `o_orderdate` \u003c '1995-03-13' AND `l_shipdate` \u003e '1995-03-13' GROUP BY `l_orderkey`, `o_orderdate`, `o_shippriority` ORDER BY sum(`lineitem`.`l_extendedprice` * (1 - `lineitem`.`l_discount`)) DESC, `orders`.`o_orderdate` ASC LIMIT 10",
+    "queryStructure": "SELECT `l_orderkey`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `revenue`, `o_orderdate`, `o_shippriority` FROM `customer`, `orders`, `lineitem` WHERE `c_mktsegment` = :_c_mktsegment /* VARCHAR */ AND `c_custkey` = `o_custkey` AND `l_orderkey` = `o_orderkey` AND `o_orderdate` \u003c :_o_orderdate /* VARCHAR */ AND `l_shipdate` \u003e :_o_orderdate /* VARCHAR */ GROUP BY `l_orderkey`, `o_orderdate`, `o_shippriority` ORDER BY sum(`lineitem`.`l_extendedprice` * (:1 /* INT64 */ - `lineitem`.`l_discount`)) DESC, `orders`.`o_orderdate` ASC LIMIT :2 /* INT64 */",
     "usageCount": 1,
     "lineNumbers": [
       201
@@ -128,7 +128,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `o_orderpriority`, count(*) AS `order_count` FROM `orders` WHERE `o_orderdate` \u003e= '1995-01-01' AND `o_orderdate` \u003c DATE_ADD('1995-01-01', INTERVAL '3' month) AND EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` WHERE `l_orderkey` = `o_orderkey` AND `l_commitdate` \u003c `l_receiptdate`) GROUP BY `o_orderpriority` ORDER BY `orders`.`o_orderpriority` ASC",
+    "queryStructure": "SELECT `o_orderpriority`, count(*) AS `order_count` FROM `orders` WHERE `o_orderdate` \u003e= :_o_orderdate /* VARCHAR */ AND `o_orderdate` \u003c DATE_ADD(:_o_orderdate /* VARCHAR */, INTERVAL :1 /* VARCHAR */ month) AND EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` WHERE `l_orderkey` = `o_orderkey` AND `l_commitdate` \u003c `l_receiptdate`) GROUP BY `o_orderpriority` ORDER BY `orders`.`o_orderpriority` ASC",
     "usageCount": 1,
     "lineNumbers": [
       226
@@ -152,7 +152,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `n_name`, sum(`l_extendedprice` * (1 - `l_discount`)) AS `revenue` FROM `customer`, `orders`, `lineitem`, `supplier`, `nation`, `region` WHERE `c_custkey` = `o_custkey` AND `l_orderkey` = `o_orderkey` AND `l_suppkey` = `s_suppkey` AND `c_nationkey` = `s_nationkey` AND `s_nationkey` = `n_nationkey` AND `n_regionkey` = `r_regionkey` AND `r_name` = 'MIDDLE EAST' AND `o_orderdate` \u003e= '1994-01-01' AND `o_orderdate` \u003c DATE_ADD('1994-01-01', INTERVAL '1' year) GROUP BY `n_name` ORDER BY sum(`lineitem`.`l_extendedprice` * (1 - `lineitem`.`l_discount`)) DESC",
+    "queryStructure": "SELECT `n_name`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `revenue` FROM `customer`, `orders`, `lineitem`, `supplier`, `nation`, `region` WHERE `c_custkey` = `o_custkey` AND `l_orderkey` = `o_orderkey` AND `l_suppkey` = `s_suppkey` AND `c_nationkey` = `s_nationkey` AND `s_nationkey` = `n_nationkey` AND `n_regionkey` = `r_regionkey` AND `r_name` = :_r_name /* VARCHAR */ AND `o_orderdate` \u003e= :_o_orderdate /* VARCHAR */ AND `o_orderdate` \u003c DATE_ADD(:_o_orderdate /* VARCHAR */, INTERVAL :2 /* VARCHAR */ year) GROUP BY `n_name` ORDER BY sum(`lineitem`.`l_extendedprice` * (:1 /* INT64 */ - `lineitem`.`l_discount`)) DESC",
     "usageCount": 1,
     "lineNumbers": [
       249
@@ -188,7 +188,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT sum(`l_extendedprice` * `l_discount`) AS `revenue` FROM `lineitem` WHERE `l_shipdate` \u003e= '1994-01-01' AND `l_shipdate` \u003c DATE_ADD('1994-01-01', INTERVAL '1' year) AND `l_discount` BETWEEN 0.06 - 0.01 AND 0.06 + 0.01 AND `l_quantity` \u003c 24",
+    "queryStructure": "SELECT sum(`l_extendedprice` * `l_discount`) AS `revenue` FROM `lineitem` WHERE `l_shipdate` \u003e= :_l_shipdate /* VARCHAR */ AND `l_shipdate` \u003c DATE_ADD(:_l_shipdate /* VARCHAR */, INTERVAL :1 /* VARCHAR */ year) AND `l_discount` BETWEEN :2 /* DECIMAL(3,2) */ - :3 /* DECIMAL(3,2) */ AND :2 /* DECIMAL(3,2) */ + :3 /* DECIMAL(3,2) */ AND `l_quantity` \u003c :_l_quantity /* INT64 */",
     "usageCount": 1,
     "lineNumbers": [
       275
@@ -199,7 +199,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `supp_nation`, `cust_nation`, `l_year`, sum(`volume`) AS `revenue` FROM (SELECT `n1`.`n_name` AS `supp_nation`, `n2`.`n_name` AS `cust_nation`, EXTRACT(year FROM `l_shipdate`) AS `l_year`, `l_extendedprice` * (1 - `l_discount`) AS `volume` FROM `supplier`, `lineitem`, `orders`, `customer`, `nation` AS `n1`, `nation` AS `n2` WHERE `s_suppkey` = `l_suppkey` AND `o_orderkey` = `l_orderkey` AND `c_custkey` = `o_custkey` AND `s_nationkey` = `n1`.`n_nationkey` AND `c_nationkey` = `n2`.`n_nationkey` AND (`n1`.`n_name` = 'JAPAN' AND `n2`.`n_name` = 'INDIA' OR `n1`.`n_name` = 'INDIA' AND `n2`.`n_name` = 'JAPAN') AND `l_shipdate` BETWEEN '1995-01-01' AND '1996-12-31') AS `shipping` GROUP BY `supp_nation`, `cust_nation`, `l_year` ORDER BY `shipping`.`supp_nation` ASC, `shipping`.`cust_nation` ASC, `shipping`.`l_year` ASC",
+    "queryStructure": "SELECT `supp_nation`, `cust_nation`, `l_year`, sum(`volume`) AS `revenue` FROM (SELECT `n1`.`n_name` AS `supp_nation`, `n2`.`n_name` AS `cust_nation`, EXTRACT(year FROM `l_shipdate`) AS `l_year`, `l_extendedprice` * (1 - `l_discount`) AS `volume` FROM `supplier`, `lineitem`, `orders`, `customer`, `nation` AS `n1`, `nation` AS `n2` WHERE `s_suppkey` = `l_suppkey` AND `o_orderkey` = `l_orderkey` AND `c_custkey` = `o_custkey` AND `s_nationkey` = `n1`.`n_nationkey` AND `c_nationkey` = `n2`.`n_nationkey` AND (`n1`.`n_name` = :_n1_n_name /* VARCHAR */ AND `n2`.`n_name` = :_n2_n_name /* VARCHAR */ OR `n1`.`n_name` = :_n2_n_name /* VARCHAR */ AND `n2`.`n_name` = :_n1_n_name /* VARCHAR */) AND `l_shipdate` BETWEEN :1 /* VARCHAR */ AND :2 /* VARCHAR */) AS `shipping` GROUP BY `supp_nation`, `cust_nation`, `l_year` ORDER BY `shipping`.`supp_nation` ASC, `shipping`.`cust_nation` ASC, `shipping`.`l_year` ASC",
     "usageCount": 1,
     "lineNumbers": [
       286
@@ -226,7 +226,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `o_year`, sum(CASE WHEN `nation` = 'INDIA' THEN `volume` ELSE 0 END) / sum(`volume`) AS `mkt_share` FROM (SELECT EXTRACT(year FROM `o_orderdate`) AS `o_year`, `l_extendedprice` * (1 - `l_discount`) AS `volume`, `n2`.`n_name` AS `nation` FROM `part`, `supplier`, `lineitem`, `orders`, `customer`, `nation` AS `n1`, `nation` AS `n2`, `region` WHERE `p_partkey` = `l_partkey` AND `s_suppkey` = `l_suppkey` AND `l_orderkey` = `o_orderkey` AND `o_custkey` = `c_custkey` AND `c_nationkey` = `n1`.`n_nationkey` AND `n1`.`n_regionkey` = `r_regionkey` AND `r_name` = 'ASIA' AND `s_nationkey` = `n2`.`n_nationkey` AND `o_orderdate` BETWEEN '1995-01-01' AND '1996-12-31' AND `p_type` = 'SMALL PLATED COPPER') AS `all_nations` GROUP BY `o_year` ORDER BY `all_nations`.`o_year` ASC",
+    "queryStructure": "SELECT `o_year`, sum(CASE WHEN `nation` = :_nation /* VARCHAR */ THEN `volume` ELSE :3 /* INT64 */ END) / sum(`volume`) AS `mkt_share` FROM (SELECT EXTRACT(year FROM `o_orderdate`) AS `o_year`, `l_extendedprice` * (1 - `l_discount`) AS `volume`, `n2`.`n_name` AS `nation` FROM `part`, `supplier`, `lineitem`, `orders`, `customer`, `nation` AS `n1`, `nation` AS `n2`, `region` WHERE `p_partkey` = `l_partkey` AND `s_suppkey` = `l_suppkey` AND `l_orderkey` = `o_orderkey` AND `o_custkey` = `c_custkey` AND `c_nationkey` = `n1`.`n_nationkey` AND `n1`.`n_regionkey` = `r_regionkey` AND `r_name` = :_r_name /* VARCHAR */ AND `s_nationkey` = `n2`.`n_nationkey` AND `o_orderdate` BETWEEN :1 /* VARCHAR */ AND :2 /* VARCHAR */ AND `p_type` = :_p_type /* VARCHAR */) AS `all_nations` GROUP BY `o_year` ORDER BY `all_nations`.`o_year` ASC",
     "usageCount": 1,
     "lineNumbers": [
       327
@@ -263,7 +263,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `nation`, `o_year`, sum(`amount`) AS `sum_profit` FROM (SELECT `n_name` AS `nation`, EXTRACT(year FROM `o_orderdate`) AS `o_year`, `l_extendedprice` * (1 - `l_discount`) - `ps_supplycost` * `l_quantity` AS `amount` FROM `part`, `supplier`, `lineitem`, `partsupp`, `orders`, `nation` WHERE `s_suppkey` = `l_suppkey` AND `ps_suppkey` = `l_suppkey` AND `ps_partkey` = `l_partkey` AND `p_partkey` = `l_partkey` AND `o_orderkey` = `l_orderkey` AND `s_nationkey` = `n_nationkey` AND `p_name` LIKE '%dim%') AS `profit` GROUP BY `nation`, `o_year` ORDER BY `profit`.`nation` ASC, `profit`.`o_year` DESC",
+    "queryStructure": "SELECT `nation`, `o_year`, sum(`amount`) AS `sum_profit` FROM (SELECT `n_name` AS `nation`, EXTRACT(year FROM `o_orderdate`) AS `o_year`, `l_extendedprice` * (1 - `l_discount`) - `ps_supplycost` * `l_quantity` AS `amount` FROM `part`, `supplier`, `lineitem`, `partsupp`, `orders`, `nation` WHERE `s_suppkey` = `l_suppkey` AND `ps_suppkey` = `l_suppkey` AND `ps_partkey` = `l_partkey` AND `p_partkey` = `l_partkey` AND `o_orderkey` = `l_orderkey` AND `s_nationkey` = `n_nationkey` AND `p_name` LIKE :_p_name /* VARCHAR */) AS `profit` GROUP BY `nation`, `o_year` ORDER BY `profit`.`nation` ASC, `profit`.`o_year` DESC",
     "usageCount": 1,
     "lineNumbers": [
       366
@@ -294,7 +294,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `c_custkey`, `c_name`, sum(`l_extendedprice` * (1 - `l_discount`)) AS `revenue`, `c_acctbal`, `n_name`, `c_address`, `c_phone`, `c_comment` FROM `customer`, `orders`, `lineitem`, `nation` WHERE `c_custkey` = `o_custkey` AND `l_orderkey` = `o_orderkey` AND `o_orderdate` \u003e= '1993-08-01' AND `o_orderdate` \u003c DATE_ADD('1993-08-01', INTERVAL '3' month) AND `l_returnflag` = 'R' AND `c_nationkey` = `n_nationkey` GROUP BY `c_custkey`, `c_name`, `c_acctbal`, `c_phone`, `n_name`, `c_address`, `c_comment` ORDER BY sum(`lineitem`.`l_extendedprice` * (1 - `lineitem`.`l_discount`)) DESC LIMIT 20",
+    "queryStructure": "SELECT `c_custkey`, `c_name`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `revenue`, `c_acctbal`, `n_name`, `c_address`, `c_phone`, `c_comment` FROM `customer`, `orders`, `lineitem`, `nation` WHERE `c_custkey` = `o_custkey` AND `l_orderkey` = `o_orderkey` AND `o_orderdate` \u003e= :_o_orderdate /* VARCHAR */ AND `o_orderdate` \u003c DATE_ADD(:_o_orderdate /* VARCHAR */, INTERVAL :2 /* VARCHAR */ month) AND `l_returnflag` = :_l_returnflag /* VARCHAR */ AND `c_nationkey` = `n_nationkey` GROUP BY `c_custkey`, `c_name`, `c_acctbal`, `c_phone`, `n_name`, `c_address`, `c_comment` ORDER BY sum(`lineitem`.`l_extendedprice` * (:1 /* INT64 */ - `lineitem`.`l_discount`)) DESC LIMIT :3 /* INT64 */",
     "usageCount": 1,
     "lineNumbers": [
       400
@@ -329,7 +329,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `ps_partkey`, sum(`ps_supplycost` * `ps_availqty`) AS `value` FROM `partsupp`, `supplier`, `nation` WHERE `ps_suppkey` = `s_suppkey` AND `s_nationkey` = `n_nationkey` AND `n_name` = 'MOZAMBIQUE' GROUP BY `ps_partkey` HAVING sum(`ps_supplycost` * `ps_availqty`) \u003e (SELECT sum(`ps_supplycost` * `ps_availqty`) * 0.0001000000 FROM `partsupp`, `supplier`, `nation` WHERE `ps_suppkey` = `s_suppkey` AND `s_nationkey` = `n_nationkey` AND `n_name` = 'MOZAMBIQUE') ORDER BY sum(`partsupp`.`ps_supplycost` * `partsupp`.`ps_availqty`) DESC",
+    "queryStructure": "SELECT `ps_partkey`, sum(`ps_supplycost` * `ps_availqty`) AS `value` FROM `partsupp`, `supplier`, `nation` WHERE `ps_suppkey` = `s_suppkey` AND `s_nationkey` = `n_nationkey` AND `n_name` = :_n_name /* VARCHAR */ GROUP BY `ps_partkey` HAVING sum(`ps_supplycost` * `ps_availqty`) \u003e (SELECT sum(`ps_supplycost` * `ps_availqty`) * :1 /* DECIMAL(11,10) */ FROM `partsupp`, `supplier`, `nation` WHERE `ps_suppkey` = `s_suppkey` AND `s_nationkey` = `n_nationkey` AND `n_name` = :_n_name /* VARCHAR */) ORDER BY sum(`partsupp`.`ps_supplycost` * `partsupp`.`ps_availqty`) DESC",
     "usageCount": 1,
     "lineNumbers": [
       434
@@ -357,7 +357,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `l_shipmode`, sum(CASE WHEN `o_orderpriority` = '1-URGENT' OR `o_orderpriority` = '2-HIGH' THEN 1 ELSE 0 END) AS `high_line_count`, sum(CASE WHEN `o_orderpriority` != '1-URGENT' AND `o_orderpriority` != '2-HIGH' THEN 1 ELSE 0 END) AS `low_line_count` FROM `orders`, `lineitem` WHERE `o_orderkey` = `l_orderkey` AND `l_shipmode` IN ('RAIL', 'FOB') AND `l_commitdate` \u003c `l_receiptdate` AND `l_shipdate` \u003c `l_commitdate` AND `l_receiptdate` \u003e= '1997-01-01' AND `l_receiptdate` \u003c DATE_ADD('1997-01-01', INTERVAL '1' year) GROUP BY `l_shipmode` ORDER BY `lineitem`.`l_shipmode` ASC",
+    "queryStructure": "SELECT `l_shipmode`, sum(CASE WHEN `o_orderpriority` = :_o_orderpriority /* VARCHAR */ OR `o_orderpriority` = :_o_orderpriority1 /* VARCHAR */ THEN :1 /* INT64 */ ELSE :2 /* INT64 */ END) AS `high_line_count`, sum(CASE WHEN `o_orderpriority` != :_o_orderpriority /* VARCHAR */ AND `o_orderpriority` != :_o_orderpriority1 /* VARCHAR */ THEN :1 /* INT64 */ ELSE :2 /* INT64 */ END) AS `low_line_count` FROM `orders`, `lineitem` WHERE `o_orderkey` = `l_orderkey` AND `l_shipmode` IN ::3 AND `l_commitdate` \u003c `l_receiptdate` AND `l_shipdate` \u003c `l_commitdate` AND `l_receiptdate` \u003e= :_l_receiptdate /* VARCHAR */ AND `l_receiptdate` \u003c DATE_ADD(:_l_receiptdate /* VARCHAR */, INTERVAL :4 /* VARCHAR */ year) GROUP BY `l_shipmode` ORDER BY `lineitem`.`l_shipmode` ASC",
     "usageCount": 1,
     "lineNumbers": [
       463
@@ -382,7 +382,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `c_count`, count(*) AS `custdist` FROM (SELECT `c_custkey`, COUNT(`o_orderkey`) AS `c_count` FROM `customer` LEFT JOIN `orders` ON `c_custkey` = `o_custkey` AND `o_comment` NOT LIKE '%pending%deposits%' GROUP BY `c_custkey`) AS `c_orders` GROUP BY `c_count` ORDER BY count(*) DESC, `c_orders`.`c_count` DESC",
+    "queryStructure": "SELECT `c_count`, count(*) AS `custdist` FROM (SELECT `c_custkey`, COUNT(`o_orderkey`) AS `c_count` FROM `customer` LEFT JOIN `orders` ON `c_custkey` = `o_custkey` AND `o_comment` NOT LIKE :_o_comment /* VARCHAR */ GROUP BY `c_custkey`) AS `c_orders` GROUP BY `c_count` ORDER BY count(*) DESC, `c_orders`.`c_count` DESC",
     "usageCount": 1,
     "lineNumbers": [
       493
@@ -404,7 +404,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT 100.00 * sum(CASE WHEN `p_type` LIKE 'PROMO%' THEN `l_extendedprice` * (1 - `l_discount`) ELSE 0 END) / sum(`l_extendedprice` * (1 - `l_discount`)) AS `promo_revenue` FROM `lineitem`, `part` WHERE `l_partkey` = `p_partkey` AND `l_shipdate` \u003e= '1996-12-01' AND `l_shipdate` \u003c DATE_ADD('1996-12-01', INTERVAL '1' month)",
+    "queryStructure": "SELECT :1 /* DECIMAL(5,2) */ * sum(CASE WHEN `p_type` LIKE :_p_type /* VARCHAR */ THEN `l_extendedprice` * (:2 /* INT64 */ - `l_discount`) ELSE :3 /* INT64 */ END) / sum(`l_extendedprice` * (:2 /* INT64 */ - `l_discount`)) AS `promo_revenue` FROM `lineitem`, `part` WHERE `l_partkey` = `p_partkey` AND `l_shipdate` \u003e= :_l_shipdate /* VARCHAR */ AND `l_shipdate` \u003c DATE_ADD(:_l_shipdate /* VARCHAR */, INTERVAL :4 /* VARCHAR */ month)",
     "usageCount": 1,
     "lineNumbers": [
       515
@@ -423,7 +423,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `p_brand`, `p_type`, `p_size`, COUNT(DISTINCT `ps_suppkey`) AS `supplier_cnt` FROM `partsupp`, `part` WHERE `p_partkey` = `ps_partkey` AND `p_brand` != 'Brand#34' AND `p_type` NOT LIKE 'LARGE BRUSHED%' AND `p_size` IN (48, 19, 12, 4, 41, 7, 21, 39) AND `ps_suppkey` NOT IN (SELECT `s_suppkey` FROM `supplier` WHERE `s_comment` LIKE '%Customer%Complaints%') GROUP BY `p_brand`, `p_type`, `p_size` ORDER BY COUNT(DISTINCT `partsupp`.`ps_suppkey`) DESC, `part`.`p_brand` ASC, `part`.`p_type` ASC, `part`.`p_size` ASC",
+    "queryStructure": "SELECT `p_brand`, `p_type`, `p_size`, COUNT(DISTINCT `ps_suppkey`) AS `supplier_cnt` FROM `partsupp`, `part` WHERE `p_partkey` = `ps_partkey` AND `p_brand` != :_p_brand /* VARCHAR */ AND `p_type` NOT LIKE :_p_type /* VARCHAR */ AND `p_size` IN ::1 AND `ps_suppkey` NOT IN (SELECT `s_suppkey` FROM `supplier` WHERE `s_comment` LIKE :_s_comment /* VARCHAR */) GROUP BY `p_brand`, `p_type`, `p_size` ORDER BY COUNT(DISTINCT `partsupp`.`ps_suppkey`) DESC, `part`.`p_brand` ASC, `part`.`p_type` ASC, `part`.`p_size` ASC",
     "usageCount": 1,
     "lineNumbers": [
       530
@@ -452,7 +452,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `c_name`, `c_custkey`, `o_orderkey`, `o_orderdate`, `o_totalprice`, sum(`l_quantity`) FROM `customer`, `orders`, `lineitem` WHERE `o_orderkey` IN (SELECT `l_orderkey` FROM `lineitem` GROUP BY `l_orderkey` HAVING sum(`l_quantity`) \u003e 314) AND `c_custkey` = `o_custkey` AND `o_orderkey` = `l_orderkey` GROUP BY `c_name`, `c_custkey`, `o_orderkey`, `o_orderdate`, `o_totalprice` ORDER BY `orders`.`o_totalprice` DESC, `orders`.`o_orderdate` ASC LIMIT 100",
+    "queryStructure": "SELECT `c_name`, `c_custkey`, `o_orderkey`, `o_orderdate`, `o_totalprice`, sum(`l_quantity`) FROM `customer`, `orders`, `lineitem` WHERE `o_orderkey` IN (SELECT `l_orderkey` FROM `lineitem` GROUP BY `l_orderkey` HAVING sum(`l_quantity`) \u003e :1 /* INT64 */) AND `c_custkey` = `o_custkey` AND `o_orderkey` = `l_orderkey` GROUP BY `c_name`, `c_custkey`, `o_orderkey`, `o_orderdate`, `o_totalprice` ORDER BY `orders`.`o_totalprice` DESC, `orders`.`o_orderdate` ASC LIMIT :2 /* INT64 */",
     "usageCount": 1,
     "lineNumbers": [
       582
@@ -483,7 +483,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT sum(`l_extendedprice` * (1 - `l_discount`)) AS `revenue` FROM `lineitem`, `part` WHERE `p_partkey` = `l_partkey` AND `p_brand` = 'Brand#52' AND `p_container` IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG') AND `l_quantity` \u003e= 4 AND `l_quantity` \u003c= 4 + 10 AND `p_size` BETWEEN 1 AND 5 AND `l_shipmode` IN ('AIR', 'AIR REG') AND `l_shipinstruct` = 'DELIVER IN PERSON' OR `p_partkey` = `l_partkey` AND `p_brand` = 'Brand#11' AND `p_container` IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK') AND `l_quantity` \u003e= 18 AND `l_quantity` \u003c= 18 + 10 AND `p_size` BETWEEN 1 AND 10 AND `l_shipmode` IN ('AIR', 'AIR REG') AND `l_shipinstruct` = 'DELIVER IN PERSON' OR `p_partkey` = `l_partkey` AND `p_brand` = 'Brand#51' AND `p_container` IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG') AND `l_quantity` \u003e= 29 AND `l_quantity` \u003c= 29 + 10 AND `p_size` BETWEEN 1 AND 15 AND `l_shipmode` IN ('AIR', 'AIR REG') AND `l_shipinstruct` = 'DELIVER IN PERSON'",
+    "queryStructure": "SELECT sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `revenue` FROM `lineitem`, `part` WHERE `p_partkey` = `l_partkey` AND `p_brand` = :_p_brand /* VARCHAR */ AND `p_container` IN ::2 AND `l_quantity` \u003e= :_l_quantity /* INT64 */ AND `l_quantity` \u003c= :_l_quantity /* INT64 */ + :3 /* INT64 */ AND `p_size` BETWEEN :1 /* INT64 */ AND :4 /* INT64 */ AND `l_shipmode` IN ::5 AND `l_shipinstruct` = :_l_shipinstruct /* VARCHAR */ OR `p_partkey` = `l_partkey` AND `p_brand` = :_p_brand1 /* VARCHAR */ AND `p_container` IN ::6 AND `l_quantity` \u003e= :_l_quantity1 /* INT64 */ AND `l_quantity` \u003c= :_l_quantity1 /* INT64 */ + :3 /* INT64 */ AND `p_size` BETWEEN :1 /* INT64 */ AND :3 /* INT64 */ AND `l_shipmode` IN ::7 AND `l_shipinstruct` = :_l_shipinstruct /* VARCHAR */ OR `p_partkey` = `l_partkey` AND `p_brand` = :_p_brand2 /* VARCHAR */ AND `p_container` IN ::8 AND `l_quantity` \u003e= :_l_quantity2 /* INT64 */ AND `l_quantity` \u003c= :_l_quantity2 /* INT64 */ + :3 /* INT64 */ AND `p_size` BETWEEN :1 /* INT64 */ AND :9 /* INT64 */ AND `l_shipmode` IN ::10 AND `l_shipinstruct` = :_l_shipinstruct /* VARCHAR */",
     "usageCount": 1,
     "lineNumbers": [
       617
@@ -495,7 +495,7 @@
     "statementType": "SELECT"
   },
   {
-    "queryStructure": "SELECT `s_name`, count(*) AS `numwait` FROM `supplier`, `lineitem` AS `l1`, `orders`, `nation` WHERE `s_suppkey` = `l1`.`l_suppkey` AND `o_orderkey` = `l1`.`l_orderkey` AND `o_orderstatus` = 'F' AND `l1`.`l_receiptdate` \u003e `l1`.`l_commitdate` AND EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` AS `l2` WHERE `l2`.`l_orderkey` = `l1`.`l_orderkey` AND `l2`.`l_suppkey` != `l1`.`l_suppkey`) AND NOT EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` AS `l3` WHERE `l3`.`l_orderkey` = `l1`.`l_orderkey` AND `l3`.`l_suppkey` != `l1`.`l_suppkey` AND `l3`.`l_receiptdate` \u003e `l3`.`l_commitdate`) AND `s_nationkey` = `n_nationkey` AND `n_name` = 'EGYPT' GROUP BY `s_name` ORDER BY count(*) DESC, `supplier`.`s_name` ASC LIMIT 100",
+    "queryStructure": "SELECT `s_name`, count(*) AS `numwait` FROM `supplier`, `lineitem` AS `l1`, `orders`, `nation` WHERE `s_suppkey` = `l1`.`l_suppkey` AND `o_orderkey` = `l1`.`l_orderkey` AND `o_orderstatus` = :_o_orderstatus /* VARCHAR */ AND `l1`.`l_receiptdate` \u003e `l1`.`l_commitdate` AND EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` AS `l2` WHERE `l2`.`l_orderkey` = `l1`.`l_orderkey` AND `l2`.`l_suppkey` != `l1`.`l_suppkey`) AND NOT EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` AS `l3` WHERE `l3`.`l_orderkey` = `l1`.`l_orderkey` AND `l3`.`l_suppkey` != `l1`.`l_suppkey` AND `l3`.`l_receiptdate` \u003e `l3`.`l_commitdate`) AND `s_nationkey` = `n_nationkey` AND `n_name` = :_n_name /* VARCHAR */ GROUP BY `s_name` ORDER BY count(*) DESC, `supplier`.`s_name` ASC LIMIT :1 /* INT64 */",
     "usageCount": 1,
     "lineNumbers": [
       695

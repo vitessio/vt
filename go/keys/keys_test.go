@@ -14,20 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package keys
 
 import (
-	"github.com/spf13/cobra"
+	"os"
+	"strings"
+	"testing"
 
-	"github.com/vitessio/vitess-tester/go/keys"
+	"github.com/stretchr/testify/require"
 )
 
-var keysCmd = &cobra.Command{
-	Use:     "keys file.test",
-	Short:   "Runs vexplain keys on all queries of the test file",
-	Example: "vt keys file.test",
-	Args:    cobra.ExactArgs(1),
-	RunE: func(_ *cobra.Command, args []string) error {
-		return keys.Run(args[0])
-	},
+func TestKeys(t *testing.T) {
+	sb := &strings.Builder{}
+	err := run(sb, "../../t/tpch.test")
+	require.NoError(t, err)
+
+	out, err := os.ReadFile("../benchstat/testdata/keys-log.json")
+	require.NoError(t, err)
+
+	require.Equal(t, string(out), sb.String())
 }
