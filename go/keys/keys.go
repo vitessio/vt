@@ -172,12 +172,12 @@ func (ql *queryList) writeJsonTo(w io.Writer) error {
 // times the query was used, the line numbers where the query was used, the table name, grouping columns, join columns,
 // filter columns, and the statement type.
 type QueryAnalysisResult struct {
-	QueryStructure  string   `json:"queryStructure"`
-	UsageCount      int      `json:"usageCount"`
-	LineNumbers     []int    `json:"lineNumbers"`
-	TableName       []string `json:"tableName,omitempty"`
-	GroupingColumns []string `json:"groupingColumns,omitempty"`
-	JoinColumns     []string `json:"joinColumns,omitempty"`
-	FilterColumns   []string `json:"filterColumns,omitempty"`
-	StatementType   string   `json:"statementType"`
+	QueryStructure  string                `json:"queryStructure"`
+	UsageCount      int                   `json:"usageCount"`
+	LineNumbers     []int                 `json:"lineNumbers"`
+	TableName       []string              `json:"tableName,omitempty"`
+	GroupingColumns []operators.Column    `json:"groupingColumns,omitempty"`
+	JoinColumns     []operators.ColumnUse `json:"joinColumns,omitempty"`
+	FilterColumns   []operators.ColumnUse `json:"filterColumns,omitempty"`
+	StatementType   string                `json:"statementType"`
 }

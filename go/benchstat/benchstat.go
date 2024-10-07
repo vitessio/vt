@@ -25,6 +25,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/alecthomas/chroma/quick"
 	"github.com/olekukonko/tablewriter"
@@ -360,20 +361,24 @@ func summarizeQueries(queries []keys.QueryAnalysisResult) []TableSummary {
 			}
 			tableUsageCounts[table] += query.UsageCount
 
-			updateColumnUsage := func(columns []string, usageType func(*ColumnUsage) *float64) {
+			updateColumnUsage := func(columns []operators.Column, usageType func(*ColumnUsage) *float64) {
 				for _, col := range columns {
-					if strings.HasPrefix(col, table+".") {
-						colName := strings.TrimPrefix(col, table+".")
-						usage := tableSummaries[table].Columns[colName]
-						*usageType(&usage) += float64(query.UsageCount)
-						tableSummaries[table].Columns[colName] = usage
-					}
+					usage := tableSummaries[col.Table].Columns[col.Name]
+					*usageType(&usage) += float64(query.UsageCount)
+					tableSummaries[table].Columns[col.Name] = usage
+				}
+			}
+			updateColumnUseUsage := func(columns []operators.ColumnUse, usageType func(*ColumnUsage) *float64) {
+				for _, col := range columns {
+					usage := tableSummaries[col.Column.Table].Columns[col.Column.Name]
+					*usageType(&usage) += float64(query.UsageCount)
+					tableSummaries[table].Columns[col.Column.Name] = usage
 				}
 			}
 
-			updateColumnUsage(query.FilterColumns, func(cu *ColumnUsage) *float64 { return &cu.FilterPercentage })
+			updateColumnUseUsage(query.FilterColumns, func(cu *ColumnUsage) *float64 { return &cu.FilterPercentage })
 			updateColumnUsage(query.GroupingColumns, func(cu *ColumnUsage) *float64 { return &cu.GroupingPercentage })
-			updateColumnUsage(query.JoinColumns, func(cu *ColumnUsage) *float64 { return &cu.JoinPercentage })
+			updateColumnUseUsage(query.JoinColumns, func(cu *ColumnUsage) *float64 { return &cu.JoinPercentage })
 		}
 	}
 

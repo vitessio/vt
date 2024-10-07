@@ -1,6 +1,6 @@
 module github.com/vitessio/vitess-tester
 
-go 1.23.1
+go 1.23.2
 
 require (
 	github.com/sirupsen/logrus v1.9.3
@@ -14,7 +14,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/term v0.24.0
-	vitess.io/vitess v0.10.3-0.20241001054030-978c59d80f4d
+	vitess.io/vitess v0.10.3-0.20241007064641-30d63d48d6c2
 )
 
 require (
