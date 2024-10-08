@@ -36,6 +36,7 @@ type Config struct {
 	VtExplainVschemaFile string
 	TraceFile            string
 	Tests                []string
+	NumberOfShards       int
 }
 
 func Run(cfg Config) {
@@ -48,6 +49,11 @@ func Run(cfg Config) {
 	b := cfg.VtExplainVschemaFile != ""
 	if a && b || a && cfg.Sharded || b && cfg.Sharded {
 		log.Errorf("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
+		os.Exit(1)
+	}
+
+	if cfg.NumberOfShards > 1 && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
+		log.Errorf("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
 		os.Exit(1)
 	}
 
@@ -69,7 +75,7 @@ func Run(cfg Config) {
 
 	log.Infof("running tests: %v", cfg.Tests)
 
-	clusterInstance, vtParams, mysqlParams, ksNames, closer := SetupCluster(cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.Sharded)
+	clusterInstance, vtParams, mysqlParams, ksNames, closer := SetupCluster(cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.Sharded, cfg.NumberOfShards)
 	defer closer()
 
 	// remove errors folder if exists

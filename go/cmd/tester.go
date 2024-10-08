@@ -44,6 +44,7 @@ func testerCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.OLAP, "olap", false, "Use OLAP to run the queries.")
 	cmd.Flags().BoolVar(&cfg.XUnit, "xunit", false, "Get output in an xml file instead of errors directory")
 	cmd.Flags().BoolVar(&cfg.Sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
+	cmd.Flags().IntVar(&cfg.NumberOfShards, "number-of-shards", 1, "Number of shards to use for the sharded keyspace.")
 
 	return cmd
 }
