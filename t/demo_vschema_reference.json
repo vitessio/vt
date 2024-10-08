@@ -1,0 +1,67 @@
+{
+  "keyspaces": {
+    "mysqltest": {
+      "sharded": true,
+      "vindexes": {
+        "xxhash": {
+          "type": "xxhash"
+        },
+        "unicode_loose_xxhash": {
+          "type": "unicode_loose_xxhash"
+        },
+        "name_vdx": {
+          "type": "consistent_lookup",
+          "params": {
+            "table": "name_idx",
+            "from": "name,customer_id",
+            "to": "keyspace_id",
+            "ignore_nulls": "true"
+          },
+          "owner": "customers"
+        }
+      },
+      "tables": {
+        "customers": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "customer_id"
+              ],
+              "name": "xxhash"
+            },
+            {
+              "columns": [
+                "customer_name",
+                "customer_id"
+              ],
+              "name": "name_vdx"
+            }
+          ]
+        },
+        "name_idx": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "name"
+              ],
+              "name": "unicode_loose_xxhash"
+            }
+          ]
+        },
+        "orders": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "customer_id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "pincode_areas": {
+          "type": "reference"
+        }
+      }
+    }
+  }
+}
