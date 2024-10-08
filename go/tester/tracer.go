@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"vitess.io/vitess/go/test/endtoend/cluster"
 
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/utils"
@@ -38,8 +39,8 @@ func NewTracerFactory(traceFile *os.File, inner QueryRunnerFactory) *TracerFacto
 	}
 }
 
-func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner {
-	inner := t.inner.NewQueryRunner(reporter, handleCreateTable, comparer)
+func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, table func(name string) (ks string, err error)) QueryRunner {
+	inner := t.inner.NewQueryRunner(reporter, handleCreateTable, comparer, cluster, APA)
 	return newTracer(t.traceFile, comparer.MySQLConn, comparer.VtConn, reporter, inner)
 }
 

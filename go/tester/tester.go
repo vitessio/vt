@@ -72,8 +72,8 @@ type (
 	}
 
 	QueryRunConfig struct {
-		ast           sqlparser.Statement
-		vitess, mysql bool
+		ast                      sqlparser.Statement
+		vitess, mysql, reference bool
 	}
 
 	QueryRunner interface {
@@ -81,7 +81,7 @@ type (
 	}
 
 	QueryRunnerFactory interface {
-		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner
+		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, table func(name string) (ks string, err error)) QueryRunner
 		Close()
 	}
 )
@@ -117,7 +117,7 @@ func NewTester(
 	if !t.autoVSchema() {
 		createTableHandler = func(*sqlparser.CreateTable) func() { return func() {} }
 	}
-	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp)
+	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp, clusterInstance, t.findTable)
 
 	return t
 }

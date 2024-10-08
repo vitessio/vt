@@ -26,6 +26,7 @@ create table name_idx
     primary key (name, customer_id)
 );
 
+--reference
 insert into pincode_areas(pincode, area_name)
 values (110001, 'Connaught Place'),
        (110002, 'Lodhi Road'),
