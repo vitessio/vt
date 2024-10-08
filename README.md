@@ -119,7 +119,3 @@ Vitess Tester is licensed under the Apache 2.0 license. See the [LICENSE](./LICE
 ## Acknowledgments
 
 Vitess Tester started as a fork from [pingcap/mysql-tester](https://github.com/pingcap/mysql-tester). We thank the original authors for their foundational work.
-
----
-
-This version includes an example workflow for `vt keys` and clarifies the role of `vt benchstat`. Let me know if anything else needs adjustment.
