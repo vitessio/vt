@@ -104,8 +104,9 @@ func SetupCluster(
 		}
 
 		if vschemaKs.Keyspace.Sharded {
-			fmt.Printf("starting sharded keyspace: '%s' with %d shards\n", keyspace.Name, numberOfShards)
-			err = clusterInstance.StartKeyspace(*keyspace, generateShardRanges(numberOfShards), 0, false)
+			shardRanges := generateShardRanges(numberOfShards)
+			fmt.Printf("starting sharded keyspace: '%s' with shards %v\n", keyspace.Name, shardRanges)
+			err = clusterInstance.StartKeyspace(*keyspace, shardRanges, 0, false)
 			errCheck(err)
 		} else {
 			fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)

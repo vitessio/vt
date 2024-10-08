@@ -89,13 +89,14 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement,
 		return err
 	}
 
-	_, isDDL := ast.(sqlparser.DDLStatement)
-	if isDDL || !vitess {
-		// we don't want to trace DDLs or queries that are not run on vitess
+	_, isSelect := ast.(sqlparser.SelectStatement)
+	if vitess && (isSelect || sqlparser.IsDMLStatement(ast)) {
+		// we only trace select statements and non-DMLs
+		return t.trace(q)
+	} else {
 		return nil
 	}
 
-	return t.trace(q)
 }
 
 // trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile
