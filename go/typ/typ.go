@@ -32,6 +32,8 @@ const (
 	SkipIfBelowVersion
 	VExplain
 	WaitForAuthoritative
+	VitessOnly
+	MysqlOnly
 )
 
 var commandMap = map[string]CmdType{
@@ -42,6 +44,8 @@ var commandMap = map[string]CmdType{
 	"skip_if_below_version": SkipIfBelowVersion,
 	"vexplain":              VExplain,
 	"wait_authoritative":    WaitForAuthoritative,
+	"vitess_only":           VitessOnly,
+	"mysql_only":            MysqlOnly,
 }
 
 func (cmd CmdType) String() string {

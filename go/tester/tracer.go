@@ -64,8 +64,8 @@ func newTracer(traceFile *os.File,
 	}
 }
 
-func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement) error {
-	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !expectErr {
+func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement, vitess, mysql bool) error {
+	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !expectErr && vitess {
 		// we don't want to run DMLs twice, so we just run them once while tracing
 		var errs []error
 		err := t.trace(q)
@@ -73,23 +73,25 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement)
 			errs = append(errs, err)
 		}
 
-		// we need to run the DMLs on mysql as well
-		_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
-		if err != nil {
-			errs = append(errs, err)
+		if mysql {
+			// we need to run the DMLs on mysql as well
+			_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
+			if err != nil {
+				errs = append(errs, err)
+			}
 		}
 
 		return vterrors.Aggregate(errs)
 	}
 
-	err := t.inner.runQuery(q, expectErr, ast)
+	err := t.inner.runQuery(q, expectErr, ast, vitess, mysql)
 	if err != nil {
 		return err
 	}
 
 	_, isDDL := ast.(sqlparser.DDLStatement)
-	if isDDL {
-		// we don't want to trace DDLs
+	if isDDL || !vitess {
+		// we don't want to trace DDLs or queries that are not run on vitess
 		return nil
 	}
 

@@ -55,25 +55,31 @@ func newComparingQueryRunner(
 	}
 }
 
-func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement) error {
-	return nqr.execute(q, expectedErrs, ast)
+func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, vitess, mysql bool) error {
+	if !vitess && !mysql {
+		return fmt.Errorf("both vitess and mysql are false")
+	}
+	return nqr.execute(q, expectedErrs, ast, vitess, mysql)
 }
 
-func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, ast sqlparser.Statement) error {
+func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, ast sqlparser.Statement, vitess bool, mysql bool) error {
 	if len(query.Query) == 0 {
 		return nil
 	}
 
-	if err := nqr.executeStmt(query.Query, ast, expectedErrs); err != nil {
+	defer func() {
+		// clear expected errors after we execute
+		expectedErrs = false
+	}()
+
+	if err := nqr.executeStmt(query.Query, ast, expectedErrs, vitess, mysql); err != nil {
 		return fmt.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err)
 	}
-	// clear expected errors after we execute
-	expectedErrs = false
 
 	return nil
 }
 
-func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Statement, expectedErrs bool) (err error) {
+func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Statement, expectedErrs bool, vitess bool, mysql bool) (err error) {
 	_, commentOnly := ast.(*sqlparser.CommentOnly)
 	if commentOnly {
 		return nil
@@ -81,7 +87,7 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 
 	log.Debugf("executeStmt: %s", query)
 	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	if isCreateStatement && !expectedErrs {
+	if isCreateStatement && !expectedErrs && vitess {
 		closer := nqr.handleCreateTable(create)
 		defer func() {
 			if err == nil {
@@ -92,13 +98,42 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 
 	switch {
 	case expectedErrs:
-		_, err := nqr.comparer.ExecAllowAndCompareError(query, utils.CompareOptions{CompareColumnNames: true})
-		if err == nil {
-			// If we expected an error, but didn't get one, return an error
-			return fmt.Errorf("expected error, but got none")
+		err := nqr.execAndExpectErr(query, vitess, mysql)
+		if err != nil {
+			nqr.reporter.AddFailure(err)
 		}
 	default:
-		_ = nqr.comparer.Exec(query)
+		var err error
+		switch {
+		case vitess && !mysql:
+			_, err = nqr.comparer.VtConn.ExecuteFetch(query, 1000, true)
+		case mysql && !vitess:
+			_, err = nqr.comparer.MySQLConn.ExecuteFetch(query, 1000, true)
+		case mysql:
+			nqr.comparer.Exec(query)
+		}
+		if err != nil {
+			nqr.reporter.AddFailure(err)
+		}
+	}
+	return nil
+}
+
+func (nqr *ComparingQueryRunner) execAndExpectErr(query string, vitess bool, mysql bool) error {
+	var err error
+	switch {
+	case vitess && !mysql:
+		_, err = nqr.comparer.VtConn.ExecuteFetch(query, 1000, true)
+	case mysql && !vitess:
+		_, err = nqr.comparer.MySQLConn.ExecuteFetch(query, 1000, true)
+	case mysql:
+		_, err = nqr.comparer.ExecAllowAndCompareError(query, utils.CompareOptions{CompareColumnNames: true})
+		return err
+	}
+
+	if err == nil {
+		// If we expected an error, but didn't get one, return an error
+		return fmt.Errorf("expected error, but got none")
 	}
 	return nil
 }

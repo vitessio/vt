@@ -45,9 +45,6 @@ type (
 		vtParams, mysqlParams mysql.ConnParams
 		curr                  utils.MySQLCompare
 
-		skipBinary  string
-		skipVersion int
-		skipNext    bool
 		olap        bool
 		ksNames     []string
 		vschema     vindexes.VSchema
@@ -58,14 +55,24 @@ type (
 		// we only care if an error is returned, not the exact error message.
 		expectedErrs bool
 
+		state *testerState
+
 		reporter             Reporter
 		alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
 
 		qr QueryRunner
 	}
 
+	testerState struct {
+		skip        bool
+		skipBinary  string
+		skipVersion int
+		vitessOnly  bool
+		mysqlOnly   bool
+	}
+
 	QueryRunner interface {
-		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement) error
+		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, vitess, mysql bool) error
 	}
 
 	QueryRunnerFactory interface {
@@ -95,6 +102,7 @@ func NewTester(
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
+		state:           &testerState{},
 	}
 
 	mcmp, err := utils.NewMySQLCompare(t.reporter, t.vtParams, t.mysqlParams)
@@ -146,6 +154,68 @@ func (t *Tester) getVschema() func() []byte {
 	}
 }
 
+func (state *testerState) skipNext() {
+	state.skip = true
+}
+
+func (state *testerState) skipIfBelow(binary string, version int) {
+	state.skipBinary = binary
+	state.skipVersion = version
+}
+
+func (state *testerState) shouldSkip() bool {
+	if state.skip {
+		state.skip = false
+		return true
+	}
+
+	if state.skipBinary != "" {
+		okayToRun := utils.BinaryIsAtLeastAtVersion(state.skipVersion, state.skipBinary)
+		state.skipBinary = ""
+		return !okayToRun
+	}
+
+	return false
+}
+
+func (state *testerState) beginVitessOnly() error {
+	if state.vitessOnly {
+		return fmt.Errorf("nested vitess_only begin")
+	}
+	if state.mysqlOnly {
+		return fmt.Errorf("cannot begin vitess_only within mysql_only")
+	}
+	state.vitessOnly = true
+	return nil
+}
+
+func (state *testerState) endVitessOnly() error {
+	if !state.vitessOnly {
+		return fmt.Errorf("no vitess_only to end")
+	}
+	state.vitessOnly = false
+	return nil
+}
+
+func (state *testerState) beginMySQLOnly() error {
+	if state.mysqlOnly {
+		return fmt.Errorf("nested mysql_only begin")
+	}
+	if state.vitessOnly {
+		return fmt.Errorf("cannot begin mysql_only within vitess_only")
+	}
+	state.mysqlOnly = true
+	return nil
+}
+
+func (state *testerState) endMySQLOnly() error {
+	if !state.mysqlOnly {
+		return fmt.Errorf("no vitess_only to end")
+	}
+	state.mysqlOnly = false
+	return nil
+}
+
 func (t *Tester) Run() error {
 	t.preProcess()
 	if t.autoVSchema() {
@@ -160,20 +230,19 @@ func (t *Tester) Run() error {
 	for _, q := range queries {
 		switch q.Type {
 		case typ.Skip:
-			t.skipNext = true
+			t.state.skipNext()
 		case typ.SkipIfBelowVersion:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
 				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
 				continue
 			}
-			t.skipBinary = strs[1]
-			var err error
-			t.skipVersion, err = strconv.Atoi(strs[2])
+			v, err := strconv.Atoi(strs[2])
 			if err != nil {
 				t.reporter.AddFailure(err)
 				continue
 			}
+			t.state.skipIfBelow(strs[1], v)
 		case typ.Error:
 			t.expectedErrs = true
 		case typ.VExplain:
@@ -203,6 +272,16 @@ func (t *Tester) Run() error {
 			if err != nil {
 				return fmt.Errorf("failed to remove file: %w", err)
 			}
+		case typ.VitessOnly:
+			err := vitessOrMySQLOnly(q.Query, t.state.beginVitessOnly, t.state.endVitessOnly)
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
+		case typ.MysqlOnly:
+			err := vitessOrMySQLOnly(q.Query, t.state.beginMySQLOnly, t.state.endMySQLOnly)
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		default:
 			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
 		}
@@ -212,17 +291,25 @@ func (t *Tester) Run() error {
 	return nil
 }
 
-func (t *Tester) runQuery(q data.Query) {
-	if t.skipNext {
-		t.skipNext = false
-		return
+func vitessOrMySQLOnly(query string, begin, end func() error) error {
+	strs := strings.Split(query, " ")
+	if len(strs) != 2 {
+		return fmt.Errorf("incorrect syntax in: %v", query)
 	}
-	if t.skipBinary != "" {
-		okayToRun := utils.BinaryIsAtLeastAtVersion(t.skipVersion, t.skipBinary)
-		t.skipBinary = ""
-		if !okayToRun {
-			return
-		}
+
+	switch strs[1] {
+	case "begin":
+		return begin()
+	case "end":
+		return end()
+	default:
+		return fmt.Errorf("incorrect syntax in: %v", query)
+	}
+}
+
+func (t *Tester) runQuery(q data.Query) {
+	if t.state.shouldSkip() {
+		return
 	}
 	t.reporter.AddTestCase(q.Query, q.Line)
 	parser := sqlparser.NewTestParser()
@@ -231,8 +318,9 @@ func (t *Tester) runQuery(q data.Query) {
 		t.reporter.AddFailure(err)
 		return
 	}
-
-	err = t.qr.runQuery(q, t.expectedErrs, ast)
+	runOnVitess := !t.state.mysqlOnly
+	runOnMySQL := !t.state.vitessOnly
+	err = t.qr.runQuery(q, t.expectedErrs, ast, runOnVitess, runOnMySQL)
 	if err != nil {
 		t.reporter.AddFailure(err)
 	}

@@ -36,7 +36,14 @@ type Config struct {
 	VtExplainVschemaFile string
 	TraceFile            string
 	Tests                []string
-	NumberOfShards       int
+	NumberOfShards       *int
+}
+
+func (cfg Config) GetNumberOfShards() int {
+	if cfg.NumberOfShards == nil {
+		return 2
+	}
+	return *cfg.NumberOfShards
 }
 
 func Run(cfg Config) {
@@ -52,7 +59,7 @@ func Run(cfg Config) {
 		os.Exit(1)
 	}
 
-	if cfg.NumberOfShards > 1 && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
+	if cfg.NumberOfShards != nil && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
 		log.Errorf("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
 		os.Exit(1)
 	}
@@ -75,7 +82,7 @@ func Run(cfg Config) {
 
 	log.Infof("running tests: %v", cfg.Tests)
 
-	clusterInstance, vtParams, mysqlParams, ksNames, closer := SetupCluster(cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.Sharded, cfg.NumberOfShards)
+	clusterInstance, vtParams, mysqlParams, ksNames, closer := SetupCluster(cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.Sharded, cfg.GetNumberOfShards())
 	defer closer()
 
 	// remove errors folder if exists
