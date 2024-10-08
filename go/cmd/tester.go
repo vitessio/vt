@@ -19,7 +19,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	vttester "github.com/vitessio/vitess-tester/go/tester"
+	vttester "github.com/vitessio/vt/go/tester"
 )
 
 func testerCmd() *cobra.Command {
@@ -36,7 +36,7 @@ func testerCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&cfg.LogLevel, "log-level", "error", "The log level of vitess-tester: info, warn, error, debug.")
+	cmd.Flags().StringVar(&cfg.LogLevel, "log-level", "error", "The log level of vt tester: info, warn, error, debug.")
 	cmd.Flags().StringVar(&cfg.TraceFile, "trace-file", "", "Do a vexplain trace on all queries and store the output in the given file.")
 	cmd.Flags().StringVar(&cfg.VschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
 	cmd.Flags().StringVar(&cfg.VtExplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")

@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vitessio/vitess-tester/go/typ"
+	"github.com/vitessio/vt/go/typ"
 )
 
 func TestParseQueries(t *testing.T) {

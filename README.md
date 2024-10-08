@@ -11,7 +11,7 @@ The `vt` binary encapsulates several utility tools for Vitess, providing a compr
 You can install `vt` using the following command:
 
 ```bash
-go install github.com/vitessio/vitess-tester/go/vt@latest
+go install github.com/vitessio/vt/go/vt@latest
 ```
 
 ## Testing Methodology

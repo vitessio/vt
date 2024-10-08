@@ -26,7 +26,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vitessio/vitess-tester/go/typ"
+	"github.com/vitessio/vt/go/typ"
 )
 
 type (

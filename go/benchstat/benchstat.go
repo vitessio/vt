@@ -30,7 +30,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
 
-	"github.com/vitessio/vitess-tester/go/keys"
+	"github.com/vitessio/vt/go/keys"
 )
 
 type (

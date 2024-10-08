@@ -23,7 +23,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/vitessio/vitess-tester/go/keys"
+	"github.com/vitessio/vt/go/keys"
 )
 
 func readTraceFile(fileName string) TraceFile {
