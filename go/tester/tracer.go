@@ -64,8 +64,8 @@ func newTracer(traceFile *os.File,
 	}
 }
 
-func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement, vitess, mysql bool) error {
-	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !expectErr && vitess {
+func (t *Tracer) runQuery(q data.Query, expectErr bool, cfg QueryRunConfig) error {
+	if sqlparser.IsDMLStatement(cfg.ast) && t.traceFile != nil && !expectErr && cfg.vitess {
 		// we don't want to run DMLs twice, so we just run them once while tracing
 		var errs []error
 		err := t.trace(q)
@@ -73,7 +73,7 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement,
 			errs = append(errs, err)
 		}
 
-		if mysql {
+		if cfg.mysql {
 			// we need to run the DMLs on mysql as well
 			_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
 			if err != nil {
@@ -84,19 +84,18 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement,
 		return vterrors.Aggregate(errs)
 	}
 
-	err := t.inner.runQuery(q, expectErr, ast, vitess, mysql)
+	err := t.inner.runQuery(q, expectErr, cfg)
 	if err != nil {
 		return err
 	}
 
-	_, isSelect := ast.(sqlparser.SelectStatement)
-	if vitess && (isSelect || sqlparser.IsDMLStatement(ast)) {
+	_, isSelect := cfg.ast.(sqlparser.SelectStatement)
+	if cfg.vitess && (isSelect || sqlparser.IsDMLStatement(cfg.ast)) {
 		// we only trace select statements and non-DMLs
 		return t.trace(q)
 	} else {
 		return nil
 	}
-
 }
 
 // trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile

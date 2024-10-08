@@ -71,8 +71,13 @@ type (
 		mysqlOnly   bool
 	}
 
+	QueryRunConfig struct {
+		ast           sqlparser.Statement
+		vitess, mysql bool
+	}
+
 	QueryRunner interface {
-		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, vitess, mysql bool) error
+		runQuery(q data.Query, expectedErrs bool, cfg QueryRunConfig) error
 	}
 
 	QueryRunnerFactory interface {
@@ -318,9 +323,12 @@ func (t *Tester) runQuery(q data.Query) {
 		t.reporter.AddFailure(err)
 		return
 	}
-	runOnVitess := !t.state.mysqlOnly
-	runOnMySQL := !t.state.vitessOnly
-	err = t.qr.runQuery(q, t.expectedErrs, ast, runOnVitess, runOnMySQL)
+	cfg := QueryRunConfig{
+		ast:    ast,
+		vitess: !t.state.mysqlOnly,
+		mysql:  !t.state.vitessOnly,
+	}
+	err = t.qr.runQuery(q, t.expectedErrs, cfg)
 	if err != nil {
 		t.reporter.AddFailure(err)
 	}

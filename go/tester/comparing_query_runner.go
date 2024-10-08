@@ -55,11 +55,11 @@ func newComparingQueryRunner(
 	}
 }
 
-func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, vitess, mysql bool) error {
-	if !vitess && !mysql {
+func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, cfg QueryRunConfig) error {
+	if !cfg.vitess && !cfg.mysql {
 		return fmt.Errorf("both vitess and mysql are false")
 	}
-	return nqr.execute(q, expectedErrs, ast, vitess, mysql)
+	return nqr.execute(q, expectedErrs, cfg.ast, cfg.vitess, cfg.mysql)
 }
 
 func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, ast sqlparser.Statement, vitess bool, mysql bool) error {
