@@ -1,4 +1,4 @@
-.PHONY: all build test tidy clean vitess-tester vtbenchstat
+.PHONY: all build test tidy clean
 
 GO := go
 REQUIRED_GO_VERSION := 1.23

@@ -18,11 +18,12 @@ package tester
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 
-	"github.com/vitessio/vitess-tester/go/data"
+	"github.com/vitessio/vt/go/data"
 )
 
 type (

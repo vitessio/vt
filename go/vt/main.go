@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"github.com/vitessio/vitess-tester/go/cmd"
+	"github.com/vitessio/vt/go/cmd"
 )
 
 func main() {

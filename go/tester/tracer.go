@@ -11,7 +11,7 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vterrors"
 
-	"github.com/vitessio/vitess-tester/go/data"
+	"github.com/vitessio/vt/go/data"
 )
 
 var _ QueryRunner = (*Tracer)(nil)

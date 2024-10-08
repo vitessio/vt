@@ -33,8 +33,8 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 
-	"github.com/vitessio/vitess-tester/go/data"
-	"github.com/vitessio/vitess-tester/go/typ"
+	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/typ"
 )
 
 type (

@@ -19,7 +19,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/vitessio/vitess-tester/go/keys"
+	"github.com/vitessio/vt/go/keys"
 )
 
 var keysCmd = &cobra.Command{

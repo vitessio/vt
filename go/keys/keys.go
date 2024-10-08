@@ -30,8 +30,8 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/plancontext"
 	"vitess.io/vitess/go/vt/vtgate/semantics"
 
-	"github.com/vitessio/vitess-tester/go/data"
-	"github.com/vitessio/vitess-tester/go/typ"
+	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/typ"
 
 	querypb "vitess.io/vitess/go/vt/proto/query"
 )

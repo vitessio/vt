@@ -1,4 +1,4 @@
-module github.com/vitessio/vitess-tester
+module github.com/vitessio/vt
 
 go 1.23.1
 
