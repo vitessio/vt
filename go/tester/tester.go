@@ -69,6 +69,7 @@ type (
 		skipVersion int
 		vitessOnly  bool
 		mysqlOnly   bool
+		reference   bool
 	}
 
 	QueryRunConfig struct {
@@ -159,7 +160,25 @@ func (t *Tester) getVschema() func() []byte {
 	}
 }
 
+func (state *testerState) referenceNext() {
+	if state.vitessOnly || state.mysqlOnly || state.skip {
+		return
+	}
+	state.reference = true
+}
+
+func (state *testerState) shouldReference() bool {
+	if state.reference {
+		state.reference = false
+		return true
+	}
+	return false
+}
+
 func (state *testerState) skipNext() {
+	if state.vitessOnly || state.mysqlOnly || state.reference {
+		return
+	}
 	state.skip = true
 }
 
@@ -287,6 +306,8 @@ func (t *Tester) Run() error {
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
+		case typ.Reference:
+			t.state.referenceNext()
 		default:
 			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
 		}
@@ -324,9 +345,10 @@ func (t *Tester) runQuery(q data.Query) {
 		return
 	}
 	cfg := QueryRunConfig{
-		ast:    ast,
-		vitess: !t.state.mysqlOnly,
-		mysql:  !t.state.vitessOnly,
+		ast:       ast,
+		vitess:    !t.state.mysqlOnly,
+		mysql:     !t.state.vitessOnly,
+		reference: t.state.shouldReference(),
 	}
 	err = t.qr.runQuery(q, t.expectedErrs, cfg)
 	if err != nil {
