@@ -59,11 +59,11 @@ func newComparingQueryRunner(
 	}
 }
 
-func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, cfg QueryRunConfig) error {
-	return nqr.execute(q, expectedErrs, cfg)
+func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, state *State) error {
+	return nqr.execute(q, expectedErrs, ast, state)
 }
 
-func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, cfg QueryRunConfig) error {
+func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, ast sqlparser.Statement, state *State) error {
 	if len(query.Query) == 0 {
 		return nil
 	}
@@ -73,22 +73,22 @@ func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, cf
 		expectedErrs = false
 	}()
 
-	if err := nqr.executeStmt(query.Query, cfg, expectedErrs); err != nil {
+	if err := nqr.executeStmt(query.Query, expectedErrs, ast, state); err != nil {
 		return fmt.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err)
 	}
 
 	return nil
 }
 
-func (nqr *ComparingQueryRunner) executeStmt(query string, cfg QueryRunConfig, expectedErrs bool) (err error) {
-	_, commentOnly := cfg.ast.(*sqlparser.CommentOnly)
+func (nqr *ComparingQueryRunner) executeStmt(query string, expectedErrs bool, ast sqlparser.Statement, state *State) (err error) {
+	_, commentOnly := ast.(*sqlparser.CommentOnly)
 	if commentOnly {
 		return nil
 	}
 
 	log.Debugf("executeStmt: %s", query)
-	create, isCreateStatement := cfg.ast.(*sqlparser.CreateTable)
-	if isCreateStatement && !expectedErrs && cfg.vitess {
+	create, isCreateStatement := ast.(*sqlparser.CreateTable)
+	if isCreateStatement && !expectedErrs && !state.isMySQLOnly() {
 		closer := nqr.handleCreateTable(create)
 		defer func() {
 			if err == nil {
@@ -106,13 +106,13 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, cfg QueryRunConfig, e
 	default:
 		var err error
 		switch {
-		case cfg.reference:
-			return nqr.executeReference(query, cfg.ast)
-		case cfg.mysql && cfg.vitess:
+		case state.isReference():
+			return nqr.executeReference(query, ast)
+		case state.normalExecution():
 			nqr.comparer.Exec(query)
-		case cfg.vitess:
+		case state.isVitessOnly():
 			_, err = nqr.comparer.VtConn.ExecuteFetch(query, 1000, true)
-		case cfg.mysql:
+		case state.isMySQLOnly():
 			_, err = nqr.comparer.MySQLConn.ExecuteFetch(query, 1000, true)
 		}
 		if err != nil {

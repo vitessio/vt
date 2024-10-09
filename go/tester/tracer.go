@@ -1,3 +1,19 @@
+/*
+Copyright 2024 The Vitess Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package tester
 
 import (
@@ -66,8 +82,8 @@ func newTracer(traceFile *os.File,
 	}
 }
 
-func (t *Tracer) runQuery(q data.Query, expectErr bool, cfg QueryRunConfig) error {
-	if sqlparser.IsDMLStatement(cfg.ast) && t.traceFile != nil && !expectErr && cfg.vitess {
+func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement, state *State) error {
+	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !expectErr && state.runOnVitess() {
 		// we don't want to run DMLs twice, so we just run them once while tracing
 		var errs []error
 		err := t.trace(q)
@@ -75,7 +91,7 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, cfg QueryRunConfig) erro
 			errs = append(errs, err)
 		}
 
-		if cfg.mysql {
+		if state.runOnMySQL() {
 			// we need to run the DMLs on mysql as well
 			_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
 			if err != nil {
@@ -86,18 +102,18 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, cfg QueryRunConfig) erro
 		return vterrors.Aggregate(errs)
 	}
 
-	err := t.inner.runQuery(q, expectErr, cfg)
+	err := t.inner.runQuery(q, expectErr, ast, state)
 	if err != nil {
 		return err
 	}
 
-	_, isSelect := cfg.ast.(sqlparser.SelectStatement)
-	if cfg.vitess && (isSelect || sqlparser.IsDMLStatement(cfg.ast)) {
-		// we only trace select statements and non-DMLs
-		return t.trace(q)
-	} else {
+	_, isSelect := ast.(sqlparser.SelectStatement)
+	if state.runOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
 		return nil
 	}
+
+	// we only trace select statements and non-DMLs
+	return t.trace(q)
 }
 
 // trace writes the query and its trace (fetched from VtConn) as a JSON object into traceFile

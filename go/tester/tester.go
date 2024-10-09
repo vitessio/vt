@@ -55,7 +55,7 @@ type (
 		// we only care if an error is returned, not the exact error message.
 		expectedErrs bool
 
-		state *testerState
+		state *State
 
 		reporter             Reporter
 		alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
@@ -63,22 +63,8 @@ type (
 		qr QueryRunner
 	}
 
-	testerState struct {
-		skip        bool
-		skipBinary  string
-		skipVersion int
-		vitessOnly  bool
-		mysqlOnly   bool
-		reference   bool
-	}
-
-	QueryRunConfig struct {
-		ast                      sqlparser.Statement
-		vitess, mysql, reference bool
-	}
-
 	QueryRunner interface {
-		runQuery(q data.Query, expectedErrs bool, cfg QueryRunConfig) error
+		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, state *State) error
 	}
 
 	QueryRunnerFactory interface {
@@ -108,7 +94,7 @@ func NewTester(
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
-		state:           &testerState{},
+		state:           &State{},
 	}
 
 	mcmp, err := utils.NewMySQLCompare(t.reporter, t.vtParams, t.mysqlParams)
@@ -160,86 +146,6 @@ func (t *Tester) getVschema() func() []byte {
 	}
 }
 
-func (state *testerState) referenceNext() {
-	if state.vitessOnly || state.mysqlOnly || state.skip {
-		return
-	}
-	state.reference = true
-}
-
-func (state *testerState) shouldReference() bool {
-	if state.reference {
-		state.reference = false
-		return true
-	}
-	return false
-}
-
-func (state *testerState) skipNext() {
-	if state.vitessOnly || state.mysqlOnly || state.reference {
-		return
-	}
-	state.skip = true
-}
-
-func (state *testerState) skipIfBelow(binary string, version int) {
-	state.skipBinary = binary
-	state.skipVersion = version
-}
-
-func (state *testerState) shouldSkip() bool {
-	if state.skip {
-		state.skip = false
-		return true
-	}
-
-	if state.skipBinary != "" {
-		okayToRun := utils.BinaryIsAtLeastAtVersion(state.skipVersion, state.skipBinary)
-		state.skipBinary = ""
-		return !okayToRun
-	}
-
-	return false
-}
-
-func (state *testerState) beginVitessOnly() error {
-	if state.vitessOnly {
-		return fmt.Errorf("nested vitess_only begin")
-	}
-	if state.mysqlOnly {
-		return fmt.Errorf("cannot begin vitess_only within mysql_only")
-	}
-	state.vitessOnly = true
-	return nil
-}
-
-func (state *testerState) endVitessOnly() error {
-	if !state.vitessOnly {
-		return fmt.Errorf("no vitess_only to end")
-	}
-	state.vitessOnly = false
-	return nil
-}
-
-func (state *testerState) beginMySQLOnly() error {
-	if state.mysqlOnly {
-		return fmt.Errorf("nested mysql_only begin")
-	}
-	if state.vitessOnly {
-		return fmt.Errorf("cannot begin mysql_only within vitess_only")
-	}
-	state.mysqlOnly = true
-	return nil
-}
-
-func (state *testerState) endMySQLOnly() error {
-	if !state.mysqlOnly {
-		return fmt.Errorf("no vitess_only to end")
-	}
-	state.mysqlOnly = false
-	return nil
-}
-
 func (t *Tester) Run() error {
 	t.preProcess()
 	if t.autoVSchema() {
@@ -254,7 +160,10 @@ func (t *Tester) Run() error {
 	for _, q := range queries {
 		switch q.Type {
 		case typ.Skip:
-			t.state.skipNext()
+			err := t.state.setSkipNext()
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		case typ.SkipIfBelowVersion:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
@@ -266,7 +175,10 @@ func (t *Tester) Run() error {
 				t.reporter.AddFailure(err)
 				continue
 			}
-			t.state.skipIfBelow(strs[1], v)
+			err = t.state.setSkipBelowVersion(strs[1], v)
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		case typ.Error:
 			t.expectedErrs = true
 		case typ.VExplain:
@@ -307,7 +219,10 @@ func (t *Tester) Run() error {
 				t.reporter.AddFailure(err)
 			}
 		case typ.Reference:
-			t.state.referenceNext()
+			err := t.state.setReferenceNext()
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		default:
 			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
 		}
@@ -344,13 +259,7 @@ func (t *Tester) runQuery(q data.Query) {
 		t.reporter.AddFailure(err)
 		return
 	}
-	cfg := QueryRunConfig{
-		ast:       ast,
-		vitess:    !t.state.mysqlOnly,
-		mysql:     !t.state.vitessOnly,
-		reference: t.state.shouldReference(),
-	}
-	err = t.qr.runQuery(q, t.expectedErrs, cfg)
+	err = t.qr.runQuery(q, t.expectedErrs, ast, t.state)
 	if err != nil {
 		t.reporter.AddFailure(err)
 	}
