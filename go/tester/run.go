@@ -36,14 +36,14 @@ type Config struct {
 	VtExplainVschemaFile string
 	TraceFile            string
 	Tests                []string
-	NumberOfShards       *int
+	NumberOfShards       int
 }
 
 func (cfg Config) GetNumberOfShards() int {
-	if cfg.NumberOfShards == nil {
+	if cfg.NumberOfShards == 0 {
 		return 2
 	}
-	return *cfg.NumberOfShards
+	return cfg.NumberOfShards
 }
 
 func Run(cfg Config) {
@@ -59,7 +59,7 @@ func Run(cfg Config) {
 		os.Exit(1)
 	}
 
-	if cfg.NumberOfShards != nil && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
+	if cfg.NumberOfShards > 0 && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
 		log.Errorf("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
 		os.Exit(1)
 	}
