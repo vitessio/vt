@@ -17,12 +17,12 @@ limitations under the License.
 package tester
 
 import (
-	"github.com/fatih/color"
 	"io"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/test/endtoend/cluster"
 )

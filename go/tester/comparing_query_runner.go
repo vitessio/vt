@@ -25,6 +25,7 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/tester/state"
 )
 
 type (
@@ -59,11 +60,11 @@ func newComparingQueryRunner(
 	}
 }
 
-func (nqr ComparingQueryRunner) runQuery(q data.Query, ast sqlparser.Statement, state *State) error {
+func (nqr ComparingQueryRunner) runQuery(q data.Query, ast sqlparser.Statement, state *state.State) error {
 	return nqr.execute(q, ast, state)
 }
 
-func (nqr *ComparingQueryRunner) execute(query data.Query, ast sqlparser.Statement, state *State) error {
+func (nqr *ComparingQueryRunner) execute(query data.Query, ast sqlparser.Statement, state *state.State) error {
 	if len(query.Query) == 0 {
 		return nil
 	}
@@ -75,7 +76,7 @@ func (nqr *ComparingQueryRunner) execute(query data.Query, ast sqlparser.Stateme
 	return nil
 }
 
-func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Statement, state *State) (err error) {
+func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Statement, state *state.State) (err error) {
 	_, commentOnly := ast.(*sqlparser.CommentOnly)
 	if commentOnly {
 		return nil
@@ -83,7 +84,7 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 
 	log.Debugf("executeStmt: %s", query)
 	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	if isCreateStatement && !state.isErrorExpectedSet() && state.runOnVitess() {
+	if isCreateStatement && !state.IsErrorExpectedSet() && state.RunOnVitess() {
 		closer := nqr.handleCreateTable(create)
 		defer func() {
 			if err == nil {
@@ -93,7 +94,7 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 	}
 
 	switch {
-	case state.checkAndClearErrorExpected():
+	case state.CheckAndClearErrorExpected():
 		err := nqr.execAndExpectErr(query)
 		if err != nil {
 			nqr.reporter.AddFailure(err)
@@ -101,13 +102,13 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 	default:
 		var err error
 		switch {
-		case state.checkAndClearReference():
+		case state.CheckAndClearReference():
 			return nqr.executeReference(query, ast)
-		case state.normalExecution():
+		case state.NormalExecution():
 			nqr.comparer.Exec(query)
-		case state.isVitessOnlySet():
+		case state.IsVitessOnlySet():
 			_, err = nqr.comparer.VtConn.ExecuteFetch(query, 1000, true)
-		case state.isMySQLOnlySet():
+		case state.IsMySQLOnlySet():
 			_, err = nqr.comparer.MySQLConn.ExecuteFetch(query, 1000, true)
 		}
 		if err != nil {

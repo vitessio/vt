@@ -22,14 +22,14 @@ import (
 	"fmt"
 	"os"
 
-	"vitess.io/vitess/go/test/endtoend/cluster"
-
 	"vitess.io/vitess/go/mysql"
+	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vterrors"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/tester/state"
 )
 
 var _ QueryRunner = (*Tracer)(nil)
@@ -82,8 +82,8 @@ func newTracer(traceFile *os.File,
 	}
 }
 
-func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *State) error {
-	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !state.isErrorExpectedSet() && state.runOnVitess() {
+func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *state.State) error {
+	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !state.IsErrorExpectedSet() && state.RunOnVitess() {
 		// we don't want to run DMLs twice, so we just run them once while tracing
 		var errs []error
 		err := t.trace(q)
@@ -91,7 +91,7 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *State) e
 			errs = append(errs, err)
 		}
 
-		if state.runOnMySQL() {
+		if state.RunOnMySQL() {
 			// we need to run the DMLs on mysql as well
 			_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
 			if err != nil {
@@ -102,7 +102,7 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *State) e
 		return vterrors.Aggregate(errs)
 	}
 
-	reference := state.isReferenceSet()
+	reference := state.IsReferenceSet()
 
 	err := t.inner.runQuery(q, ast, state)
 	if err != nil {
@@ -110,7 +110,7 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *State) e
 	}
 
 	_, isSelect := ast.(sqlparser.SelectStatement)
-	if reference || !state.runOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
+	if reference || !state.RunOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
 		return nil
 	}
 

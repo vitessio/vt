@@ -34,6 +34,7 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/tester/state"
 	"github.com/vitessio/vt/go/typ"
 )
 
@@ -51,7 +52,7 @@ type (
 		vschemaFile string
 		vexplain    string
 
-		state *State
+		state *state.State
 
 		reporter             Reporter
 		alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
@@ -60,7 +61,7 @@ type (
 	}
 
 	QueryRunner interface {
-		runQuery(q data.Query, ast sqlparser.Statement, state *State) error
+		runQuery(q data.Query, ast sqlparser.Statement, state *state.State) error
 	}
 
 	QueryRunnerFactory interface {
@@ -90,7 +91,7 @@ func NewTester(
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
-		state:           &State{},
+		state:           &state.State{},
 	}
 
 	mcmp, err := utils.NewMySQLCompare(t.reporter, t.vtParams, t.mysqlParams)
@@ -156,7 +157,7 @@ func (t *Tester) Run() error {
 	for _, q := range queries {
 		switch q.Type {
 		case typ.Skip:
-			err := t.state.setSkipNext()
+			err := t.state.SetSkipNext()
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
@@ -171,12 +172,12 @@ func (t *Tester) Run() error {
 				t.reporter.AddFailure(err)
 				continue
 			}
-			err = t.state.setSkipBelowVersion(strs[1], v)
+			err = t.state.SetSkipBelowVersion(strs[1], v)
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
 		case typ.Error:
-			err = t.state.setErrorExpected()
+			err = t.state.SetErrorExpected()
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
@@ -208,17 +209,17 @@ func (t *Tester) Run() error {
 				return fmt.Errorf("failed to remove file: %w", err)
 			}
 		case typ.VitessOnly:
-			err := vitessOrMySQLOnly(q.Query, t.state.beginVitessOnly, t.state.endVitessOnly)
+			err := vitessOrMySQLOnly(q.Query, t.state.BeginVitessOnly, t.state.EndVitessOnly)
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
 		case typ.MysqlOnly:
-			err := vitessOrMySQLOnly(q.Query, t.state.beginMySQLOnly, t.state.endMySQLOnly)
+			err := vitessOrMySQLOnly(q.Query, t.state.BeginMySQLOnly, t.state.EndMySQLOnly)
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
 		case typ.Reference:
-			err := t.state.setReference()
+			err := t.state.SetReference()
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
@@ -248,7 +249,7 @@ func vitessOrMySQLOnly(query string, begin, end func() error) error {
 }
 
 func (t *Tester) runQuery(q data.Query) {
-	if t.state.shouldSkip() {
+	if t.state.ShouldSkip() {
 		return
 	}
 	t.reporter.AddTestCase(q.Query, q.Line)

@@ -18,8 +18,9 @@ package tester
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateShardRanges(t *testing.T) {
