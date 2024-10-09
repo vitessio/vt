@@ -34,6 +34,7 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/tester/state"
 	"github.com/vitessio/vt/go/typ"
 )
 
@@ -45,18 +46,13 @@ type (
 		vtParams, mysqlParams mysql.ConnParams
 		curr                  utils.MySQLCompare
 
-		skipBinary  string
-		skipVersion int
-		skipNext    bool
 		olap        bool
 		ksNames     []string
 		vschema     vindexes.VSchema
 		vschemaFile string
 		vexplain    string
 
-		// check expected error, use --error before the statement
-		// we only care if an error is returned, not the exact error message.
-		expectedErrs bool
+		state *state.State
 
 		reporter             Reporter
 		alreadyWrittenTraces bool // we need to keep track of it is the first trace or not, to add commas in between traces
@@ -65,11 +61,11 @@ type (
 	}
 
 	QueryRunner interface {
-		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement) error
+		runQuery(q data.Query, ast sqlparser.Statement, state *state.State) error
 	}
 
 	QueryRunnerFactory interface {
-		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner
+		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster) QueryRunner
 		Close()
 	}
 )
@@ -95,6 +91,7 @@ func NewTester(
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
+		state:           &state.State{},
 	}
 
 	mcmp, err := utils.NewMySQLCompare(t.reporter, t.vtParams, t.mysqlParams)
@@ -104,7 +101,7 @@ func NewTester(
 	if !t.autoVSchema() {
 		createTableHandler = func(*sqlparser.CreateTable) func() { return func() {} }
 	}
-	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp)
+	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp, clusterInstance)
 
 	return t
 }
@@ -160,22 +157,30 @@ func (t *Tester) Run() error {
 	for _, q := range queries {
 		switch q.Type {
 		case typ.Skip:
-			t.skipNext = true
+			err := t.state.SetSkipNext()
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		case typ.SkipIfBelowVersion:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 3 {
 				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
 				continue
 			}
-			t.skipBinary = strs[1]
-			var err error
-			t.skipVersion, err = strconv.Atoi(strs[2])
+			v, err := strconv.Atoi(strs[2])
 			if err != nil {
 				t.reporter.AddFailure(err)
 				continue
 			}
+			err = t.state.SetSkipBelowVersion(strs[1], v)
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		case typ.Error:
-			t.expectedErrs = true
+			err = t.state.SetErrorExpected()
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		case typ.VExplain:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 2 {
@@ -203,6 +208,21 @@ func (t *Tester) Run() error {
 			if err != nil {
 				return fmt.Errorf("failed to remove file: %w", err)
 			}
+		case typ.VitessOnly:
+			err := vitessOrMySQLOnly(q.Query, t.state.BeginVitessOnly, t.state.EndVitessOnly)
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
+		case typ.MysqlOnly:
+			err := vitessOrMySQLOnly(q.Query, t.state.BeginMySQLOnly, t.state.EndMySQLOnly)
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
+		case typ.Reference:
+			err := t.state.SetReference()
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		default:
 			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
 		}
@@ -212,17 +232,25 @@ func (t *Tester) Run() error {
 	return nil
 }
 
-func (t *Tester) runQuery(q data.Query) {
-	if t.skipNext {
-		t.skipNext = false
-		return
+func vitessOrMySQLOnly(query string, begin, end func() error) error {
+	strs := strings.Split(query, " ")
+	if len(strs) != 2 {
+		return fmt.Errorf("incorrect syntax in: %v", query)
 	}
-	if t.skipBinary != "" {
-		okayToRun := utils.BinaryIsAtLeastAtVersion(t.skipVersion, t.skipBinary)
-		t.skipBinary = ""
-		if !okayToRun {
-			return
-		}
+
+	switch strs[1] {
+	case "begin":
+		return begin()
+	case "end":
+		return end()
+	default:
+		return fmt.Errorf("incorrect syntax in: %v", query)
+	}
+}
+
+func (t *Tester) runQuery(q data.Query) {
+	if t.state.ShouldSkip() {
+		return
 	}
 	t.reporter.AddTestCase(q.Query, q.Line)
 	parser := sqlparser.NewTestParser()
@@ -231,14 +259,11 @@ func (t *Tester) runQuery(q data.Query) {
 		t.reporter.AddFailure(err)
 		return
 	}
-
-	err = t.qr.runQuery(q, t.expectedErrs, ast)
+	err = t.qr.runQuery(q, ast, t.state)
 	if err != nil {
 		t.reporter.AddFailure(err)
 	}
 	t.reporter.EndTestCase()
-	// clear expected errors and current query after we execute any query
-	t.expectedErrs = false
 }
 
 func (t *Tester) findTable(name string) (ks string, err error) {

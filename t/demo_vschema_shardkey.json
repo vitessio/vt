@@ -1,0 +1,45 @@
+{
+  "keyspaces": {
+    "mysqltest": {
+      "sharded": true,
+      "vindexes": {
+        "xxhash": {
+          "type": "xxhash"
+        }
+      },
+      "tables": {
+        "customers": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "customer_id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "orders": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "customer_id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "pincode_areas": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "pincode",
+                "area_name"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

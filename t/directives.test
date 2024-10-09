@@ -1,20 +1,51 @@
-# vitess-tester, just like mysql-tester, uses `--<directive>` in the .test files to do things outside the regular script
-# --skip <comment> allows you to skip a test with a comment
+# Vitess-tester, like mysql-tester, uses `--<directive>` in `.test` files to manage actions outside the regular script.
+
+# --skip <comment>
+# Skips a test and includes an optional comment explaining why.
 --skip "This test is not ready yet"
 select * from table_doesnt_exist;
 
-# skip_if_below_version <binary> <version> allows you to skip a query if the binary version is below the specified version
+# --skip_if_below_version <binary> <version>
+# Skips a query if the binary version is below the specified version.
 --skip_if_below_version vtgate 999.0
 select * from table_doesnt_exist;
 
-# --error allows to assert that a query fails with an error
+# --error <comment>
+# Asserts that the following query will fail. Optionally, you can add a comment.
 --error the following query should fail
 select * from table_doesnt_exist;
 
-# --vexplain <mode> allows to run a query with vexplain to see the plan or which queries are sent to mysql. Mode can be `plan` or `queries`
+# --vexplain <mode>
+# Runs a query with vexplain to view the execution plan or which queries are sent to MySQL.
+# The <mode> can be either:
+# - `plan`: Shows the execution plan.
+# - `queries`: Displays the queries sent to MySQL.
 --vexplain plan
 select 1;
 
-# --wait_authoritative <table> <keyspace> allows to wait until the vtgate has authoritative information about the table
-# This is useful when you provide your own vschema and want it amended by the schema tracker
---wait_authoritative table_doesnt_exist keyspace_doesnt_exist
+# --wait_authoritative <table> <keyspace>
+# Waits until Vitess has authoritative information about the specified table.
+# This is useful when you're working with a custom vschema and want it to be updated by the schema tracker.
+--wait_authoritative table_doesnt_exist keyspace_doesnt_exist;
+
+# --vitess_only
+# This block of commands will only run on the Vitess cluster.
+# Start with `--vitess_only begin` and end with `--vitess_only end`.
+--vitess_only begin
+select 1;
+select 2;
+--vitess_only end
+
+# --mysql_only
+# Similar to `--vitess_only`, this block will run only on the MySQL server.
+# Use `--mysql_only begin` to start and `--mysql_only end` to end the block.
+--mysql_only begin
+select 1;
+select 2;
+--mysql_only end
+
+# --reference
+# The following query is treated as DML aimed at the reference table.
+# Since reference tables are copied to all shards, this query will be executed on all shards.
+--reference
+insert into reference_table values (1, 2, 3);

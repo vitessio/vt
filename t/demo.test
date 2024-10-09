@@ -1,0 +1,110 @@
+create table customers
+(
+    customer_id      int,
+    customer_name    varchar(100),
+    customer_pincode int,
+    primary key (customer_id)
+);
+create table pincode_areas
+(
+    pincode   int,
+    area_name varchar(100)
+);
+create table orders
+(
+    order_id     int,
+    customer_id  int,
+    order_date   date,
+    order_amount double,
+    primary key (order_id)
+);
+create table name_idx
+(
+    name        varchar(100),
+    customer_id int,
+    keyspace_id varbinary(16),
+    primary key (name, customer_id)
+);
+
+insert into pincode_areas(pincode, area_name)
+values (110001, 'Connaught Place'),
+       (110002, 'Lodhi Road'),
+       (110003, 'Civil Lines'),
+       (110004, 'Kashmere Gate'),
+       (110005, 'Chandni Chowk'),
+       (110006, 'Barakhamba Road'),
+       (110007, 'Kamla Nagar'),
+       (110008, 'Karol Bagh'),
+       (110009, 'Paharganj'),
+       (110010, 'Patel Nagar'),
+       (110011, 'South Extension'),
+       (110012, 'Lajpat Nagar'),
+       (110013, 'Sarojini Nagar'),
+       (110014, 'Malviya Nagar'),
+       (110015, 'Saket');
+
+insert into customers(customer_id, customer_name, customer_pincode)
+values (1, 'John Doe', 110001)
+     , (2, 'Jane Doe', 110002)
+     , (3, 'Alice', 110003)
+     , (4, 'Bob', 110004)
+     , (5, 'Charlie', 110004)
+     , (6, 'David', 110006)
+     , (7, 'Eve', 110007)
+     , (8, 'Frank', 110008)
+     , (9, 'Grace', 110009)
+     , (10, 'Heidi', 110004)
+     , (11, 'Ivy', 110011)
+     , (12, 'Alice', 110005)
+     , (13, 'Bob', 110003)
+     , (14, 'Charlie', 110014)
+     , (15, 'David', 110015)
+     , (16, 'Frank', 110008)
+     , (17, 'Grace', 110009);
+
+insert into orders(order_id, customer_id, order_date, order_amount)
+values (1, 1, '2020-01-01', 1000),
+       (2, 2, '2020-01-02', 2000),
+       (3, 3, '2020-01-03', 3000),
+       (4, 4, '2020-01-04', 4000),
+       (5, 5, '2020-01-05', 5000),
+       (6, 6, '2020-01-06', 6000),
+       (7, 7, '2020-01-07', 7000),
+       (8, 8, '2020-01-08', 8000),
+       (9, 9, '2020-01-09', 9000),
+       (10, 10, '2020-01-10', 10000),
+       (11, 11, '2020-01-11', 11000),
+       (12, 12, '2020-01-12', 12000),
+       (13, 13, '2020-01-13', 13000),
+       (14, 14, '2020-01-14', 14000),
+       (15, 15, '2020-01-15', 15000),
+       (16, 16, '2020-01-16', 16000),
+       (17, 17, '2020-01-17', 17000),
+       (18, 1, '2020-01-18', 18000),
+       (19, 2, '2020-01-19', 19000),
+       (20, 3, '2020-01-20', 20000),
+       (21, 4, '2020-01-21', 21000),
+       (22, 5, '2020-01-22', 22000),
+       (23, 6, '2020-01-23', 23000),
+       (24, 7, '2020-01-24', 24000),
+       (25, 8, '2020-01-25', 25000),
+       (26, 9, '2020-01-26', 26000),
+       (27, 10, '2020-01-27', 27000),
+       (28, 11, '2020-01-28', 28000),
+       (29, 12, '2020-01-29', 29000),
+       (30, 13, '2020-01-30', 30000),
+       (31, 14, '2020-01-31', 31000),
+       (32, 15, '2020-02-01', 32000);
+
+select customer_id, customer_pincode
+from customers
+where customer_name = 'Alice';
+
+select c.customer_id, sum(o.order_amount)
+from customers c
+         join orders o on c.customer_id = o.customer_id
+group by c.customer_id;
+
+select c.customer_id, p.area_name
+from customers c
+         join pincode_areas p on c.customer_pincode = p.pincode;

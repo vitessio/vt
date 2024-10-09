@@ -20,8 +20,8 @@ default: check_version build
 build:
 	$(GO) build -o vt ./go/vt
 
-test: build
-	$(GO) test -cover ./go/...
+test:
+	$(GO) test ./go/...
 
 tidy:
 	$(GO) mod tidy

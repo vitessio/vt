@@ -1,3 +1,19 @@
+/*
+Copyright 2024 The Vitess Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package tester
 
 import (
@@ -7,11 +23,13 @@ import (
 	"os"
 
 	"vitess.io/vitess/go/mysql"
+	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vterrors"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/tester/state"
 )
 
 var _ QueryRunner = (*Tracer)(nil)
@@ -38,8 +56,13 @@ func NewTracerFactory(traceFile *os.File, inner QueryRunnerFactory) *TracerFacto
 	}
 }
 
-func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare) QueryRunner {
-	inner := t.inner.NewQueryRunner(reporter, handleCreateTable, comparer)
+func (t *TracerFactory) NewQueryRunner(
+	reporter Reporter,
+	handleCreateTable CreateTableHandler,
+	comparer utils.MySQLCompare,
+	cluster *cluster.LocalProcessCluster,
+) QueryRunner {
+	inner := t.inner.NewQueryRunner(reporter, handleCreateTable, comparer, cluster)
 	return newTracer(t.traceFile, comparer.MySQLConn, comparer.VtConn, reporter, inner)
 }
 
@@ -64,8 +87,8 @@ func newTracer(traceFile *os.File,
 	}
 }
 
-func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement) error {
-	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !expectErr {
+func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *state.State) error {
+	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !state.IsErrorExpectedSet() && state.RunOnVitess() {
 		// we don't want to run DMLs twice, so we just run them once while tracing
 		var errs []error
 		err := t.trace(q)
@@ -73,23 +96,26 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement)
 			errs = append(errs, err)
 		}
 
-		// we need to run the DMLs on mysql as well
-		_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
-		if err != nil {
-			errs = append(errs, err)
+		if state.RunOnMySQL() {
+			// we need to run the DMLs on mysql as well
+			_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
+			if err != nil {
+				errs = append(errs, err)
+			}
 		}
 
 		return vterrors.Aggregate(errs)
 	}
 
-	err := t.inner.runQuery(q, expectErr, ast)
+	reference := state.IsReferenceSet()
+
+	err := t.inner.runQuery(q, ast, state)
 	if err != nil {
 		return err
 	}
 
-	_, isDDL := ast.(sqlparser.DDLStatement)
-	if isDDL {
-		// we don't want to trace DDLs
+	_, isSelect := ast.(sqlparser.SelectStatement)
+	if reference || !state.RunOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
 		return nil
 	}
 

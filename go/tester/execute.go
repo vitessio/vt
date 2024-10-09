@@ -78,6 +78,7 @@ func ExecuteTests(
 func SetupCluster(
 	vschemaFile, vtexplainVschemaFile string,
 	sharded bool,
+	numberOfShards int,
 ) (clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, ksNames []string, close func()) {
 	clusterInstance = cluster.NewCluster(defaultCellName, "localhost")
 
@@ -103,8 +104,9 @@ func SetupCluster(
 		}
 
 		if vschemaKs.Keyspace.Sharded {
-			fmt.Printf("starting sharded keyspace: '%s'\n", keyspace.Name)
-			err = clusterInstance.StartKeyspace(*keyspace, []string{"-80", "80-"}, 0, false)
+			shardRanges := generateShardRanges(numberOfShards)
+			fmt.Printf("starting sharded keyspace: '%s' with shards %v\n", keyspace.Name, shardRanges)
+			err = clusterInstance.StartKeyspace(*keyspace, shardRanges, 0, false)
 			errCheck(err)
 		} else {
 			fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)
@@ -160,6 +162,34 @@ func SetupCluster(
 		clusterInstance.Teardown()
 		closer()
 	}
+}
+
+func generateShardRanges(numberOfShards int) []string {
+	if numberOfShards <= 0 {
+		return []string{}
+	}
+
+	if numberOfShards == 1 {
+		return []string{"-"}
+	}
+
+	ranges := make([]string, numberOfShards)
+	step := 0x100 / numberOfShards
+
+	for i := 0; i < numberOfShards; i++ {
+		start := i * step
+		end := (i + 1) * step
+
+		if i == 0 {
+			ranges[i] = fmt.Sprintf("-%02x", end)
+		} else if i == numberOfShards-1 {
+			ranges[i] = fmt.Sprintf("%02x-", start)
+		} else {
+			ranges[i] = fmt.Sprintf("%02x-%02x", start, end)
+		}
+	}
+
+	return ranges
 }
 
 func defaultVschema(defaultKeyspaceName string) vindexes.VSchema {
