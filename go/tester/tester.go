@@ -65,7 +65,7 @@ type (
 	}
 
 	QueryRunnerFactory interface {
-		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, table func(name string) (ks string, err error)) QueryRunner
+		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster) QueryRunner
 		Close()
 	}
 )
@@ -101,7 +101,7 @@ func NewTester(
 	if !t.autoVSchema() {
 		createTableHandler = func(*sqlparser.CreateTable) func() { return func() {} }
 	}
-	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp, clusterInstance, t.findTable)
+	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp, clusterInstance)
 
 	return t
 }

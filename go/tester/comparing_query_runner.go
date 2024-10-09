@@ -42,7 +42,12 @@ type (
 
 func (f ComparingQueryRunnerFactory) Close() {}
 
-func (f ComparingQueryRunnerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, table func(name string) (ks string, err error)) QueryRunner {
+func (f ComparingQueryRunnerFactory) NewQueryRunner(
+	reporter Reporter,
+	handleCreateTable CreateTableHandler,
+	comparer utils.MySQLCompare,
+	cluster *cluster.LocalProcessCluster,
+) QueryRunner {
 	return newComparingQueryRunner(reporter, handleCreateTable, comparer, cluster)
 }
 
