@@ -43,3 +43,9 @@ select 2;
 select 1;
 select 2;
 --mysql_only end
+
+# --reference
+# The following query is treated as DML aimed at the reference table.
+# Since reference tables are copied to all shards, this query will be executed on all shards.
+--reference
+insert into reference_table values (1, 2, 3);
