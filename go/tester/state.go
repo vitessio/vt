@@ -30,6 +30,7 @@ const (
 	StateReference
 	StateVitessOnly
 	StateMySQLOnly
+	StateErrorExpected
 )
 
 type State struct {
@@ -39,8 +40,8 @@ type State struct {
 	skipVersion int
 }
 
-func (ts *State) getStateName() string {
-	switch ts.state {
+func (s *State) getStateName() string {
+	switch s.state {
 	case StateNone:
 		return "None"
 	case StateSkipNext:
@@ -51,120 +52,152 @@ func (ts *State) getStateName() string {
 		return "VitessOnly"
 	case StateMySQLOnly:
 		return "MySQLOnly"
+	case StateSkipBelowVersion:
+		return "SkipBelowVersion"
+	case StateErrorExpected:
+		return "ErrorExpected"
 	default:
 		return "Unknown"
 	}
 }
 
-func (ts *State) setSkipBelowVersion(binary string, version int) error {
-	if ts.state != StateNone {
-		return fmt.Errorf("cannot set skip below version: %s state is already active", ts.getStateName())
+func (s *State) setSkipNext() error {
+	if s.state != StateNone {
+		return fmt.Errorf("cannot set skip next: %s state is already active", s.getStateName())
 	}
-	ts.state = StateSkipBelowVersion
-	ts.skipBinary = binary
-	ts.skipVersion = version
+	s.state = StateSkipNext
 	return nil
 }
 
-func (ts *State) setReferenceNext() error {
-	if ts.state != StateNone {
-		return fmt.Errorf("cannot set reference next: %s state is already active", ts.getStateName())
-	}
-	ts.state = StateReference
-	return nil
+func (s *State) isSkipNextSet() bool {
+	return s.state == StateSkipNext
 }
 
-func (ts *State) isReference() bool {
-	isRef := ts.state == StateReference
-	if isRef {
-		ts.state = StateNone
-	}
-	return isRef
-}
-
-func (ts *State) setSkipNext() error {
-	if ts.state != StateNone {
-		return fmt.Errorf("cannot set skip next: %s state is already active", ts.getStateName())
-	}
-	ts.state = StateSkipNext
-	return nil
-}
-
-func (ts *State) isSkipNext() bool {
-	isSkip := ts.state == StateSkipNext
+func (s *State) checkAndClearSkipNext() bool {
+	isSkip := s.state == StateSkipNext
 	if isSkip {
-		ts.state = StateNone
+		s.state = StateNone
 	}
 	return isSkip
 }
 
-func (ts *State) beginVitessOnly() error {
-	if ts.state != StateNone {
-		return fmt.Errorf("cannot begin vitess_only: %s state is already active", ts.getStateName())
+func (s *State) setErrorExpected() error {
+	if s.state != StateNone {
+		return fmt.Errorf("cannot set error expected: %s state is already active", s.getStateName())
 	}
-	ts.state = StateVitessOnly
+	s.state = StateErrorExpected
 	return nil
 }
 
-func (ts *State) endVitessOnly() error {
-	if ts.state != StateVitessOnly {
-		return fmt.Errorf("cannot end vitess_only: current state is %s", ts.getStateName())
+func (s *State) isErrorExpectedSet() bool {
+	return s.state == StateErrorExpected
+}
+
+func (s *State) checkAndClearErrorExpected() bool {
+	isErr := s.state == StateErrorExpected
+	if isErr {
+		s.state = StateNone
 	}
-	ts.state = StateNone
+	return isErr
+}
+
+func (s *State) setSkipBelowVersion(binary string, version int) error {
+	if s.state != StateNone {
+		return fmt.Errorf("cannot set skip below version: %s state is already active", s.getStateName())
+	}
+	s.state = StateSkipBelowVersion
+	s.skipBinary = binary
+	s.skipVersion = version
 	return nil
 }
 
-func (ts *State) beginMySQLOnly() error {
-	if ts.state != StateNone {
-		return fmt.Errorf("cannot begin mysql_only: %s state is already active", ts.getStateName())
+func (s *State) setReference() error {
+	if s.state != StateNone {
+		return fmt.Errorf("cannot set reference: %s state is already active", s.getStateName())
 	}
-	ts.state = StateMySQLOnly
+	s.state = StateReference
 	return nil
 }
 
-func (ts *State) endMySQLOnly() error {
-	if ts.state != StateMySQLOnly {
-		return fmt.Errorf("cannot end mysql_only: current state is %s", ts.getStateName())
+func (s *State) isReferenceSet() bool {
+	return s.state == StateReference
+}
+
+func (s *State) checkAndClearReference() bool {
+	isRef := s.state == StateReference
+	if isRef {
+		s.state = StateNone
 	}
-	ts.state = StateNone
+	return isRef
+}
+
+func (s *State) beginVitessOnly() error {
+	if s.state != StateNone {
+		return fmt.Errorf("cannot begin vitess_only: %s state is already active", s.getStateName())
+	}
+	s.state = StateVitessOnly
 	return nil
 }
 
-func (ts *State) isVitessOnly() bool {
-	return ts.state == StateVitessOnly
+func (s *State) endVitessOnly() error {
+	if s.state != StateVitessOnly {
+		return fmt.Errorf("cannot end vitess_only: current state is %s", s.getStateName())
+	}
+	s.state = StateNone
+	return nil
 }
 
-func (ts *State) isMySQLOnly() bool {
-	return ts.state == StateMySQLOnly
+func (s *State) isVitessOnlySet() bool {
+	return s.state == StateVitessOnly
 }
 
-func (ts *State) normalExecution() bool {
-	return ts.state == StateNone
+func (s *State) beginMySQLOnly() error {
+	if s.state != StateNone {
+		return fmt.Errorf("cannot begin mysql_only: %s state is already active", s.getStateName())
+	}
+	s.state = StateMySQLOnly
+	return nil
 }
 
-func (state *State) shouldSkip() bool {
-	if state.isSkipNext() {
+func (s *State) endMySQLOnly() error {
+	if s.state != StateMySQLOnly {
+		return fmt.Errorf("cannot end mysql_only: current state is %s", s.getStateName())
+	}
+	s.state = StateNone
+	return nil
+}
+
+func (s *State) isMySQLOnlySet() bool {
+	return s.state == StateMySQLOnly
+}
+
+func (s *State) normalExecution() bool {
+	return s.state == StateNone
+}
+
+func (s *State) shouldSkip() bool {
+	if s.checkAndClearSkipNext() {
 		return true
 	}
 
-	if state.state != StateSkipBelowVersion {
+	if s.state != StateSkipBelowVersion {
 		return false
 	}
 
-	if state.skipBinary == "" {
+	if s.skipBinary == "" {
 		panic("skip below version state is active but skip binary is empty")
 	}
 
-	okayToRun := checkBinaryIsAtLeast(state.skipVersion, state.skipBinary)
-	state.skipBinary = ""
-	state.state = StateNone
+	okayToRun := checkBinaryIsAtLeast(s.skipVersion, s.skipBinary)
+	s.skipBinary = ""
+	s.state = StateNone
 	return !okayToRun
 }
 
-func (ts *State) runOnVitess() bool {
-	return ts.state == StateNone || ts.state == StateVitessOnly
+func (s *State) runOnVitess() bool {
+	return s.state == StateNone || s.state == StateVitessOnly
 }
 
-func (ts *State) runOnMySQL() bool {
-	return ts.state == StateNone || ts.state == StateMySQLOnly
+func (s *State) runOnMySQL() bool {
+	return s.state == StateNone || s.state == StateMySQLOnly
 }

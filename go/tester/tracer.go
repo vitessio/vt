@@ -82,8 +82,8 @@ func newTracer(traceFile *os.File,
 	}
 }
 
-func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement, state *State) error {
-	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !expectErr && state.runOnVitess() {
+func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *State) error {
+	if sqlparser.IsDMLStatement(ast) && t.traceFile != nil && !state.isErrorExpectedSet() && state.runOnVitess() {
 		// we don't want to run DMLs twice, so we just run them once while tracing
 		var errs []error
 		err := t.trace(q)
@@ -102,7 +102,7 @@ func (t *Tracer) runQuery(q data.Query, expectErr bool, ast sqlparser.Statement,
 		return vterrors.Aggregate(errs)
 	}
 
-	err := t.inner.runQuery(q, expectErr, ast, state)
+	err := t.inner.runQuery(q, ast, state)
 	if err != nil {
 		return err
 	}

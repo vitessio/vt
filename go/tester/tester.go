@@ -51,10 +51,6 @@ type (
 		vschemaFile string
 		vexplain    string
 
-		// check expected error, use --error before the statement
-		// we only care if an error is returned, not the exact error message.
-		expectedErrs bool
-
 		state *State
 
 		reporter             Reporter
@@ -64,7 +60,7 @@ type (
 	}
 
 	QueryRunner interface {
-		runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, state *State) error
+		runQuery(q data.Query, ast sqlparser.Statement, state *State) error
 	}
 
 	QueryRunnerFactory interface {
@@ -180,7 +176,10 @@ func (t *Tester) Run() error {
 				t.reporter.AddFailure(err)
 			}
 		case typ.Error:
-			t.expectedErrs = true
+			err = t.state.setErrorExpected()
+			if err != nil {
+				t.reporter.AddFailure(err)
+			}
 		case typ.VExplain:
 			strs := strings.Split(q.Query, " ")
 			if len(strs) != 2 {
@@ -219,7 +218,7 @@ func (t *Tester) Run() error {
 				t.reporter.AddFailure(err)
 			}
 		case typ.Reference:
-			err := t.state.setReferenceNext()
+			err := t.state.setReference()
 			if err != nil {
 				t.reporter.AddFailure(err)
 			}
@@ -259,13 +258,11 @@ func (t *Tester) runQuery(q data.Query) {
 		t.reporter.AddFailure(err)
 		return
 	}
-	err = t.qr.runQuery(q, t.expectedErrs, ast, t.state)
+	err = t.qr.runQuery(q, ast, t.state)
 	if err != nil {
 		t.reporter.AddFailure(err)
 	}
 	t.reporter.EndTestCase()
-	// clear expected errors and current query after we execute any query
-	t.expectedErrs = false
 }
 
 func (t *Tester) findTable(name string) (ks string, err error) {

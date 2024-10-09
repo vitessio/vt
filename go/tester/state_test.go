@@ -26,34 +26,35 @@ func TestState_SetAndCheckStates(t *testing.T) {
 	s := &State{}
 
 	// Test setReferenceNext
-	require.NoError(t, s.setReferenceNext(), "setReferenceNext should not fail")
-	assert.True(t, s.isReference(), "isReference should return true after setReferenceNext")
-	assert.False(t, s.isReference(), "isReference should return false on second call")
+	require.NoError(t, s.setReference())
+	assert.True(t, s.isReferenceSet())
+	assert.True(t, s.checkAndClearReference())
+	assert.False(t, s.isReferenceSet())
 
 	// Test setSkipNext
 	require.NoError(t, s.setSkipNext(), "setSkipNext should not fail")
-	assert.True(t, s.isSkipNext(), "isSkipNext should return true after setSkipNext")
-	assert.False(t, s.isSkipNext(), "isSkipNext should return false on second call")
+	assert.True(t, s.isSkipNextSet(), "isSkipNext should return true after setSkipNext")
+	assert.True(t, s.checkAndClearSkipNext(), "isSkipNext should return true after setSkipNext")
+	assert.False(t, s.isSkipNextSet(), "isSkipNext should return false on second call")
 
 	// Test beginVitessOnly and endVitessOnly
 	require.NoError(t, s.beginVitessOnly(), "beginVitessOnly should not fail")
-	assert.True(t, s.isVitessOnly(), "isVitessOnly should return true after beginVitessOnly")
+	assert.True(t, s.isVitessOnlySet(), "isVitessOnly should return true after beginVitessOnly")
 	require.NoError(t, s.endVitessOnly(), "endVitessOnly should not fail")
-	assert.False(t, s.isVitessOnly(), "isVitessOnly should return false after endVitessOnly")
+	assert.False(t, s.isVitessOnlySet(), "isVitessOnly should return false after endVitessOnly")
 
 	// Test beginMySQLOnly and endMySQLOnly
 	require.NoError(t, s.beginMySQLOnly(), "beginMySQLOnly should not fail")
-	assert.True(t, s.isMySQLOnly(), "isMySQLOnly should return true after beginMySQLOnly")
+	assert.True(t, s.isMySQLOnlySet(), "isMySQLOnly should return true after beginMySQLOnly")
 	require.NoError(t, s.endMySQLOnly(), "endMySQLOnly should not fail")
-	assert.False(t, s.isMySQLOnly(), "isMySQLOnly should return false after endMySQLOnly")
+	assert.False(t, s.isMySQLOnlySet(), "isMySQLOnly should return false after endMySQLOnly")
 }
 
 func TestState_StateMutualExclusion(t *testing.T) {
-
 	s := &State{}
 
 	// Set initial state
-	require.NoError(t, s.setReferenceNext(), "setReferenceNext should not fail")
+	require.NoError(t, s.setReference(), "setReferenceNext should not fail")
 
 	// Try to set other states
 	assert.Error(t, s.setSkipNext(), "setSkipNext should fail when Reference state is active")
@@ -61,7 +62,7 @@ func TestState_StateMutualExclusion(t *testing.T) {
 	assert.Error(t, s.beginMySQLOnly(), "beginMySQLOnly should fail when Reference state is active")
 
 	// Clear state and try again
-	s.isReference()
+	s.checkAndClearReference()
 
 	assert.NoError(t, s.setSkipNext(), "setSkipNext should not fail after clearing state")
 }
@@ -70,10 +71,10 @@ func TestState_NormalExecution(t *testing.T) {
 	s := &State{}
 	assert.True(t, s.normalExecution(), "normalExecution should return true when state is None")
 
-	s.setReferenceNext()
+	s.setReference()
 	assert.False(t, s.normalExecution(), "normalExecution should return false when state is not None")
 
-	s.isReference() // Clear the state
+	s.checkAndClearReference() // Clear the state
 	assert.True(t, s.normalExecution(), "normalExecution should return true after clearing state")
 }
 

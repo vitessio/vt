@@ -59,28 +59,23 @@ func newComparingQueryRunner(
 	}
 }
 
-func (nqr ComparingQueryRunner) runQuery(q data.Query, expectedErrs bool, ast sqlparser.Statement, state *State) error {
-	return nqr.execute(q, expectedErrs, ast, state)
+func (nqr ComparingQueryRunner) runQuery(q data.Query, ast sqlparser.Statement, state *State) error {
+	return nqr.execute(q, ast, state)
 }
 
-func (nqr *ComparingQueryRunner) execute(query data.Query, expectedErrs bool, ast sqlparser.Statement, state *State) error {
+func (nqr *ComparingQueryRunner) execute(query data.Query, ast sqlparser.Statement, state *State) error {
 	if len(query.Query) == 0 {
 		return nil
 	}
 
-	defer func() {
-		// clear expected errors after we execute
-		expectedErrs = false
-	}()
-
-	if err := nqr.executeStmt(query.Query, expectedErrs, ast, state); err != nil {
+	if err := nqr.executeStmt(query.Query, ast, state); err != nil {
 		return fmt.Errorf("run \"%v\" at line %d err %v", query.Query, query.Line, err)
 	}
 
 	return nil
 }
 
-func (nqr *ComparingQueryRunner) executeStmt(query string, expectedErrs bool, ast sqlparser.Statement, state *State) (err error) {
+func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Statement, state *State) (err error) {
 	_, commentOnly := ast.(*sqlparser.CommentOnly)
 	if commentOnly {
 		return nil
@@ -88,7 +83,7 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, expectedErrs bool, as
 
 	log.Debugf("executeStmt: %s", query)
 	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	if isCreateStatement && !expectedErrs && !state.isMySQLOnly() {
+	if isCreateStatement && !state.isErrorExpectedSet() && state.runOnVitess() {
 		closer := nqr.handleCreateTable(create)
 		defer func() {
 			if err == nil {
@@ -98,7 +93,7 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, expectedErrs bool, as
 	}
 
 	switch {
-	case expectedErrs:
+	case state.checkAndClearErrorExpected():
 		err := nqr.execAndExpectErr(query)
 		if err != nil {
 			nqr.reporter.AddFailure(err)
@@ -106,13 +101,13 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, expectedErrs bool, as
 	default:
 		var err error
 		switch {
-		case state.isReference():
+		case state.checkAndClearReference():
 			return nqr.executeReference(query, ast)
 		case state.normalExecution():
 			nqr.comparer.Exec(query)
-		case state.isVitessOnly():
+		case state.isVitessOnlySet():
 			_, err = nqr.comparer.VtConn.ExecuteFetch(query, 1000, true)
-		case state.isMySQLOnly():
+		case state.isMySQLOnlySet():
 			_, err = nqr.comparer.MySQLConn.ExecuteFetch(query, 1000, true)
 		}
 		if err != nil {
