@@ -102,17 +102,18 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *State) e
 		return vterrors.Aggregate(errs)
 	}
 
+	reference := state.isReferenceSet()
+
 	err := t.inner.runQuery(q, ast, state)
 	if err != nil {
 		return err
 	}
 
 	_, isSelect := ast.(sqlparser.SelectStatement)
-	if state.runOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
+	if reference || !state.runOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
 		return nil
 	}
 
-	// we only trace select statements and non-DMLs
 	return t.trace(q)
 }
 
