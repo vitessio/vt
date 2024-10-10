@@ -32,18 +32,17 @@ clean:
 
 # Pretty: formats the code using gofumpt and goimports-reviser
 pretty: install-tools
-	@echo "Running gofumpt..."
-	gofumpt -l -w .
-	@echo "Running goimports-reviser..."
-	goimports-reviser -project-name $$(go list -m) -rm-unused -set-alias -format .
+	@echo "Running formatting tools..."
+	@gofumpt -l -w . >/dev/null 2>&1 || true
+	@goimports-reviser -project-name $$(go list -m) -rm-unused -set-alias -format . >/dev/null 2>&1 || true
 
 # Install tools: Checks if the required tools are installed, installs if missing
 install-tools:
 	@command -v gofumpt >/dev/null 2>&1 || { \
 		echo "Installing gofumpt..."; \
-		go install mvdan.cc/gofumpt@latest; \
+		go install mvdan.cc/gofumpt@latest >/dev/null 2>&1; \
 	}
 	@command -v goimports-reviser >/dev/null 2>&1 || { \
 		echo "Installing goimports-reviser..."; \
-		go install github.com/incu6us/goimports-reviser@latest; \
+		go install github.com/incu6us/goimports-reviser@latest >/dev/null 2>&1; \
 	}
