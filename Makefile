@@ -1,4 +1,4 @@
-.PHONY: all build test tidy clean pretty install-tools lint
+.PHONY: all build test tidy clean pretty install-tools lint install-hooks
 
 GO := go
 REQUIRED_GO_VERSION := 1.23
@@ -56,3 +56,9 @@ install-tools:
 lint: install-tools
 	@echo "Running golangci-lint..."
 	@golangci-lint run --config .golangci.yml ./go/...
+
+install-hooks:
+	@echo "Installing Git hooks..."
+	@cp git-hooks/pre-commit .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
+	@echo "Pre-commit hook installed successfully."
