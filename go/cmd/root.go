@@ -26,7 +26,7 @@ import (
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	// rootCmd represents the base command when called without any subcommands
-	var root = &cobra.Command{
+	root := &cobra.Command{
 		Use:   "vt",
 		Short: "Utils tools for testing, running and benchmarking Vitess.",
 	}
