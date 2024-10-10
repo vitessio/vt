@@ -87,7 +87,6 @@ func (s *State) endState(oldState theState) error {
 	}
 	s.state = None
 	return nil
-
 }
 
 func (s *State) isSet(state theState) bool {

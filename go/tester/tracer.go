@@ -32,8 +32,10 @@ import (
 	"github.com/vitessio/vt/go/tester/state"
 )
 
-var _ QueryRunner = (*Tracer)(nil)
-var _ QueryRunnerFactory = (*TracerFactory)(nil)
+var (
+	_ QueryRunner        = (*Tracer)(nil)
+	_ QueryRunnerFactory = (*TracerFactory)(nil)
+)
 
 type (
 	Tracer struct {

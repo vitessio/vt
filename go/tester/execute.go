@@ -34,9 +34,7 @@ type RawKeyspaceVindex struct {
 	Keyspaces map[string]interface{} `json:"keyspaces"`
 }
 
-var (
-	vschema vindexes.VSchema
-)
+var vschema vindexes.VSchema
 
 const (
 	defaultKeyspaceName = "mysqltest"

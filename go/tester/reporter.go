@@ -86,7 +86,6 @@ func newFileReporter(name string, getVschema func() []byte) *FileReporter {
 		startTime:  time.Now(),
 		getVschema: getVschema,
 	}
-
 }
 
 func (e *FileReporter) Failed() bool {

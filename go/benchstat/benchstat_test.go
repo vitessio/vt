@@ -71,6 +71,7 @@ var tf1 = TraceFile{
 		},
 	}},
 }
+
 var tf2 = TraceFile{
 	Name: "test",
 	TracedQueries: []TracedQuery{{

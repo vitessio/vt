@@ -122,7 +122,7 @@ func (t *Tester) postProcess() {
 	t.curr.Close()
 }
 
-var PERM os.FileMode = 0755
+var PERM os.FileMode = 0o755
 
 func (t *Tester) getVschema() func() []byte {
 	return func() []byte {

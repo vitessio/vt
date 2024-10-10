@@ -26,6 +26,7 @@ var environmentVars = []string{
 	"VTDATAROOT",
 	"VTROOT",
 }
+
 var neededBinaries = []string{
 	"vtgate",
 	"vttablet",
