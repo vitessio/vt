@@ -9,17 +9,19 @@ if [ -z "$GO_FILES" ]; then
     exit 0
 fi
 
-# 1. Run gofumpt in check mode to verify formatting
+# 1. Run gofumpt in check mode to verify formatting on changed files
 echo "Checking gofumpt formatting..."
-gofumpt -l . | grep -q . && {
-    echo "Error: Unformatted code found. Please run 'make pretty'."
-    exit 1
-}
+for file in $GO_FILES; do
+    gofumpt -l "$file" | grep -q . && {
+        echo "Error: Unformatted code found in $file. Please run 'make pretty'."
+        exit 1
+    }
+done
 
-# 2. Run goimports-reviser to verify formatting (without writing changes)
+# 2. Run goimports-reviser to verify formatting on changed files (without writing changes)
 echo "Checking goimports-reviser formatting..."
 for file in $GO_FILES; do
-    goimports-reviser -project-name $(go list -m) -rm-unused -set-alias -format $file -diff >/dev/null 2>&1
+    goimports-reviser -project-name $(go list -m) -rm-unused -set-alias -format "$file" -diff >/dev/null 2>&1
     if [[ $? -ne 0 ]]; then
         echo "Error: Imports not correctly formatted in $file. Please run 'make pretty'."
         exit 1
