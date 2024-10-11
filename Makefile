@@ -59,6 +59,6 @@ lint: install-tools
 
 install-hooks:
 	@echo "Installing Git hooks..."
-	@cp git-hooks/pre-commit .git/hooks/pre-commit
+	@ln -sf ../../git-hooks/pre-commit .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
 	@echo "Pre-commit hook installed successfully."
