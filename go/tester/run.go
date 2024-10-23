@@ -17,6 +17,8 @@ limitations under the License.
 package tester
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -37,6 +39,7 @@ type Config struct {
 	TraceFile            string
 	Tests                []string
 	NumberOfShards       int
+	Compare              bool
 }
 
 func (cfg Config) GetNumberOfShards() int {
@@ -46,22 +49,20 @@ func (cfg Config) GetNumberOfShards() int {
 	return cfg.NumberOfShards
 }
 
-func Run(cfg Config) {
+func Run(cfg Config) error {
 	err := CheckEnvironment()
 	if err != nil {
-		exitIf(err, "reading environment variables")
+		return fmt.Errorf("error reading environment variables: %w", err)
 	}
 
 	a := cfg.VschemaFile != ""
 	b := cfg.VtExplainVschemaFile != ""
 	if a && b || a && cfg.Sharded || b && cfg.Sharded {
-		log.Errorf("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
-		os.Exit(1)
+		return errors.New("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
 	}
 
 	if cfg.NumberOfShards > 0 && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
-		log.Errorf("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
-		os.Exit(1)
+		return errors.New("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
 	}
 
 	if ll := os.Getenv("LOG_LEVEL"); ll != "" {
@@ -76,32 +77,33 @@ func Run(cfg Config) {
 	}
 
 	if len(cfg.Tests) == 0 {
-		log.Errorf("no tests specified")
-		os.Exit(1)
+		return errors.New("no tests specified")
 	}
 
 	log.Infof("running tests: %v", cfg.Tests)
 
-	clusterInstance, vtParams, mysqlParams, ksNames, closer := SetupCluster(cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.Sharded, cfg.GetNumberOfShards())
-	defer closer()
+	clusterInfo := SetupCluster(cfg)
+	defer clusterInfo.closer()
 
 	// remove errors folder if exists
 	err = os.RemoveAll("errors")
-	exitIf(err, "removing errors folder")
+	if err != nil {
+		return fmt.Errorf("removing errors folder: %w", err)
+	}
 
 	var reporterSuite Suite
 	if cfg.XUnit {
 		reporterSuite = NewXMLTestSuite()
 	} else {
-		reporterSuite = NewFileReporterSuite(getVschema(clusterInstance))
+		reporterSuite = NewFileReporterSuite(getVschema(clusterInfo.clusterInstance))
 	}
-	failed := ExecuteTests(clusterInstance, vtParams, mysqlParams, cfg.Tests, reporterSuite, ksNames, cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.OLAP, getQueryRunnerFactory(cfg.TraceFile))
+	failed := ExecuteTests(clusterInfo, cfg.Tests, reporterSuite, cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.OLAP, getQueryRunnerFactory(cfg.TraceFile))
 	outputFile := reporterSuite.Close()
 	if failed {
-		log.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
-		os.Exit(1)
+		return fmt.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
 	}
 	println("Great, All tests passed")
+	return nil
 }
 
 func getQueryRunnerFactory(traceFile string) QueryRunnerFactory {

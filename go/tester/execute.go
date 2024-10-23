@@ -35,19 +35,15 @@ type RawKeyspaceVindex struct {
 	Keyspaces map[string]interface{} `json:"keyspaces"`
 }
 
-var vschema vindexes.VSchema
-
 const (
 	defaultKeyspaceName = "mysqltest"
 	defaultCellName     = "mysqltest"
 )
 
 func ExecuteTests(
-	clusterInstance *cluster.LocalProcessCluster,
-	vtParams, mysqlParams mysql.ConnParams,
+	info ClusterInfo,
 	fileNames []string,
 	s Suite,
-	ksNames []string,
 	vschemaFile, vtexplainVschemaFile string,
 	olap bool,
 	factory QueryRunnerFactory,
@@ -59,7 +55,7 @@ func ExecuteTests(
 
 	for _, name := range fileNames {
 		errReporter := s.NewReporterForFile(name)
-		vTester := NewTester(name, errReporter, clusterInstance, vtParams, mysqlParams, olap, ksNames, vschema, vschemaF, factory)
+		vTester := NewTester(name, errReporter, info, olap, info.vschema, vschemaF, factory)
 		err := vTester.Run()
 		if err != nil {
 			failed = true
@@ -74,12 +70,16 @@ func ExecuteTests(
 	return failed
 }
 
-func SetupCluster(
-	vschemaFile, vtexplainVschemaFile string,
-	sharded bool,
-	numberOfShards int,
-) (clusterInstance *cluster.LocalProcessCluster, vtParams, mysqlParams mysql.ConnParams, ksNames []string, closerFunc func()) {
-	clusterInstance = cluster.NewCluster(defaultCellName, "localhost")
+type ClusterInfo struct {
+	clusterInstance       *cluster.LocalProcessCluster
+	vtParams, mysqlParams mysql.ConnParams
+	ksNames               []string
+	vschema               *vindexes.VSchema
+	closer                func()
+}
+
+func SetupCluster(cfg Config) ClusterInfo {
+	clusterInstance := cluster.NewCluster(defaultCellName, "localhost")
 
 	errCheck := func(err error) {
 		if err == nil {
@@ -94,7 +94,8 @@ func SetupCluster(
 	err := clusterInstance.StartTopo()
 	errCheck(err)
 
-	keyspaces := getKeyspaces(vschemaFile, vtexplainVschemaFile, defaultKeyspaceName, sharded)
+	var ksNames []string
+	keyspaces, vschema := getKeyspaces(cfg.VschemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
 	for _, keyspace := range keyspaces {
 		ksNames = append(ksNames, keyspace.Name)
 		vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
@@ -103,7 +104,7 @@ func SetupCluster(
 		}
 
 		if vschemaKs.Keyspace.Sharded {
-			shardRanges := generateShardRanges(numberOfShards)
+			shardRanges := generateShardRanges(cfg.GetNumberOfShards())
 			fmt.Printf("starting sharded keyspace: '%s' with shards %v\n", keyspace.Name, shardRanges)
 			err = clusterInstance.StartKeyspace(*keyspace, shardRanges, 0, false)
 			errCheck(err)
@@ -123,7 +124,7 @@ func SetupCluster(
 		os.Exit(1)
 	}
 
-	vtParams = clusterInstance.GetVTParams(ksNames[0])
+	vtParams := clusterInstance.GetVTParams(ksNames[0])
 
 	// Create the mysqld server we will use to compare the results.
 	// We go through all the keyspaces we found in the vschema, and
@@ -136,8 +137,9 @@ func SetupCluster(
 		}
 	}()
 
-	var closer func()
+	var closers []func()
 
+	var mysqlParams mysql.ConnParams // TODO: having a single connection is not correct if we are dealing with multiple mysql databases.
 	for i, keyspace := range keyspaces {
 		if i > 0 {
 			_, err = conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", keyspace.Name), 0, false)
@@ -145,6 +147,7 @@ func SetupCluster(
 			break
 		}
 
+		var closer func()
 		mysqlParams, closer, err = utils.NewMySQL(clusterInstance, keyspace.Name, "")
 		if err != nil {
 			clusterInstance.Teardown()
@@ -155,11 +158,21 @@ func SetupCluster(
 			clusterInstance.Teardown()
 			errCheck(err)
 		}
+		closers = append(closers, closer)
 	}
 
-	return clusterInstance, vtParams, mysqlParams, ksNames, func() {
-		clusterInstance.Teardown()
-		closer()
+	return ClusterInfo{
+		clusterInstance: clusterInstance,
+		vtParams:        vtParams,
+		mysqlParams:     mysqlParams,
+		ksNames:         ksNames,
+		vschema:         vschema,
+		closer: func() {
+			clusterInstance.Teardown()
+			for _, closer := range closers {
+				closer()
+			}
+		},
 	}
 }
 
@@ -192,8 +205,8 @@ func generateShardRanges(numberOfShards int) []string {
 	return ranges
 }
 
-func defaultVschema(defaultKeyspaceName string) vindexes.VSchema {
-	return vindexes.VSchema{
+func defaultVschema(defaultKeyspaceName string) *vindexes.VSchema {
+	return &vindexes.VSchema{
 		Keyspaces: map[string]*vindexes.KeyspaceSchema{
 			defaultKeyspaceName: {
 				Keyspace: &vindexes.Keyspace{},
@@ -207,16 +220,15 @@ func defaultVschema(defaultKeyspaceName string) vindexes.VSchema {
 	}
 }
 
-func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharded bool) (keyspaces []*cluster.Keyspace) {
+func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharded bool) (keyspaces []*cluster.Keyspace, vschema *vindexes.VSchema) {
 	ksRaw := RawKeyspaceVindex{
 		Keyspaces: map[string]interface{}{},
 	}
-
 	switch {
 	case vschemaFile != "":
-		ksRaw = readVschema(vschemaFile, false)
+		ksRaw, vschema = readVschema(vschemaFile, false)
 	case vtexplainVschemaFile != "":
-		ksRaw = readVschema(vtexplainVschemaFile, true)
+		ksRaw, vschema = readVschema(vtexplainVschemaFile, true)
 	default:
 		// auto-vschema
 		vschema = defaultVschema(keyspaceName)
@@ -240,14 +252,14 @@ func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharde
 			VSchema: ksSchema,
 		})
 	}
-	return keyspaces
+	return keyspaces, vschema
 }
 
-func readVschema(file string, vtexplain bool) RawKeyspaceVindex {
+func readVschema(file string, vtexplain bool) (RawKeyspaceVindex, *vindexes.VSchema) {
 	rawVschema, srvVschema := getSrvVschema(file, vtexplain)
-	ksRaw, err := loadVschema(srvVschema, rawVschema)
+	ksRaw, vschema, err := loadVschema(srvVschema, rawVschema)
 	exitIf(err, "loading vschema")
-	return ksRaw
+	return ksRaw, vschema
 }
 
 func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema) {
@@ -269,15 +281,18 @@ func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema) {
 	return vschemaStr, &srvVSchema
 }
 
-func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (rkv RawKeyspaceVindex, err error) {
-	vschema = *(vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser()))
+func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (RawKeyspaceVindex, *vindexes.VSchema, error) {
+	vschema := vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser())
 	if len(vschema.Keyspaces) == 0 {
-		err = errors.New("no keyspace defined in vschema")
-		return
+		return RawKeyspaceVindex{}, nil, errors.New("no keyspace defined in vschema")
 	}
 
-	err = json.Unmarshal(rawVschema, &rkv)
-	return
+	var rkv RawKeyspaceVindex
+	err := json.Unmarshal(rawVschema, &rkv)
+	if err != nil {
+		return RawKeyspaceVindex{}, nil, err
+	}
+	return rkv, vschema, nil
 }
 
 type hashVindex struct {

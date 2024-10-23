@@ -26,13 +26,14 @@ func testerCmd() *cobra.Command {
 	var cfg vttester.Config
 
 	cmd := &cobra.Command{
+		Aliases: []string{"test"},
 		Use:     "tester ",
 		Short:   "Test the given workload against both Vitess and MySQL.",
 		Example: "vt tester ",
 		Args:    cobra.MinimumNArgs(1),
-		Run: func(_ *cobra.Command, args []string) {
+		RunE: func(_ *cobra.Command, args []string) error {
 			cfg.Tests = args
-			vttester.Run(cfg)
+			return vttester.Run(cfg)
 		},
 	}
 

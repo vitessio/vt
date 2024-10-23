@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
@@ -46,7 +45,7 @@ type (
 
 		olap        bool
 		ksNames     []string
-		vschema     vindexes.VSchema
+		vschema     *vindexes.VSchema
 		vschemaFile string
 		vexplain    string
 
@@ -62,29 +61,19 @@ type (
 	}
 
 	QueryRunnerFactory interface {
-		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster) QueryRunner
+		NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, vschema *vindexes.VSchema) QueryRunner
 		Close()
 	}
 )
 
-func NewTester(
-	name string,
-	reporter Reporter,
-	clusterInstance *cluster.LocalProcessCluster,
-	vtParams, mysqlParams mysql.ConnParams,
-	olap bool,
-	ksNames []string,
-	vschema vindexes.VSchema,
-	vschemaFile string,
-	factory QueryRunnerFactory,
-) *Tester {
+func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vschema *vindexes.VSchema, vschemaFile string, factory QueryRunnerFactory) *Tester {
 	t := &Tester{
 		name:            name,
 		reporter:        reporter,
-		vtParams:        vtParams,
-		mysqlParams:     mysqlParams,
-		clusterInstance: clusterInstance,
-		ksNames:         ksNames,
+		vtParams:        info.vtParams,
+		mysqlParams:     info.mysqlParams,
+		clusterInstance: info.clusterInstance,
+		ksNames:         info.ksNames,
 		vschema:         vschema,
 		vschemaFile:     vschemaFile,
 		olap:            olap,
@@ -98,7 +87,7 @@ func NewTester(
 	if !t.autoVSchema() {
 		createTableHandler = func(*sqlparser.CreateTable) func() { return func() {} }
 	}
-	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp, clusterInstance)
+	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp, info.clusterInstance, vschema)
 
 	return t
 }
@@ -121,6 +110,76 @@ func (t *Tester) postProcess() {
 
 const PERM os.FileMode = 0o755
 
+func (t *Tester) runVexplain(q string) {
+	result, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain %s %s", t.vexplain, q), -1, false)
+	t.vexplain = ""
+	if err != nil {
+		t.reporter.AddFailure(err)
+	}
+
+	t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
+}
+
+func (t *Tester) skipIfBelow(q string) {
+	strs := strings.Split(q, " ")
+	if len(strs) != 3 {
+		t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.Q_SKIP_IF_BELOW_VERSION in: %v", q))
+		return
+	}
+	v, err := strconv.Atoi(strs[2])
+	if err != nil {
+		t.reporter.AddFailure(err)
+		return
+	}
+	err = t.state.SetSkipBelowVersion(strs[1], v)
+	if err != nil {
+		t.reporter.AddFailure(err)
+	}
+}
+
+func (t *Tester) prepareVExplain(q string) {
+	strs := strings.Split(q, " ")
+	if len(strs) != 2 {
+		t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.VExplain in: %v", q))
+		return
+	}
+
+	t.vexplain = strs[1]
+}
+
+func (t *Tester) handleQuery(q data.Query) {
+	var err error
+	switch q.Type {
+	case typ.Skip:
+		err = t.state.SetSkipNext()
+	case typ.SkipIfBelowVersion:
+		t.skipIfBelow(q.Query)
+	case typ.Error:
+		err = t.state.SetErrorExpected()
+	case typ.VExplain:
+		t.prepareVExplain(q.Query)
+	case typ.WaitForAuthoritative:
+		t.waitAuthoritative(q.Query)
+	case typ.Query:
+		if t.vexplain == "" {
+			t.runQuery(q)
+			return
+		}
+		t.runVexplain(q.Query)
+	case typ.VitessOnly:
+		err = vitessOrMySQLOnly(q.Query, t.state.BeginVitessOnly, t.state.EndVitessOnly)
+	case typ.MysqlOnly:
+		err = vitessOrMySQLOnly(q.Query, t.state.BeginMySQLOnly, t.state.EndMySQLOnly)
+	case typ.Reference:
+		err = t.state.SetReference()
+	default:
+		t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
+	}
+	if err != nil {
+		t.reporter.AddFailure(err)
+	}
+}
+
 func (t *Tester) Run() error {
 	t.preProcess()
 	if t.autoVSchema() {
@@ -133,77 +192,7 @@ func (t *Tester) Run() error {
 	}
 
 	for _, q := range queries {
-		switch q.Type {
-		case typ.Skip:
-			err := t.state.SetSkipNext()
-			if err != nil {
-				t.reporter.AddFailure(err)
-			}
-		case typ.SkipIfBelowVersion:
-			strs := strings.Split(q.Query, " ")
-			if len(strs) != 3 {
-				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.Q_SKIP_IF_BELOW_VERSION in: %v", q.Query))
-				continue
-			}
-			v, err := strconv.Atoi(strs[2])
-			if err != nil {
-				t.reporter.AddFailure(err)
-				continue
-			}
-			err = t.state.SetSkipBelowVersion(strs[1], v)
-			if err != nil {
-				t.reporter.AddFailure(err)
-			}
-		case typ.Error:
-			err = t.state.SetErrorExpected()
-			if err != nil {
-				t.reporter.AddFailure(err)
-			}
-		case typ.VExplain:
-			strs := strings.Split(q.Query, " ")
-			if len(strs) != 2 {
-				t.reporter.AddFailure(fmt.Errorf("incorrect syntax for typ.VExplain in: %v", q.Query))
-				continue
-			}
-
-			t.vexplain = strs[1]
-		case typ.WaitForAuthoritative:
-			t.waitAuthoritative(q.Query)
-		case typ.Query:
-			if t.vexplain != "" {
-				result, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain %s %s", t.vexplain, q.Query), -1, false)
-				t.vexplain = ""
-				if err != nil {
-					t.reporter.AddFailure(err)
-				}
-
-				t.reporter.AddInfo(fmt.Sprintf("VExplain Output:\n %s\n", result.Rows[0][0].ToString()))
-			}
-
-			t.runQuery(q)
-		case typ.RemoveFile:
-			err = os.Remove(strings.TrimSpace(q.Query))
-			if err != nil {
-				return fmt.Errorf("failed to remove file: %w", err)
-			}
-		case typ.VitessOnly:
-			err := vitessOrMySQLOnly(q.Query, t.state.BeginVitessOnly, t.state.EndVitessOnly)
-			if err != nil {
-				t.reporter.AddFailure(err)
-			}
-		case typ.MysqlOnly:
-			err := vitessOrMySQLOnly(q.Query, t.state.BeginMySQLOnly, t.state.EndMySQLOnly)
-			if err != nil {
-				t.reporter.AddFailure(err)
-			}
-		case typ.Reference:
-			err := t.state.SetReference()
-			if err != nil {
-				t.reporter.AddFailure(err)
-			}
-		default:
-			t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
-		}
+		t.handleQuery(q)
 	}
 	fmt.Printf("%s\n", t.reporter.Report())
 
