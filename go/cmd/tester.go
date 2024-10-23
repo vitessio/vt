@@ -33,6 +33,7 @@ func testerCmd() *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			cfg.Tests = args
+			cfg.Compare = true
 			return vttester.Run(cfg)
 		},
 	}

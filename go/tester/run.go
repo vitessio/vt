@@ -82,7 +82,11 @@ func Run(cfg Config) error {
 
 	log.Infof("running tests: %v", cfg.Tests)
 
-	clusterInfo := SetupCluster(cfg)
+	clusterInfo, err := SetupCluster(cfg)
+	if err != nil {
+		return err
+	}
+
 	defer clusterInfo.closer()
 
 	// remove errors folder if exists

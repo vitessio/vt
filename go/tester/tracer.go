@@ -86,7 +86,7 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *state.St
 			errs = append(errs, err)
 		}
 
-		if state.RunOnMySQL() {
+		if t.MySQLConn != nil && state.RunOnMySQL() {
 			// we need to run the DMLs on mysql as well
 			_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
 			if err != nil {

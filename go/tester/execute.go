@@ -71,28 +71,28 @@ func ExecuteTests(
 }
 
 type ClusterInfo struct {
-	clusterInstance       *cluster.LocalProcessCluster
-	vtParams, mysqlParams mysql.ConnParams
-	ksNames               []string
-	vschema               *vindexes.VSchema
-	closer                func()
+	clusterInstance *cluster.LocalProcessCluster
+	vtParams        mysql.ConnParams
+	mysqlParams     *mysql.ConnParams
+	ksNames         []string
+	vschema         *vindexes.VSchema
+	closer          func()
 }
 
-func SetupCluster(cfg Config) ClusterInfo {
+func SetupCluster(cfg Config) (_ ClusterInfo, err error) {
 	clusterInstance := cluster.NewCluster(defaultCellName, "localhost")
 
-	errCheck := func(err error) {
-		if err == nil {
-			return
+	defer func() {
+		if err != nil {
+			clusterInstance.Teardown()
 		}
-		clusterInstance.Teardown()
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
+	}()
 
 	// Start topo server
-	err := clusterInstance.StartTopo()
-	errCheck(err)
+	err = clusterInstance.StartTopo()
+	if err != nil {
+		return ClusterInfo{}, err
+	}
 
 	var ksNames []string
 	keyspaces, vschema := getKeyspaces(cfg.VschemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
@@ -100,24 +100,30 @@ func SetupCluster(cfg Config) ClusterInfo {
 		ksNames = append(ksNames, keyspace.Name)
 		vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
 		if !ok {
-			errCheck(fmt.Errorf("keyspace '%s' not found in vschema", keyspace.Name))
+			return ClusterInfo{}, fmt.Errorf("keyspace '%s' not found in vschema", keyspace.Name)
 		}
 
 		if vschemaKs.Keyspace.Sharded {
 			shardRanges := generateShardRanges(cfg.GetNumberOfShards())
 			fmt.Printf("starting sharded keyspace: '%s' with shards %v\n", keyspace.Name, shardRanges)
 			err = clusterInstance.StartKeyspace(*keyspace, shardRanges, 0, false)
-			errCheck(err)
+			if err != nil {
+				return ClusterInfo{}, err
+			}
 		} else {
 			fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)
 			err = clusterInstance.StartUnshardedKeyspace(*keyspace, 0, false)
-			errCheck(err)
+			if err != nil {
+				return ClusterInfo{}, err
+			}
 		}
 	}
 
 	// Start vtgate
 	err = clusterInstance.StartVtgate()
-	errCheck(err)
+	if err != nil {
+		return ClusterInfo{}, err
+	}
 
 	if len(ksNames) == 0 {
 		fmt.Println("no keyspaces found in vschema")
@@ -126,39 +132,9 @@ func SetupCluster(cfg Config) ClusterInfo {
 
 	vtParams := clusterInstance.GetVTParams(ksNames[0])
 
-	// Create the mysqld server we will use to compare the results.
-	// We go through all the keyspaces we found in the vschema, and
-	// simply create the mysqld process during the first iteration with
-	// the first database, following iterations will create new databases.
-	var conn *mysql.Conn
-	defer func() {
-		if conn != nil {
-			conn.Close()
-		}
-	}()
-
-	var closers []func()
-
-	var mysqlParams mysql.ConnParams // TODO: having a single connection is not correct if we are dealing with multiple mysql databases.
-	for i, keyspace := range keyspaces {
-		if i > 0 {
-			_, err = conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", keyspace.Name), 0, false)
-			errCheck(err)
-			break
-		}
-
-		var closer func()
-		mysqlParams, closer, err = utils.NewMySQL(clusterInstance, keyspace.Name, "")
-		if err != nil {
-			clusterInstance.Teardown()
-			errCheck(err)
-		}
-		conn, err = mysql.Connect(context.Background(), &mysqlParams)
-		if err != nil {
-			clusterInstance.Teardown()
-			errCheck(err)
-		}
-		closers = append(closers, closer)
+	mysqlParams, closers, err := setupExternalMySQL(cfg.Compare, keyspaces, clusterInstance)
+	if err != nil {
+		return ClusterInfo{}, err
 	}
 
 	return ClusterInfo{
@@ -173,7 +149,47 @@ func SetupCluster(cfg Config) ClusterInfo {
 				closer()
 			}
 		},
+	}, nil
+}
+
+// TODO: having a single connection is not correct if we are dealing with multiple mysql databases.
+func setupExternalMySQL(compare bool, keyspaces []*cluster.Keyspace, clusterInstance *cluster.LocalProcessCluster) (_ *mysql.ConnParams, closers []func(), err error) {
+	if !compare {
+		return nil, nil, nil
 	}
+
+	// Create the mysqld server we will use to compare the results.
+	// We go through all the keyspaces we found in the vschema, and
+	// simply create the mysqld process during the first iteration with
+	// the first database, following iterations will create new databases.
+	var conn *mysql.Conn
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
+
+	var mysqlParamsValue mysql.ConnParams
+	for i, keyspace := range keyspaces {
+		if i > 0 {
+			_, err = conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", keyspace.Name), 0, false)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
+		var closer func()
+		mysqlParamsValue, closer, err = utils.NewMySQL(clusterInstance, keyspace.Name, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		conn, err = mysql.Connect(context.Background(), &mysqlParamsValue)
+		if err != nil {
+			return nil, nil, err
+		}
+		closers = append(closers, closer)
+	}
+	return &mysqlParamsValue, closers, nil
 }
 
 func generateShardRanges(numberOfShards int) []string {

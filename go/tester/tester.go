@@ -17,6 +17,7 @@ limitations under the License.
 package tester
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -39,9 +40,10 @@ type (
 	Tester struct {
 		name string
 
-		clusterInstance       *cluster.LocalProcessCluster
-		vtParams, mysqlParams mysql.ConnParams
-		curr                  utils.MySQLCompare
+		clusterInstance *cluster.LocalProcessCluster
+		vtParams        mysql.ConnParams
+		mysqlParams     *mysql.ConnParams
+		curr            utils.MySQLCompare
 
 		olap        bool
 		ksNames     []string
@@ -80,9 +82,17 @@ func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vsch
 		state:           state.NewState(utils.BinaryIsAtLeastAtVersion),
 	}
 
-	mcmp, err := utils.NewMySQLCompare(t.reporter, t.vtParams, t.mysqlParams)
-	exitIf(err, "creating MySQLCompare")
-	t.curr = mcmp
+	var mcmp utils.MySQLCompare
+	var err error
+	if t.mysqlParams != nil {
+		mcmp, err = utils.NewMySQLCompare(t.reporter, t.vtParams, *t.mysqlParams)
+		exitIf(err, "creating MySQLCompare")
+		t.curr = mcmp
+	} else {
+		vtConn, err := mysql.Connect(context.Background(), &t.vtParams)
+		exitIf(err, "connecting to MySQL")
+		mcmp = utils.MySQLCompare{VtConn: vtConn}
+	}
 	createTableHandler := t.handleCreateTable
 	if !t.autoVSchema() {
 		createTableHandler = func(*sqlparser.CreateTable) func() { return func() {} }
