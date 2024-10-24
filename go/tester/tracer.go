@@ -27,6 +27,7 @@ import (
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vterrors"
+	"vitess.io/vitess/go/vt/vtgate/vindexes"
 
 	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/tester/state"
@@ -58,14 +59,15 @@ func NewTracerFactory(traceFile *os.File, inner QueryRunnerFactory) *TracerFacto
 	}
 }
 
-func (t *TracerFactory) NewQueryRunner(
-	reporter Reporter,
-	handleCreateTable CreateTableHandler,
-	comparer utils.MySQLCompare,
-	cluster *cluster.LocalProcessCluster,
-) QueryRunner {
-	inner := t.inner.NewQueryRunner(reporter, handleCreateTable, comparer, cluster)
-	return newTracer(t.traceFile, comparer.MySQLConn, comparer.VtConn, reporter, inner)
+func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, vschema *vindexes.VSchema) QueryRunner {
+	inner := t.inner.NewQueryRunner(reporter, handleCreateTable, comparer, cluster, vschema)
+	return &Tracer{
+		traceFile: t.traceFile,
+		MySQLConn: comparer.MySQLConn,
+		VtConn:    comparer.VtConn,
+		reporter:  reporter,
+		inner:     inner,
+	}
 }
 
 func (t *TracerFactory) Close() {
@@ -73,20 +75,6 @@ func (t *TracerFactory) Close() {
 	exitIf(err, "failed to write closing bracket")
 	err = t.traceFile.Close()
 	exitIf(err, "failed to close trace file")
-}
-
-func newTracer(traceFile *os.File,
-	mySQLConn, vtConn *mysql.Conn,
-	reporter Reporter,
-	inner QueryRunner,
-) QueryRunner {
-	return &Tracer{
-		traceFile: traceFile,
-		MySQLConn: mySQLConn,
-		VtConn:    vtConn,
-		reporter:  reporter,
-		inner:     inner,
-	}
 }
 
 func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *state.State) error {
@@ -98,7 +86,7 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *state.St
 			errs = append(errs, err)
 		}
 
-		if state.RunOnMySQL() {
+		if t.MySQLConn != nil && state.RunOnMySQL() {
 			// we need to run the DMLs on mysql as well
 			_, err = t.MySQLConn.ExecuteFetch(q.Query, 10000, false)
 			if err != nil {

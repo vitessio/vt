@@ -25,6 +25,7 @@ import (
 	"slices"
 	"sort"
 
+	querypb "vitess.io/vitess/go/vt/proto/query"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/plancontext"
@@ -32,8 +33,6 @@ import (
 
 	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/typ"
-
-	querypb "vitess.io/vitess/go/vt/proto/query"
 )
 
 func Run(fileName string) error {
@@ -57,7 +56,7 @@ func run(out io.Writer, fileName string) error {
 		switch query.Type {
 		case typ.Skip, typ.Error, typ.VExplain:
 			skip = true
-		case typ.RemoveFile, typ.Unknown:
+		case typ.Unknown:
 			return fmt.Errorf("unknown command type: %s", query.Type)
 		case typ.Comment, typ.CommentWithCommand, typ.EmptyLine, typ.WaitForAuthoritative, typ.SkipIfBelowVersion:
 			// no-op for keys
