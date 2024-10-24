@@ -94,6 +94,12 @@ func SetupCluster(cfg Config) (_ ClusterInfo, err error) {
 		return ClusterInfo{}, err
 	}
 
+	if cfg.BackupDir != "" {
+		clusterInstance.VtTabletExtraArgs = append(clusterInstance.VtTabletExtraArgs,
+			"--backup_storage_implementation", "file",
+			"--file_backup_storage_root", cfg.BackupDir)
+	}
+
 	var ksNames []string
 	keyspaces, vschema := getKeyspaces(cfg.VschemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
 	for _, keyspace := range keyspaces {

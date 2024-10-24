@@ -40,6 +40,8 @@ type Config struct {
 	Tests                []string
 	NumberOfShards       int
 	Compare              bool
+
+	BackupDir string
 }
 
 func (cfg Config) GetNumberOfShards() int {

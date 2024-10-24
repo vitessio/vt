@@ -48,5 +48,7 @@ func testerCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.Sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
 	cmd.Flags().IntVar(&cfg.NumberOfShards, "number-of-shards", 0, "Number of shards to use for the sharded keyspace.")
 
+	cmd.Flags().StringVar(&cfg.BackupDir, "backup-path", "", "Restore from backup before running the tester")
+
 	return cmd
 }
