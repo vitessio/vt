@@ -35,6 +35,7 @@ func Execute() {
 
 	root.AddCommand(benchstat())
 	root.AddCommand(testerCmd())
+	root.AddCommand(tracerCmd())
 	root.AddCommand(keysCmd())
 
 	err := root.Execute()

@@ -17,6 +17,8 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
+
 	"github.com/spf13/cobra"
 
 	vttester "github.com/vitessio/vt/go/tester"
@@ -31,24 +33,56 @@ func testerCmd() *cobra.Command {
 		Short:   "Test the given workload against both Vitess and MySQL.",
 		Example: "vt tester ",
 		Args:    cobra.MinimumNArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg.Tests = args
 			cfg.Compare = true
-			return vttester.Run(cfg)
+			return usageErr(cmd, vttester.Run(cfg))
 		},
 	}
 
-	cmd.Flags().StringVar(&cfg.LogLevel, "log-level", "error", "The log level of vt tester: info, warn, error, debug.")
-	cmd.Flags().StringVar(&cfg.TraceFile, "trace-file", "", "Do a vexplain trace on all queries and store the output in the given file.")
-	cmd.Flags().StringVar(&cfg.VschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
-	cmd.Flags().StringVar(&cfg.VtExplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")
+	commonFlags(cmd, &cfg)
 
 	cmd.Flags().BoolVar(&cfg.OLAP, "olap", false, "Use OLAP to run the queries.")
 	cmd.Flags().BoolVar(&cfg.XUnit, "xunit", false, "Get output in an xml file instead of errors directory")
-	cmd.Flags().BoolVar(&cfg.Sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
-	cmd.Flags().IntVar(&cfg.NumberOfShards, "number-of-shards", 0, "Number of shards to use for the sharded keyspace.")
-
-	cmd.Flags().StringVar(&cfg.BackupDir, "backup-path", "", "Restore from backup before running the tester")
 
 	return cmd
+}
+
+func tracerCmd() *cobra.Command {
+	var cfg vttester.Config
+
+	cmd := &cobra.Command{
+		Use:   "trace ",
+		Short: "Runs the given workload and does a `vexplain trace` on all queries.",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if cfg.TraceFile == "" {
+				return errors.New("flag --trace-file is required when tracing")
+			}
+			cfg.Tests = args
+			cfg.Compare = false
+			return usageErr(cmd, vttester.Run(cfg))
+		},
+	}
+
+	commonFlags(cmd, &cfg)
+
+	return cmd
+}
+
+func usageErr(cmd *cobra.Command, err error) error {
+	if !errors.Is(err, vttester.WrongUsageError{}) {
+		cmd.SilenceUsage = true
+	}
+	return err
+}
+
+func commonFlags(cmd *cobra.Command, cfg *vttester.Config) {
+	cmd.Flags().StringVar(&cfg.LogLevel, "log-level", "error", "The log level of vt tester: info, warn, error, debug.")
+	cmd.Flags().IntVar(&cfg.NumberOfShards, "number-of-shards", 0, "Number of shards to use for the sharded keyspace.")
+	cmd.Flags().StringVar(&cfg.VschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
+	cmd.Flags().StringVar(&cfg.VtExplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")
+	cmd.Flags().StringVar(&cfg.TraceFile, "trace-file", "", "Do a vexplain trace on all queries and store the output in the given file.")
+	cmd.Flags().BoolVar(&cfg.Sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
+	cmd.Flags().StringVar(&cfg.BackupDir, "backup-path", "", "Restore from backup before running the tester")
 }

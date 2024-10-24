@@ -19,6 +19,7 @@ package tester
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -43,7 +44,10 @@ type (
 		clusterInstance *cluster.LocalProcessCluster
 		vtParams        mysql.ConnParams
 		mysqlParams     *mysql.ConnParams
-		curr            utils.MySQLCompare
+
+		// connections
+
+		MySQLConn, VtConn *mysql.Conn
 
 		olap        bool
 		ksNames     []string
@@ -87,7 +91,6 @@ func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vsch
 	if t.mysqlParams != nil {
 		mcmp, err = utils.NewMySQLCompare(t.reporter, t.vtParams, *t.mysqlParams)
 		exitIf(err, "creating MySQLCompare")
-		t.curr = mcmp
 	} else {
 		vtConn, err := mysql.Connect(context.Background(), &t.vtParams)
 		exitIf(err, "connecting to MySQL")
@@ -104,24 +107,39 @@ func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vsch
 
 func (t *Tester) preProcess() {
 	if t.olap {
-		_, err := t.curr.VtConn.ExecuteFetch("set workload = 'olap'", 0, false)
+		_, err := t.VtConn.ExecuteFetch("set workload = 'olap'", 0, false)
 		exitIf(err, "setting workload to olap by executing query")
 	}
 }
 
-func (t *Tester) postProcess() {
-	r, err := t.curr.MySQLConn.ExecuteFetch("show tables", 1000, true)
-	exitIf(err, "running show tables")
-	for _, row := range r.Rows {
-		t.curr.Exec(fmt.Sprintf("drop table %s", row[0].ToString()))
+func (t *Tester) postProcess() error {
+	r, err := t.MySQLConn.ExecuteFetch("show tables", 1000, true)
+	if err != nil {
+		return fmt.Errorf("running show tables: %w", err)
 	}
-	t.curr.Close()
+	for _, row := range r.Rows {
+		_, err := t.VtConn.ExecuteFetch(fmt.Sprintf("drop table %s", row[0].ToString()), 100, false)
+		if err != nil {
+			return fmt.Errorf("dropping table %s: %w", row[0].ToString(), err)
+		}
+		if t.MySQLConn != nil {
+			_, err := t.MySQLConn.ExecuteFetch(fmt.Sprintf("drop table %s", row[0].ToString()), 100, false)
+			if err != nil {
+				return fmt.Errorf("dropping table %s: %w", row[0].ToString(), err)
+			}
+		}
+	}
+	t.VtConn.Close()
+	if t.MySQLConn != nil {
+		t.MySQLConn.Close()
+	}
+	return nil
 }
 
 const PERM os.FileMode = 0o755
 
 func (t *Tester) runVexplain(q string) {
-	result, err := t.curr.VtConn.ExecuteFetch(fmt.Sprintf("vexplain %s %s", t.vexplain, q), -1, false)
+	result, err := t.VtConn.ExecuteFetch(fmt.Sprintf("vexplain %s %s", t.vexplain, q), -1, false)
 	t.vexplain = ""
 	if err != nil {
 		t.reporter.AddFailure(err)
@@ -190,10 +208,19 @@ func (t *Tester) handleQuery(q data.Query) {
 	}
 }
 
-func (t *Tester) Run() error {
+func (t *Tester) Run() (err error) {
 	t.preProcess()
 	if t.autoVSchema() {
-		defer t.postProcess()
+		defer func() {
+			postErr := t.postProcess()
+			if postErr == nil {
+				return
+			}
+			if err == nil {
+				err = postErr
+			}
+			err = errors.Join(err, postErr)
+		}()
 	}
 	queries, err := data.LoadQueries(t.name)
 	if err != nil {

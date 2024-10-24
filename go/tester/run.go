@@ -17,7 +17,6 @@ limitations under the License.
 package tester
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -51,6 +50,18 @@ func (cfg Config) GetNumberOfShards() int {
 	return cfg.NumberOfShards
 }
 
+func wrongUsage(msg string) error {
+	return WrongUsageError{msg}
+}
+
+type WrongUsageError struct {
+	msg string
+}
+
+func (e WrongUsageError) Error() string {
+	return e.msg
+}
+
 func Run(cfg Config) error {
 	err := CheckEnvironment()
 	if err != nil {
@@ -60,11 +71,11 @@ func Run(cfg Config) error {
 	a := cfg.VschemaFile != ""
 	b := cfg.VtExplainVschemaFile != ""
 	if a && b || a && cfg.Sharded || b && cfg.Sharded {
-		return errors.New("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
+		return wrongUsage("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
 	}
 
 	if cfg.NumberOfShards > 0 && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
-		return errors.New("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
+		return wrongUsage("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
 	}
 
 	if ll := os.Getenv("LOG_LEVEL"); ll != "" {
@@ -79,7 +90,7 @@ func Run(cfg Config) error {
 	}
 
 	if len(cfg.Tests) == 0 {
-		return errors.New("no tests specified")
+		return wrongUsage("no tests specified")
 	}
 
 	log.Infof("running tests: %v", cfg.Tests)
@@ -103,7 +114,7 @@ func Run(cfg Config) error {
 	} else {
 		reporterSuite = NewFileReporterSuite(getVschema(clusterInfo.clusterInstance))
 	}
-	failed := ExecuteTests(clusterInfo, cfg.Tests, reporterSuite, cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.OLAP, getQueryRunnerFactory(cfg.TraceFile))
+	failed := ExecuteTests(clusterInfo, cfg.Tests, reporterSuite, cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.OLAP, getQueryRunnerFactory(cfg))
 	outputFile := reporterSuite.Close()
 	if failed {
 		return fmt.Errorf("some tests failed 😭\nsee errors in %v", outputFile)
@@ -112,14 +123,20 @@ func Run(cfg Config) error {
 	return nil
 }
 
-func getQueryRunnerFactory(traceFile string) QueryRunnerFactory {
-	inner := ComparingQueryRunnerFactory{}
-	if traceFile == "" {
+func getQueryRunnerFactory(cfg Config) QueryRunnerFactory {
+	var inner QueryRunnerFactory
+	if cfg.Compare {
+		inner = ComparingQueryRunnerFactory{}
+	} else {
+		inner = NullQueryRunnerFactory{}
+	}
+
+	if cfg.TraceFile == "" {
 		return inner
 	}
 
 	var err error
-	writer, err := os.Create(traceFile)
+	writer, err := os.Create(cfg.TraceFile)
 	exitIf(err, "creating trace file")
 
 	_, err = writer.Write([]byte("["))

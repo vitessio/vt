@@ -104,24 +104,9 @@ func SetupCluster(cfg Config) (_ ClusterInfo, err error) {
 	keyspaces, vschema := getKeyspaces(cfg.VschemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
 	for _, keyspace := range keyspaces {
 		ksNames = append(ksNames, keyspace.Name)
-		vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
-		if !ok {
-			return ClusterInfo{}, fmt.Errorf("keyspace '%s' not found in vschema", keyspace.Name)
-		}
-
-		if vschemaKs.Keyspace.Sharded {
-			shardRanges := generateShardRanges(cfg.GetNumberOfShards())
-			fmt.Printf("starting sharded keyspace: '%s' with shards %v\n", keyspace.Name, shardRanges)
-			err = clusterInstance.StartKeyspace(*keyspace, shardRanges, 0, false)
-			if err != nil {
-				return ClusterInfo{}, err
-			}
-		} else {
-			fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)
-			err = clusterInstance.StartUnshardedKeyspace(*keyspace, 0, false)
-			if err != nil {
-				return ClusterInfo{}, err
-			}
+		err := startKeyspace(cfg, vschema, keyspace, clusterInstance)
+		if err != nil {
+			return ClusterInfo{}, err
 		}
 	}
 
@@ -132,15 +117,18 @@ func SetupCluster(cfg Config) (_ ClusterInfo, err error) {
 	}
 
 	if len(ksNames) == 0 {
-		fmt.Println("no keyspaces found in vschema")
-		os.Exit(1)
+		return ClusterInfo{}, errors.New("no keyspaces found in vschema")
 	}
 
 	vtParams := clusterInstance.GetVTParams(ksNames[0])
 
-	mysqlParams, closers, err := setupExternalMySQL(cfg.Compare, keyspaces, clusterInstance)
-	if err != nil {
-		return ClusterInfo{}, err
+	var mysqlParams *mysql.ConnParams
+	var closers []func()
+	if cfg.Compare {
+		mysqlParams, closers, err = setupExternalMySQL(keyspaces, clusterInstance)
+		if err != nil {
+			return ClusterInfo{}, err
+		}
 	}
 
 	return ClusterInfo{
@@ -158,12 +146,31 @@ func SetupCluster(cfg Config) (_ ClusterInfo, err error) {
 	}, nil
 }
 
-// TODO: having a single connection is not correct if we are dealing with multiple mysql databases.
-func setupExternalMySQL(compare bool, keyspaces []*cluster.Keyspace, clusterInstance *cluster.LocalProcessCluster) (_ *mysql.ConnParams, closers []func(), err error) {
-	if !compare {
-		return nil, nil, nil
+func startKeyspace(cfg Config, vschema *vindexes.VSchema, keyspace *cluster.Keyspace, clusterInstance *cluster.LocalProcessCluster) error {
+	vschemaKs, ok := vschema.Keyspaces[keyspace.Name]
+	if !ok {
+		return fmt.Errorf("keyspace '%s' not found in vschema", keyspace.Name)
 	}
 
+	if vschemaKs.Keyspace.Sharded {
+		shardRanges := generateShardRanges(cfg.GetNumberOfShards())
+		fmt.Printf("starting sharded keyspace: '%s' with shards %v\n", keyspace.Name, shardRanges)
+		err := clusterInstance.StartKeyspace(*keyspace, shardRanges, 0, false)
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Printf("starting unsharded keyspace: '%s'\n", keyspace.Name)
+		err := clusterInstance.StartUnshardedKeyspace(*keyspace, 0, false)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// TODO: having a single connection is not correct if we are dealing with multiple mysql databases.
+func setupExternalMySQL(keyspaces []*cluster.Keyspace, clusterInstance *cluster.LocalProcessCluster) (_ *mysql.ConnParams, closers []func(), err error) {
 	// Create the mysqld server we will use to compare the results.
 	// We go through all the keyspaces we found in the vschema, and
 	// simply create the mysqld process during the first iteration with

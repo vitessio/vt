@@ -17,20 +17,39 @@ limitations under the License.
 package tester
 
 import (
-	"github.com/vitessio/vt/go/data"
-	"github.com/vitessio/vt/go/tester/state"
+	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
+
+	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/tester/state"
 )
 
-type Empty struct{}
-
-func (e *Empty) NewQueryRunner(Reporter, CreateTableHandler, utils.MySQLCompare, *cluster.LocalProcessCluster, *vindexes.VSchema) QueryRunner {
-	return e
+type NullQueryRunner struct {
+	VtConn            *mysql.Conn
+	handleCreateTable CreateTableHandler
 }
 
-func (e *Empty) Close() {}
+type NullQueryRunnerFactory struct{}
 
-func (e *Empty) runQuery(data.Query, sqlparser.Statement, *state.State) error { return nil }
+func (NullQueryRunnerFactory) Close() {}
+
+func (NullQueryRunnerFactory) NewQueryRunner(_ Reporter, handleCreateTable CreateTableHandler, mcmp utils.MySQLCompare, _ *cluster.LocalProcessCluster, _ *vindexes.VSchema) QueryRunner {
+	return &NullQueryRunner{
+		handleCreateTable: handleCreateTable,
+		VtConn:            mcmp.VtConn,
+	}
+}
+
+func (nqr *NullQueryRunner) runQuery(q data.Query, ast sqlparser.Statement, state *state.State) error {
+	create, isCreateStatement := ast.(*sqlparser.CreateTable)
+	if isCreateStatement && !state.IsErrorExpectedSet() && state.RunOnVitess() {
+		closer := nqr.handleCreateTable(create)
+		closer()
+	}
+
+	_, err := nqr.VtConn.ExecuteFetch(q.Query, 1000, false)
+	return err
+}
