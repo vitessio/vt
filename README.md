@@ -3,9 +3,10 @@
 The `vt` binary encapsulates several utility tools for Vitess, providing a comprehensive suite for testing, summarizing, and query analysis.
 
 ## Tools Included
-- **`vt tester`**: A testing utility using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
+- **`vt test`**: A testing utility using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
 - **`vt benchstat`**: A tool used to summarize or compare trace logs or key logs for deeper analysis.
 - **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, and column usage. It integrates with `vt benchstat` for summarizing and comparing query logs.
+- **`vt trace`**: A tool that generates a trace of the query execution plan using the `vexplain trace` tool for detailed analysis. 
 
 ## Installation
 You can install `vt` using the following command:
@@ -100,6 +101,16 @@ The generated trace logs can be summarized or compared using `vt benchstat`:
    ```
 
    This summary shows the columns of the `customer` table, along with their usage percentages in filters, groupings, and joins across the queries in the log.
+
+## Using `--backup-path` Flag
+
+The `--backup-path` flag allows `tester` and `trace` to initialize tests from a database backup rather than an empty database.
+This is particularly helpful when verifying compatibility during version upgrades or testing stateful operations.
+
+Example:
+```bash
+vt test --backup-path /path/to/backup -vschema t/vschema.json t/basic.test
+```
 
 ## Contributing
 

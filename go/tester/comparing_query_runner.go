@@ -24,6 +24,7 @@ import (
 	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
 	"vitess.io/vitess/go/vt/sqlparser"
+	"vitess.io/vitess/go/vt/vtgate/vindexes"
 
 	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/tester/state"
@@ -36,6 +37,7 @@ type (
 		handleCreateTable CreateTableHandler
 		comparer          utils.MySQLCompare
 		cluster           *cluster.LocalProcessCluster
+		vschema           *vindexes.VSchema
 	}
 	CreateTableHandler          func(create *sqlparser.CreateTable) func()
 	ComparingQueryRunnerFactory struct{}
@@ -43,26 +45,13 @@ type (
 
 func (f ComparingQueryRunnerFactory) Close() {}
 
-func (f ComparingQueryRunnerFactory) NewQueryRunner(
-	reporter Reporter,
-	handleCreateTable CreateTableHandler,
-	comparer utils.MySQLCompare,
-	cluster *cluster.LocalProcessCluster,
-) QueryRunner {
-	return newComparingQueryRunner(reporter, handleCreateTable, comparer, cluster)
-}
-
-func newComparingQueryRunner(
-	reporter Reporter,
-	handleCreateTable CreateTableHandler,
-	comparer utils.MySQLCompare,
-	cluster *cluster.LocalProcessCluster,
-) *ComparingQueryRunner {
+func (f ComparingQueryRunnerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, vschema *vindexes.VSchema) QueryRunner {
 	return &ComparingQueryRunner{
 		reporter:          reporter,
 		handleCreateTable: handleCreateTable,
 		comparer:          comparer,
 		cluster:           cluster,
+		vschema:           vschema,
 	}
 }
 
@@ -146,7 +135,7 @@ func (nqr *ComparingQueryRunner) executeReference(query string, ast sqlparser.St
 
 	tableName := tables[0]
 
-	tbl, err := vschema.FindTable("" /*empty means global search*/, tableName)
+	tbl, err := nqr.vschema.FindTable("" /*empty means global search*/, tableName)
 	if err != nil {
 		return err
 	}

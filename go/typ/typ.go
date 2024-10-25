@@ -23,7 +23,6 @@ type CmdType int
 const (
 	Query CmdType = iota
 	Error
-	RemoveFile
 	Skip
 	Unknown
 	Comment
@@ -37,10 +36,9 @@ const (
 	Reference
 )
 
-var commandMap = map[string]CmdType{
+var commandMap = map[string]CmdType{ //nolint:gochecknoglobals // this is instead of a const
 	"query":                 Query,
 	"error":                 Error,
-	"remove_file":           RemoveFile,
 	"skip":                  Skip,
 	"skip_if_below_version": SkipIfBelowVersion,
 	"vexplain":              VExplain,

@@ -28,7 +28,7 @@ func benchstat() *cobra.Command {
 		Short:   "Compares and analyses a trace output",
 		Example: "vt benchstat old.json new.json",
 		Args:    cobra.RangeArgs(1, 2),
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			vtbenchstat.Run(args)
 		},
 	}
