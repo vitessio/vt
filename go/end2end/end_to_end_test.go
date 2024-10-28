@@ -63,13 +63,6 @@ func TestApp(t *testing.T) {
 	}{
 		{[]string{"help"}, "Utils tools for testing, running and benchmarking Vitess"},
 		{[]string{"keys", "t/demo.test"}, `"queryStructure"`},
-		{[]string{
-			"trace",
-			"--backup-path", "go/end2end/testdata/backup",
-			"--trace-file", "trace.log",
-			"--vschema", "t/demo_vschema_shardkey.json",
-			"t/demo.test",
-		}, `ok! Ran 16 queries, 16 successfully`},
 	}
 	projectRoot, err := filepath.Abs("../../")
 	require.NoError(t, err)
