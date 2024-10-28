@@ -61,6 +61,7 @@ func NewTracerFactory(traceFile *os.File, inner QueryRunnerFactory) *TracerFacto
 
 func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable CreateTableHandler, comparer utils.MySQLCompare, cluster *cluster.LocalProcessCluster, vschema *vindexes.VSchema) QueryRunner {
 	inner := t.inner.NewQueryRunner(reporter, handleCreateTable, comparer, cluster, vschema)
+
 	return &Tracer{
 		traceFile: t.traceFile,
 		MySQLConn: comparer.MySQLConn,
@@ -97,13 +98,12 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *state.St
 		return vterrors.Aggregate(errs)
 	}
 
-	reference := state.IsReferenceSet()
-
 	err := t.inner.runQuery(q, ast, state)
 	if err != nil {
 		return err
 	}
 
+	reference := state.IsReferenceSet()
 	_, isSelect := ast.(sqlparser.SelectStatement)
 	if reference || !state.RunOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
 		return nil

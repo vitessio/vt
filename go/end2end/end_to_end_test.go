@@ -24,12 +24,13 @@ package end2end
 import (
 	"bytes"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
@@ -62,11 +63,13 @@ func TestApp(t *testing.T) {
 	}{
 		{[]string{"help"}, "Utils tools for testing, running and benchmarking Vitess"},
 		{[]string{"keys", "t/demo.test"}, `"queryStructure"`},
-		{[]string{"trace",
+		{[]string{
+			"trace",
 			"--backup-path", "go/end2end/testdata/backup",
 			"--trace-file", "trace.log",
 			"--vschema", "t/demo_vschema_shardkey.json",
-			"t/demo.test"}, `ok! Ran 16 queries, 16 successfully`},
+			"t/demo.test",
+		}, `ok! Ran 16 queries, 16 successfully`},
 	}
 	projectRoot, err := filepath.Abs("../../")
 	require.NoError(t, err)
