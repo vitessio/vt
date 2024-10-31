@@ -20,9 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"os"
-	"slices"
 	"sort"
 
 	querypb "vitess.io/vitess/go/vt/proto/query"
@@ -75,7 +73,12 @@ func run(out io.Writer, fileName string) error {
 func process(q data.Query, si *schemaInfo, ql *queryList) {
 	ast, bv, err := sqlparser.NewTestParser().Parse2(q.Query)
 	if err != nil {
-		panic(err) // TODO: write this to the json output
+		ql.failed = append(ql.failed, QueryFailedResult{
+			Query:      q.Query,
+			LineNumber: q.Line,
+			Error:      err.Error(),
+		})
+		return
 	}
 
 	switch ast := ast.(type) {
@@ -84,7 +87,12 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 	case sqlparser.Statement:
 		st, err := semantics.Analyze(ast, "ks", si)
 		if err != nil {
-			panic(err) // TODO: write this to the json output
+			ql.failed = append(ql.failed, QueryFailedResult{
+				Query:      q.Query,
+				LineNumber: q.Line,
+				Error:      err.Error(),
+			})
+			return
 		}
 		ctx := &plancontext.PlanningContext{
 			ReservedVars: sqlparser.NewReservedVars("", bv),
@@ -94,15 +102,26 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 	}
 }
 
+type QueryListJSON struct {
+	Queries []QueryAnalysisResult `json:"queries"`
+	Failed  []QueryFailedResult   `json:"failed,omitempty"`
+}
+
 type queryList struct {
 	queries map[string]*QueryAnalysisResult
+	failed  []QueryFailedResult
 }
 
 func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparser.Statement, q data.Query) {
 	bv := make(map[string]*querypb.BindVariable)
 	err := sqlparser.Normalize(ast, ctx.ReservedVars, bv)
 	if err != nil {
-		panic("oh no")
+		ql.failed = append(ql.failed, QueryFailedResult{
+			Query:      q.Query,
+			LineNumber: q.Line,
+			Error:      err.Error(),
+		})
+		return
 	}
 	structure := sqlparser.CanonicalString(ast)
 	r, found := ql.queries[structure]
@@ -136,33 +155,29 @@ func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparse
 
 // writeJsonTo writes the query list, sorted by the first line number of the query, to the given writer.
 func (ql *queryList) writeJSONTo(w io.Writer) error {
-	values := slices.Collect(maps.Values(ql.queries))
+	values := make([]QueryAnalysisResult, 0, len(ql.queries))
+	for _, result := range ql.queries {
+		values = append(values, *result)
+	}
+
 	sort.Slice(values, func(i, j int) bool {
 		return values[i].LineNumbers[0] < values[j].LineNumbers[0]
 	})
 
-	_, err := fmt.Fprint(w, "[\n  ")
+	res := QueryListJSON{
+		Queries: values,
+		Failed:  ql.failed,
+	}
+
+	jsonData, err := json.MarshalIndent(res, "  ", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(jsonData)
 	if err != nil {
 		return err
 	}
 
-	for i, q := range values {
-		if i > 0 {
-			_, err = fmt.Fprint(w, ",\n  ")
-			if err != nil {
-				return err
-			}
-		}
-		jsonData, err := json.MarshalIndent(q, "  ", "  ")
-		if err != nil {
-			return err
-		}
-		_, err = w.Write(jsonData)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = fmt.Fprint(w, "\n]")
 	return err
 }
 
@@ -178,4 +193,10 @@ type QueryAnalysisResult struct {
 	JoinColumns     []string `json:"joinColumns,omitempty"`
 	FilterColumns   []string `json:"filterColumns,omitempty"`
 	StatementType   string   `json:"statementType"`
+}
+
+type QueryFailedResult struct {
+	Query      string `json:"query"`
+	LineNumber int    `json:"lineNumber"`
+	Error      string `json:"error"`
 }

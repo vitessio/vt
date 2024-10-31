@@ -26,7 +26,7 @@ import (
 
 func TestKeys(t *testing.T) {
 	sb := &strings.Builder{}
-	err := run(sb, "../../t/tpch.test")
+	err := run(sb, "../../t/tpch_failing_queries.test")
 	require.NoError(t, err)
 
 	out, err := os.ReadFile("../benchstat/testdata/keys-log.json")
