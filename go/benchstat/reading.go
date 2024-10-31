@@ -26,7 +26,7 @@ import (
 	"github.com/vitessio/vt/go/keys"
 )
 
-func readTraceFile(fileName string) TraceFile {
+func readTraceFile(fileName string) readingSummary {
 	// Open the JSON file
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -67,7 +67,7 @@ func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
 	return decoder, val.(json.Delim)
 }
 
-func readTracedQueryFile(decoder *json.Decoder, fileName string) TraceFile {
+func readTracedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
 	var tracedQueries []TracedQuery
 	err := decoder.Decode(&tracedQueries)
 	if err != nil {
@@ -86,21 +86,21 @@ func readTracedQueryFile(decoder *json.Decoder, fileName string) TraceFile {
 		return a < b
 	})
 
-	return TraceFile{
+	return readingSummary{
 		Name:          fileName,
 		TracedQueries: tracedQueries,
 	}
 }
 
-func readAnalysedQueryFile(decoder *json.Decoder, fileName string) TraceFile {
-	var res keys.QueryListJSON
-	err := decoder.Decode(&res)
+func readAnalysedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
+	var output keys.Output
+	err := decoder.Decode(&output)
 	if err != nil {
 		exit("Error reading json: " + err.Error())
 	}
 
-	return TraceFile{
+	return readingSummary{
 		Name:            fileName,
-		AnalysedQueries: res.Queries,
+		AnalysedQueries: &output,
 	}
 }
