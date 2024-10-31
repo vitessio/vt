@@ -58,7 +58,11 @@ func (s *schemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes
 
 	columns, found := s.tables[tablename.Name.String()]
 	if !found {
-		return nil, nil, "", topodata.TabletType_REPLICA, nil, fmt.Errorf("unknown table %s", tablename.Name.String())
+		return &vindexes.Table{
+			Name:                    tablename.Name,
+			Keyspace:                &vindexes.Keyspace{Name: s.ksName},
+			ColumnListAuthoritative: false,
+		}, nil, s.ksName, topodata.TabletType_REPLICA, nil, nil
 	}
 
 	return &vindexes.Table{
