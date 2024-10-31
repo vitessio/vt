@@ -29,6 +29,8 @@ import (
 	"github.com/alecthomas/chroma/quick"
 	"github.com/olekukonko/tablewriter"
 	"golang.org/x/term"
+	"vitess.io/vitess/go/slice"
+	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/vitessio/vt/go/keys"
 )
@@ -378,8 +380,22 @@ func summarizeQueries(queries *keys.Output) ([]TableSummary, []FailuresSummary) 
 			}
 			tableUsageCounts[table] += query.UsageCount
 
-			updateColumnUsage := func(columns []string, usageType func(*ColumnUsage) *float64) {
-				for _, col := range columns {
+			updateColumnUsage := func(columns any, usageType func(*ColumnUsage) *float64) {
+				var colNames []string
+				switch columns := columns.(type) {
+				case []operators.Column:
+					slice.Map(columns, func(col operators.Column) interface{} {
+						colNames = append(colNames, col.String())
+						return col
+					})
+				case []operators.ColumnUse:
+					slice.Map(columns, func(col operators.ColumnUse) interface{} {
+						colNames = append(colNames, col.Column.String())
+						return col
+					})
+				}
+
+				for _, col := range colNames {
 					if strings.HasPrefix(col, table+".") {
 						colName := strings.TrimPrefix(col, table+".")
 						usage := tableSummaries[table].Columns[colName]
