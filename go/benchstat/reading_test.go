@@ -29,7 +29,7 @@ func initFile(t *testing.T, firstToken rune) *os.File {
 	f, err := os.CreateTemp("", "")
 	require.NoError(t, err)
 
-	require.NoError(t, os.WriteFile(f.Name(), []byte(fmt.Sprintf("%c{\"value\": 1}", firstToken)), 0600))
+	require.NoError(t, os.WriteFile(f.Name(), []byte(fmt.Sprintf("%c{\"value\": 1}", firstToken)), 0o600))
 	return f
 }
 
