@@ -22,6 +22,7 @@ import (
 	"iter"
 	"math"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -451,11 +452,15 @@ func summarizeColumnUsage(table string, tableSummaries map[string]*TableSummary,
 				colNames = append(colNames, col.String())
 				return col
 			})
+			sort.Strings(colNames)
+			slices.Compact(colNames)
 		case []operators.ColumnUse:
 			slice.Map(columns, func(col operators.ColumnUse) interface{} {
 				colNames = append(colNames, col.Column.String())
 				return col
 			})
+			sort.Strings(colNames)
+			slices.Compact(colNames)
 		}
 
 		for _, col := range colNames {
