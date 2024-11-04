@@ -135,6 +135,7 @@ func getQueryRunnerFactory(cfg Config) QueryRunnerFactory {
 		return inner
 	}
 
+	// we are tracing, so we need to create a tracer factory
 	var err error
 	writer, err := os.Create(cfg.TraceFile)
 	exitIf(err, "creating trace file")

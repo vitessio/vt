@@ -78,8 +78,8 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 	}
 
 	log.Debugf("executeStmt: %s", query)
-	create, isCreateStatement := ast.(*sqlparser.CreateTable)
-	if isCreateStatement && !state.IsErrorExpectedSet() && state.RunOnVitess() {
+
+	if create, ok := shouldWeRunCreateTable(ast, state); ok {
 		closer := nqr.handleCreateTable(create)
 		defer func() {
 			if err == nil {
@@ -111,6 +111,14 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 		}
 	}
 	return nil
+}
+
+func shouldWeRunCreateTable(ast sqlparser.Statement, state *state.State) (*sqlparser.CreateTable, bool) {
+	if state.IsErrorExpectedSet() || !state.RunOnVitess() {
+		return nil, false
+	}
+	create, isCreateStatement := ast.(*sqlparser.CreateTable)
+	return create, isCreateStatement
 }
 
 func (nqr *ComparingQueryRunner) execAndExpectErr(query string) error {
