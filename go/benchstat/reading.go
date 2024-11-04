@@ -26,7 +26,7 @@ import (
 	"github.com/vitessio/vt/go/keys"
 )
 
-func readTraceFile(fileName string) TraceFile {
+func readTraceFile(fileName string) readingSummary {
 	// Open the JSON file
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -34,19 +34,28 @@ func readTraceFile(fileName string) TraceFile {
 	}
 	defer file.Close()
 
+	decoder, val := getDecoderAndDelim(file)
+
+	// Determine the type based on the first delimiter of the JSON file
+	switch val {
+	case json.Delim('['):
+		return readTracedQueryFile(decoder, fileName)
+	case json.Delim('{'):
+		return readAnalysedQueryFile(decoder, fileName)
+	}
+
+	exit("Unknown file format")
+	panic("unreachable")
+}
+
+func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
 	// Create a decoder
 	decoder := json.NewDecoder(file)
 
 	// Read the opening bracket
-	_, err = decoder.Token()
+	val, err := decoder.Token()
 	if err != nil {
 		exit("Error reading json: " + err.Error())
-	}
-
-	// Peek at the first object to determine the file type
-	var peekObj json.RawMessage
-	if err := decoder.Decode(&peekObj); err != nil {
-		exit("Error peeking json object: " + err.Error())
 	}
 
 	// Reset the file pointer to the beginning
@@ -55,39 +64,12 @@ func readTraceFile(fileName string) TraceFile {
 		exit("Error rewinding file: " + err.Error())
 	}
 	decoder = json.NewDecoder(file)
-
-	// Skip the opening bracket again
-	_, err = decoder.Token()
-	if err != nil {
-		exit("Error reading json: " + err.Error())
-	}
-
-	// Determine the type based on the structure of the first object
-	var tracedQuery TracedQuery
-	var analysedQuery keys.QueryAnalysisResult
-	if err := json.Unmarshal(peekObj, &tracedQuery); err == nil && tracedQuery.Query != "" {
-		return readTracedQueryFile(decoder, fileName)
-	} else if err := json.Unmarshal(peekObj, &analysedQuery); err == nil && analysedQuery.QueryStructure != "" {
-		return readAnalysedQueryFile(decoder, fileName)
-	}
-
-	exit("Unknown file format")
-	panic("unreachable")
+	return decoder, val.(json.Delim)
 }
 
-func readTracedQueryFile(decoder *json.Decoder, fileName string) TraceFile {
+func readTracedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
 	var tracedQueries []TracedQuery
-	for decoder.More() {
-		var element TracedQuery
-		err := decoder.Decode(&element)
-		if err != nil {
-			exit("Error reading json: " + err.Error())
-		}
-		tracedQueries = append(tracedQueries, element)
-	}
-
-	// Read the closing bracket
-	_, err := decoder.Token()
+	err := decoder.Decode(&tracedQueries)
 	if err != nil {
 		exit("Error reading json: " + err.Error())
 	}
@@ -104,31 +86,21 @@ func readTracedQueryFile(decoder *json.Decoder, fileName string) TraceFile {
 		return a < b
 	})
 
-	return TraceFile{
+	return readingSummary{
 		Name:          fileName,
 		TracedQueries: tracedQueries,
 	}
 }
 
-func readAnalysedQueryFile(decoder *json.Decoder, fileName string) TraceFile {
-	var analysedQueries []keys.QueryAnalysisResult
-	for decoder.More() {
-		var element keys.QueryAnalysisResult
-		err := decoder.Decode(&element)
-		if err != nil {
-			exit("Error reading json: " + err.Error())
-		}
-		analysedQueries = append(analysedQueries, element)
-	}
-
-	// Read the closing bracket
-	_, err := decoder.Token()
+func readAnalysedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
+	var output keys.Output
+	err := decoder.Decode(&output)
 	if err != nil {
 		exit("Error reading json: " + err.Error())
 	}
 
-	return TraceFile{
+	return readingSummary{
 		Name:            fileName,
-		AnalysedQueries: analysedQueries,
+		AnalysedQueries: &output,
 	}
 }

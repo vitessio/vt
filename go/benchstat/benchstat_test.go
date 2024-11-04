@@ -24,8 +24,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func tf1() TraceFile {
-	return TraceFile{
+func tf1() readingSummary {
+	return readingSummary{
 		Name: "test",
 		TracedQueries: []TracedQuery{{
 			Query:      "select * from music",
@@ -74,8 +74,8 @@ func tf1() TraceFile {
 	}
 }
 
-func tf2() TraceFile {
-	return TraceFile{
+func tf2() readingSummary {
+	return readingSummary{
 		Name: "test",
 		TracedQueries: []TracedQuery{{
 			Query:      "select * from music",
@@ -482,6 +482,14 @@ Table: supplier used in 9 queries
 | s_nationkey | 0.00%    | 0.00%      | 77.78% |
 | s_suppkey   | 0.00%    | 0.00%      | 77.78% |
 +-------------+----------+------------+--------+
+
+The 1 following queries have failed:
++-----------------------+--------------------------------+
+|         Query         |             Error              |
++-----------------------+--------------------------------+
+| I am a failing query; | syntax error at position 2     |
+|                       | near 'I'                       |
++-----------------------+--------------------------------+
 
 `
 	x := sb.String()

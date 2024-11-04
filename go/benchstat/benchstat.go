@@ -60,17 +60,17 @@ type (
 		ShardsQueried int
 	}
 
-	TraceFile struct {
+	readingSummary struct {
 		Name string
 
 		// Only one of these fields will be populated
-		TracedQueries   []TracedQuery
-		AnalysedQueries []keys.QueryAnalysisResult
+		TracedQueries   []TracedQuery // Set when analyzing a 'vt tester --trace' output
+		AnalysedQueries *keys.Output  // Set when analyzing a 'vt keys' output
 	}
 )
 
 func Run(args []string) {
-	traces := make([]TraceFile, len(args))
+	traces := make([]readingSummary, len(args))
 	for i, arg := range args {
 		traces[i] = readTraceFile(arg)
 	}
@@ -94,7 +94,7 @@ func visit(trace Trace, f func(Trace)) {
 	}
 }
 
-func summarizeTraces(file TraceFile) map[string]QuerySummary {
+func summarizeTraces(file readingSummary) map[string]QuerySummary {
 	summary := make(map[string]QuerySummary)
 	for _, traceElement := range file.TracedQueries {
 		summary[traceElement.Query] = summarizeTrace(traceElement)
@@ -153,7 +153,7 @@ func limitQueryLength(query string, termWidth int) string {
 	return processedQuery
 }
 
-func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, file TraceFile) {
+func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, file readingSummary) {
 	summary := summarizeTraces(file)
 	for i, query := range file.TracedQueries {
 		if i > 0 {
@@ -213,7 +213,7 @@ func terminalWidth() int {
 	return termWidth
 }
 
-func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, file1, file2 TraceFile) {
+func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, file1, file2 readingSummary) {
 	summary1 := summarizeTraces(file1)
 	summary2 := summarizeTraces(file2)
 
@@ -295,9 +295,9 @@ func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) 
 
 // printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
 // and prints this summary information to the output.
-func printKeysSummary(out io.Writer, file TraceFile) {
+func printKeysSummary(out io.Writer, file readingSummary) {
 	_, _ = fmt.Fprintf(out, "Summary from trace file %s\n", file.Name)
-	tableSummaries := summarizeQueries(file.AnalysedQueries)
+	tableSummaries, failuresSummaries := summarizeQueries(file.AnalysedQueries)
 	for _, summary := range tableSummaries {
 		table := tablewriter.NewWriter(out)
 		table.SetAutoFormatHeaders(false)
@@ -314,6 +314,18 @@ func printKeysSummary(out io.Writer, file TraceFile) {
 		table.Render()
 		_, _ = fmt.Fprintln(out)
 	}
+
+	if len(failuresSummaries) > 0 {
+		table := tablewriter.NewWriter(out)
+		table.SetAutoFormatHeaders(false)
+		table.SetHeader([]string{"Query", "Error"})
+		for _, summary := range failuresSummaries {
+			table.Append([]string{summary.Query, summary.Error})
+		}
+		fmt.Fprintf(out, "The %d following queries have failed:\n", len(failuresSummaries))
+		table.Render()
+		_, _ = fmt.Fprintln(out)
+	}
 }
 
 type ColumnUsage struct {
@@ -326,6 +338,12 @@ type TableSummary struct {
 	Table      string
 	QueryCount int
 	Columns    map[string]ColumnUsage
+	Failed     bool
+}
+
+type FailuresSummary struct {
+	Query string
+	Error string
 }
 
 func (ts TableSummary) GetColumns() iter.Seq2[string, ColumnUsage] {
@@ -345,12 +363,12 @@ func (ts TableSummary) GetColumns() iter.Seq2[string, ColumnUsage] {
 	}
 }
 
-func summarizeQueries(queries []keys.QueryAnalysisResult) []TableSummary {
+func summarizeQueries(queries *keys.Output) ([]TableSummary, []FailuresSummary) {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageCounts := make(map[string]int)
 
 	// First pass: collect all data and count occurrences
-	for _, query := range queries {
+	for _, query := range queries.Queries {
 		for _, table := range query.TableName {
 			if _, exists := tableSummaries[table]; !exists {
 				tableSummaries[table] = &TableSummary{
@@ -400,5 +418,14 @@ func summarizeQueries(queries []keys.QueryAnalysisResult) []TableSummary {
 		return result[i].Table < result[j].Table
 	})
 
-	return result
+	// Collect failed queries
+	var failures []FailuresSummary
+	for _, query := range queries.Failed {
+		failures = append(failures, FailuresSummary{
+			Query: query.Query,
+			Error: query.Error,
+		})
+	}
+
+	return result, failures
 }
