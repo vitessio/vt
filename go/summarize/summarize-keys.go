@@ -30,23 +30,54 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/vitessio/vt/go/markdown"
 	"vitess.io/vitess/go/slice"
+	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/vitessio/vt/go/keys"
 )
 
+type Position int
+
+const (
+	Join Position = iota
+	JoinRange
+	Where
+	WhereRange
+	Grouping
+)
+
+func (p Position) String() string {
+	switch p {
+	case Join:
+		return "JOIN"
+	case JoinRange:
+		return "JOIN RANGE"
+	case Where:
+		return "WHERE"
+	case WhereRange:
+		return "WHERE RANGE"
+	case Grouping:
+		return "GROUP"
+	}
+
+	panic("unknown Position")
+}
+
 type (
 	ColumnUsage struct {
-		FilterPercentage   float64
-		GroupingPercentage float64
-		JoinPercentage     float64
+		Percentage float64
+		Count      int
+	}
+	ColumnInformation struct {
+		Name string
+		Pos  Position
 	}
 
 	TableSummary struct {
 		Table           string
 		ReadQueryCount  int
 		WriteQueryCount int
-		Columns         map[string]ColumnUsage
+		Columns         map[ColumnInformation]ColumnUsage
 		JoinPredicates  []operators.JoinPredicate
 		Failed          bool
 	}
@@ -63,17 +94,20 @@ type (
 	queryGraph map[graphKey][]operators.JoinPredicate
 )
 
-func (ts TableSummary) GetColumns() iter.Seq2[string, ColumnUsage] {
+func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
 	columns := make([][2]interface{}, 0, len(ts.Columns))
-	for colName, usage := range ts.Columns {
-		columns = append(columns, [2]interface{}{colName, usage})
+	for colInfo, usage := range ts.Columns {
+		columns = append(columns, [2]interface{}{colInfo, usage})
 	}
 	sort.Slice(columns, func(i, j int) bool {
-		return columns[i][0].(string) < columns[j][0].(string)
+		if columns[i][0].(ColumnInformation).Name == columns[j][0].(ColumnInformation).Name {
+			return columns[i][0].(ColumnInformation).Pos < columns[j][0].(ColumnInformation).Pos
+		}
+		return columns[i][0].(ColumnInformation).Name < columns[j][0].(ColumnInformation).Name
 	})
-	return func(yield func(string, ColumnUsage) bool) {
+	return func(yield func(ColumnInformation, ColumnUsage) bool) {
 		for _, col := range columns {
-			if !yield(col[0].(string), col[1].(ColumnUsage)) {
+			if !yield(col[0].(ColumnInformation), col[1].(ColumnUsage)) {
 				break
 			}
 		}
@@ -129,14 +163,16 @@ func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary) {
 }
 
 func renderColumnUsageTable(md *markdown.MarkDown, summary TableSummary) {
-	headers := []string{"Column", "Filter %", "Grouping %", "Join %"}
+	md.PrintHeader(fmt.Sprintf("Table: `%s` (%d reads and %d writes)", summary.Table, summary.ReadQueryCount, summary.WriteQueryCount), 4)
+
+	headers := []string{"Column", "Position", "Used", "Used %"}
 	var rows [][]string
-	for colName, usage := range summary.GetColumns() {
+	for colInfo, usage := range summary.GetColumns() {
 		rows = append(rows, []string{
-			colName,
-			fmt.Sprintf("%.2f%%", usage.FilterPercentage),
-			fmt.Sprintf("%.2f%%", usage.GroupingPercentage),
-			fmt.Sprintf("%.2f%%", usage.JoinPercentage),
+			colInfo.Name,
+			colInfo.Pos.String(),
+			fmt.Sprintf("%d", usage.Count),
+			fmt.Sprintf("%.2f%%", usage.Percentage),
 		})
 	}
 	md.PrintTable(headers, rows)
@@ -219,7 +255,7 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 			if _, exists := tableSummaries[table]; !exists {
 				tableSummaries[table] = &TableSummary{
 					Table:   table,
-					Columns: make(map[string]ColumnUsage),
+					Columns: make(map[ColumnInformation]ColumnUsage),
 				}
 			}
 
@@ -242,9 +278,7 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 		count := summary.ReadQueryCount + summary.WriteQueryCount
 		for colName, usage := range summary.Columns {
 			countF := float64(count)
-			usage.FilterPercentage = (usage.FilterPercentage / countF) * 100
-			usage.GroupingPercentage = (usage.GroupingPercentage / countF) * 100
-			usage.JoinPercentage = (usage.JoinPercentage / countF) * 100
+			usage.Percentage = (usage.Percentage / countF) * 100
 			summary.Columns[colName] = usage
 		}
 	}
@@ -272,35 +306,52 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 }
 
 func summarizeColumnUsage(table string, tableSummaries map[string]*TableSummary, query keys.QueryAnalysisResult) {
-	updateColumnUsage := func(columns any, usageType func(*ColumnUsage) *float64) {
-		var colNames []string
-		switch columns := columns.(type) {
-		case []operators.Column:
-			slice.Map(columns, func(col operators.Column) interface{} {
-				colNames = append(colNames, col.String())
-				return col
-			})
-		case []operators.ColumnUse:
-			slice.Map(columns, func(col operators.ColumnUse) interface{} {
-				colNames = append(colNames, col.Column.String())
-				return col
-			})
-		}
+	updateColumnUsage := func(columns []ColumnInformation) {
+		sort.Slice(columns, func(i, j int) bool {
+			if columns[i].Name == columns[j].Name {
+				return columns[i].Pos < columns[j].Pos
+			}
+			return columns[i].Name < columns[j].Name
+		})
+		columns = slices.Compact(columns)
 
-		sort.Strings(colNames)
-		colNames = slices.Compact(colNames)
-		for _, col := range colNames {
-			if strings.HasPrefix(col, table+".") {
-				colName := strings.TrimPrefix(col, table+".")
-				usage := tableSummaries[table].Columns[colName]
-				*usageType(&usage) += float64(query.UsageCount)
-				tableSummaries[table].Columns[colName] = usage
+		for _, col := range columns {
+			if strings.HasPrefix(col.Name, table+".") {
+				col.Name = strings.TrimPrefix(col.Name, table+".")
+				usage := tableSummaries[table].Columns[col]
+				queryUsageCount := query.UsageCount
+				usage.Percentage += float64(queryUsageCount)
+				usage.Count += queryUsageCount
+				tableSummaries[table].Columns[col] = usage
 			}
 		}
 	}
 
-	updateColumnUsage(query.FilterColumns, func(cu *ColumnUsage) *float64 { return &cu.FilterPercentage })
-	updateColumnUsage(query.GroupingColumns, func(cu *ColumnUsage) *float64 { return &cu.GroupingPercentage })
+	updateColumnUsage(slice.Map(query.FilterColumns, func(col operators.ColumnUse) ColumnInformation {
+		pos := Where
+		if col.Uses != sqlparser.EqualOp {
+			pos = WhereRange
+		}
+		return ColumnInformation{Name: col.Column.String(), Pos: pos}
+	}))
+
+	updateColumnUsage(slice.Map(query.GroupingColumns, func(col operators.Column) ColumnInformation {
+		return ColumnInformation{Name: col.String(), Pos: Grouping}
+	}))
+
+	updateColumnUsage(slice.Map(query.JoinPredicates, func(pred operators.JoinPredicate) ColumnInformation {
+		ci := ColumnInformation{Pos: Join}
+		if pred.Uses != sqlparser.EqualOp {
+			ci.Pos = JoinRange
+		}
+		switch table {
+		case pred.LHS.Table:
+			ci.Name = pred.LHS.String()
+		case pred.RHS.Table:
+			ci.Name = pred.RHS.String()
+		}
+		return ci
+	}))
 }
 
 func summarizeJoinPredicates(joinPredicates []operators.JoinPredicate, table string, tableSummaries map[string]*TableSummary) {
