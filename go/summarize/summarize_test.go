@@ -17,11 +17,11 @@ limitations under the License.
 package summarize
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func tf1() readingSummary {
@@ -551,12 +551,5 @@ The 1 following queries have failed:
 
 `
 	x := sb.String()
-	for idx := range expected {
-		if x[idx] != expected[idx] {
-			fmt.Println(expected[idx:])
-			panic(fmt.Sprintf("Mismatch at index %d", idx))
-		}
-	}
-	assert.Equal(t, len(expected), len(x))
-	assert.Equal(t, expected, x)
+	require.Equal(t, expected, x)
 }

@@ -20,11 +20,14 @@ import (
 	"fmt"
 	"io"
 	"iter"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/vitessio/vt/go/markdown"
 	"vitess.io/vitess/go/slice"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
@@ -50,6 +53,12 @@ type (
 		Query string
 		Error string
 	}
+
+	graphKey struct {
+		Tbl1, Tbl2 string
+	}
+
+	queryGraph map[graphKey][]operators.JoinPredicate
 )
 
 func (ts TableSummary) GetColumns() iter.Seq2[string, ColumnUsage] {
@@ -72,49 +81,104 @@ func (ts TableSummary) GetColumns() iter.Seq2[string, ColumnUsage] {
 // printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
 // and prints this summary information to the output.
 func printKeysSummary(out io.Writer, file readingSummary) {
-	_, _ = fmt.Fprintf(out, "Summary from trace file %s\n", file.Name)
-	tableSummaries, failuresSummaries := summarizeKeysQueries(file.AnalysedQueries)
-	for _, summary := range tableSummaries {
-		fmt.Fprintf(out, "Table: %s used in %d queries\n", summary.Table, summary.QueryCount)
+	var md = &markdown.MarkDown{}
 
-		renderColumnUsageTable(out, summary)
-		renderJoinPredicatesTable(out, summary)
+	md.PrintHeader(fmt.Sprintf("Keys analyzed %s", time.Now().Format(time.DateTime)), 1)
+	md.Println(fmt.Sprintf("File analyzed: %s", file.Name))
+	md.NewLine()
 
-		_, _ = fmt.Fprintln(out)
-	}
+	tableSummaries, _ := summarizeKeysQueries(file.AnalysedQueries)
 
-	if len(failuresSummaries) > 0 {
-		table := tablewriter.NewWriter(out)
-		table.SetAutoFormatHeaders(false)
-		table.SetHeader([]string{"Query", "Error"})
-		for _, summary := range failuresSummaries {
-			table.Append([]string{summary.Query, summary.Error})
-		}
-		fmt.Fprintf(out, "The %d following queries have failed:\n", len(failuresSummaries))
-		table.Render()
-		_, _ = fmt.Fprintln(out)
+	renderTableUsage(tableSummaries, md)
+	renderJoinPredicatesUsage(md, file.AnalysedQueries)
+
+	// if len(failuresSummaries) > 0 {
+	// 	table := tablewriter.NewWriter(out)
+	// 	table.SetAutoFormatHeaders(false)
+	// 	table.SetHeader([]string{"Query", "Error"})
+	// 	for _, summary := range failuresSummaries {
+	// 		table.Append([]string{summary.Query, summary.Error})
+	// 	}
+	// 	fmt.Fprintf(out, "The %d following queries have failed:\n", len(failuresSummaries))
+	// 	table.Render()
+	// 	_, _ = fmt.Fprintln(out)
+	// }
+	_, err := md.WriteTo(out)
+	if err != nil {
+		panic(err)
 	}
 }
 
-func renderColumnUsageTable(out io.Writer, summary TableSummary) {
-	table := createTableWriter(out, []string{"Column", "Filter %", "Grouping %", "Join %"})
+func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
+	if len(tableSummaries) == 0 {
+		return
+	}
+
+	md.PrintHeader("Tables", 2)
+	// TODO: high-level overview of all tables
+
+	md.PrintHeader("Column Usage", 3)
+	for _, summary := range tableSummaries {
+		renderColumnUsageTable(md, summary)
+	}
+}
+
+func renderColumnUsageTable(md *markdown.MarkDown, summary TableSummary) {
+	headers := []string{"Column", "Filter %", "Grouping %", "Join %"}
+	var rows [][]string
 	for colName, usage := range summary.GetColumns() {
-		table.Append([]string{
+		rows = append(rows, []string{
 			colName,
 			fmt.Sprintf("%.2f%%", usage.FilterPercentage),
 			fmt.Sprintf("%.2f%%", usage.GroupingPercentage),
 			fmt.Sprintf("%.2f%%", usage.JoinPercentage),
 		})
 	}
-	table.Render()
+	md.PrintTable(headers, rows)
 }
 
-func renderJoinPredicatesTable(out io.Writer, summary TableSummary) {
-	table := createTableWriter(out, []string{"Join Predicate"})
-	for _, predicate := range summary.JoinPredicates {
-		table.Append([]string{predicate.String()})
+func (g queryGraph) AddJoinPredicate(key graphKey, pred operators.JoinPredicate) {
+	g[key] = append(g[key], pred)
+}
+
+func renderJoinPredicatesUsage(md *markdown.MarkDown, summary *keys.Output) {
+	g := make(queryGraph)
+	for _, query := range summary.Queries {
+		for _, pred := range query.JoinPredicates {
+			key := makeKey(pred.LHS, pred.RHS)
+			g.AddJoinPredicate(key, pred)
+		}
 	}
-	table.Render()
+	ks := slices.Collect(maps.Keys(g))
+	slices.SortFunc(ks, func(a, b graphKey) int {
+		if a.Tbl1 == b.Tbl1 {
+			return strings.Compare(a.Tbl2, b.Tbl2)
+		}
+		return strings.Compare(a.Tbl1, b.Tbl1)
+	})
+
+	if len(g) > 0 {
+		md.PrintHeader("Table Relationships", 2)
+	}
+	for key, predicates := range g {
+		md.Println("```")
+		md.Printf("%s <> %s\n", key.Tbl1, key.Tbl2)
+		md.Printf("|\n")
+		for _, predicate := range predicates {
+			md.Printf("|- %s\n", predicate.String())
+		}
+		md.Println("```")
+		md.NewLine()
+	}
+}
+
+// makeKey creates a graph key from two columns. The key is always sorted in ascending order.
+func makeKey(lhs, rhs operators.Column) graphKey {
+	if lhs.Table < rhs.Table {
+		return graphKey{lhs.Table, rhs.Table}
+	}
+
+	return graphKey{rhs.Table, lhs.Table}
 }
 
 func createTableWriter(out io.Writer, cols []string) *tablewriter.Table {

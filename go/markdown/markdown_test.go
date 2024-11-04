@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package summarize
+package markdown
 
 import (
 	"fmt"
@@ -59,39 +59,9 @@ func TestTable(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("headers: %v, rows: %v", tt.headers, tt.rows), func(t *testing.T) {
-			md := &markDown{}
+			md := &MarkDown{}
 			md.PrintTable(tt.headers, tt.rows)
 			assert.Equal(t, tt.expected, md.String())
-		})
-	}
-}
-
-func TestEscape(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{
-			input:    "| alla * kan _ älska !",
-			expected: `&#124; alla \* kan \_ älska \!`,
-		},
-		{
-			input:    "[hello](world)",
-			expected: `\[hello\]\(world\)`,
-		},
-		{
-			input:    "# This is a test + example",
-			expected: `\# This is a test \+ example`,
-		},
-		{
-			input:    "simple text",
-			expected: "simple text",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("input: %v", tt.input), func(t *testing.T) {
-			assert.Equal(t, tt.expected, markdownEscaper.Replace(tt.input))
 		})
 	}
 }
@@ -121,7 +91,7 @@ func TestPrintHeader(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("header: %s, level: %d", tt.input, tt.level), func(t *testing.T) {
-			md := &markDown{}
+			md := &MarkDown{}
 			md.PrintHeader(tt.input, tt.level)
 			assert.Equal(t, tt.expected, md.String())
 		})
@@ -145,7 +115,7 @@ func TestPrintln(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("input: %s", tt.input), func(t *testing.T) {
-			md := &markDown{}
+			md := &MarkDown{}
 			md.Println(tt.input)
 			assert.Equal(t, tt.expected, md.String())
 		})
@@ -172,7 +142,7 @@ func TestPrintf(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("format: %s", tt.format), func(t *testing.T) {
-			md := &markDown{}
+			md := &MarkDown{}
 			md.Printf(tt.format, tt.args...)
 			assert.Equal(t, tt.expected, md.String())
 		})
