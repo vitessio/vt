@@ -14,7 +14,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/term v0.24.0
-	vitess.io/vitess v0.10.3-0.20241031225146-0282feba4bdc
+	vitess.io/vitess v0.10.3-0.20241104094120-3f631e20f4c9
 )
 
 require (
