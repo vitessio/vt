@@ -23,6 +23,7 @@ import (
 	"maps"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,11 +43,12 @@ type (
 	}
 
 	TableSummary struct {
-		Table          string
-		QueryCount     int
-		Columns        map[string]ColumnUsage
-		JoinPredicates []operators.JoinPredicate
-		Failed         bool
+		Table           string
+		ReadQueryCount  int
+		WriteQueryCount int
+		Columns         map[string]ColumnUsage
+		JoinPredicates  []operators.JoinPredicate
+		Failed          bool
 	}
 
 	FailuresSummary struct {
@@ -87,22 +89,12 @@ func printKeysSummary(out io.Writer, file readingSummary) {
 	md.Println(fmt.Sprintf("File analyzed: %s", file.Name))
 	md.NewLine()
 
-	tableSummaries, _ := summarizeKeysQueries(file.AnalysedQueries)
+	tableSummaries, failuresSummaries := summarizeKeysQueries(file.AnalysedQueries)
 
 	renderTableUsage(tableSummaries, md)
 	renderJoinPredicatesUsage(md, file.AnalysedQueries)
+	renderFailures(md, failuresSummaries)
 
-	// if len(failuresSummaries) > 0 {
-	// 	table := tablewriter.NewWriter(out)
-	// 	table.SetAutoFormatHeaders(false)
-	// 	table.SetHeader([]string{"Query", "Error"})
-	// 	for _, summary := range failuresSummaries {
-	// 		table.Append([]string{summary.Query, summary.Error})
-	// 	}
-	// 	fmt.Fprintf(out, "The %d following queries have failed:\n", len(failuresSummaries))
-	// 	table.Render()
-	// 	_, _ = fmt.Fprintln(out)
-	// }
 	_, err := md.WriteTo(out)
 	if err != nil {
 		panic(err)
@@ -115,12 +107,25 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
 	}
 
 	md.PrintHeader("Tables", 2)
-	// TODO: high-level overview of all tables
+	renderTableOverview(md, tableSummaries)
 
 	md.PrintHeader("Column Usage", 3)
 	for _, summary := range tableSummaries {
 		renderColumnUsageTable(md, summary)
 	}
+}
+
+func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary) {
+	headers := []string{"Table Name", "Read Query Count", "Write Query Count"}
+	var rows [][]string
+	for _, summary := range tableSummaries {
+		rows = append(rows, []string{
+			summary.Table,
+			strconv.Itoa(summary.ReadQueryCount),
+			strconv.Itoa(summary.WriteQueryCount),
+		})
+	}
+	md.PrintTable(headers, rows)
 }
 
 func renderColumnUsageTable(md *markdown.MarkDown, summary TableSummary) {
@@ -172,6 +177,20 @@ func renderJoinPredicatesUsage(md *markdown.MarkDown, summary *keys.Output) {
 	}
 }
 
+func renderFailures(md *markdown.MarkDown, failures []FailuresSummary) {
+	if len(failures) == 0 {
+		return
+	}
+	md.PrintHeader("Failures", 2)
+
+	headers := []string{"Query", "Error"}
+	var rows [][]string
+	for _, failure := range failures {
+		rows = append(rows, []string{failure.Query, failure.Error})
+	}
+	md.PrintTable(headers, rows)
+}
+
 // makeKey creates a graph key from two columns. The key is always sorted in ascending order.
 func makeKey(lhs, rhs operators.Column) graphKey {
 	if lhs.Table < rhs.Table {
@@ -191,7 +210,8 @@ func createTableWriter(out io.Writer, cols []string) *tablewriter.Table {
 
 func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSummary) {
 	tableSummaries := make(map[string]*TableSummary)
-	tableUsageCounts := make(map[string]int)
+	tableUsageWriteCounts := make(map[string]int)
+	tableUsageReadCounts := make(map[string]int)
 
 	// First pass: collect all data and count occurrences
 	for _, query := range queries.Queries {
@@ -202,7 +222,13 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 					Columns: make(map[string]ColumnUsage),
 				}
 			}
-			tableUsageCounts[table] += query.UsageCount
+
+			switch query.StatementType {
+			case "INSERT", "DELETE", "UPDATE", "REPLACE":
+				tableUsageWriteCounts[table] += query.UsageCount
+			default:
+				tableUsageReadCounts[table] += query.UsageCount
+			}
 
 			summarizeColumnUsage(table, tableSummaries, query)
 			summarizeJoinPredicates(query.JoinPredicates, table, tableSummaries)
@@ -211,8 +237,9 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 
 	// Second pass: calculate percentages
 	for _, summary := range tableSummaries {
-		count := tableUsageCounts[summary.Table]
-		summary.QueryCount = count
+		summary.ReadQueryCount = tableUsageReadCounts[summary.Table]
+		summary.WriteQueryCount = tableUsageWriteCounts[summary.Table]
+		count := summary.ReadQueryCount + summary.WriteQueryCount
 		for colName, usage := range summary.Columns {
 			countF := float64(count)
 			usage.FilterPercentage = (usage.FilterPercentage / countF) * 100
