@@ -47,23 +47,23 @@ To run `vt tester` with tracing:
 vt tester --sharded --trace=trace-log.json t/tpch.test
 ```
 
-The generated trace logs can be summarized or compared using `vt benchstat`:
+The generated trace logs can be summarized or compared using `vt summarize`:
 
 - **Summarize a trace log**:
 
   ```bash
-  vt benchstat trace-log.json
+  vt summarize trace-log.json
   ```
 
 - **Compare two trace logs**:
 
   ```bash
-  vt benchstat trace-log1.json trace-log2.json
+  vt summarize trace-log1.json trace-log2.json
   ```
 
 ## Key Analysis Workflow
 
-`vt keys` analyzes a query log and outputs detailed information about table and column usage in queries. This data can be summarized using `vt benchstat`. Here's a typical workflow:
+`vt keys` analyzes a query log and outputs detailed information about table and column usage in queries. This data can be summarized using `vt summarize`. Here's a typical workflow:
 
 1. **Run `vt keys` to analyze the query log**:
 
@@ -73,10 +73,10 @@ The generated trace logs can be summarized or compared using `vt benchstat`:
 
    This command generates a `keys-log.json` file that contains a detailed analysis of table and column usage from the query log.
 
-2. **Summarize the `keys-log` using `vt benchstat`**:
+2. **Summarize the `keys-log` using `vt summarize`**:
 
    ```bash
-   vt benchstat keys-log.json
+   vt summarize keys-log.json
    ```
 
    This command summarizes the key analysis, providing insight into which tables and columns are used across queries, and how frequently they are involved in filters, groupings, and joins.
