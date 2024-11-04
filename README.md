@@ -4,8 +4,8 @@ The `vt` binary encapsulates several utility tools for Vitess, providing a compr
 
 ## Tools Included
 - **`vt test`**: A testing utility using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
-- **`vt benchstat`**: A tool used to summarize or compare trace logs or key logs for deeper analysis.
-- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, and column usage. It integrates with `vt benchstat` for summarizing and comparing query logs.
+- **`vt summarize`**: A tool used to summarize or compare trace logs or key logs for deeper analysis.
+- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, and column usage. It integrates with `vt summarize` for summarizing and comparing query logs.
 - **`vt trace`**: A tool that generates a trace of the query execution plan using the `vexplain trace` tool for detailed analysis. 
 
 ## Installation

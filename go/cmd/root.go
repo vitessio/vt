@@ -33,7 +33,7 @@ func Execute() {
 
 	root.CompletionOptions.HiddenDefaultCmd = true
 
-	root.AddCommand(summarize())
+	root.AddCommand(summarizeCmd())
 	root.AddCommand(testerCmd())
 	root.AddCommand(tracerCmd())
 	root.AddCommand(keysCmd())

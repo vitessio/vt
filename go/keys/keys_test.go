@@ -29,7 +29,7 @@ func TestKeys(t *testing.T) {
 	err := run(sb, "../../t/tpch_failing_queries.test")
 	require.NoError(t, err)
 
-	out, err := os.ReadFile("../benchstat/testdata/keys-log.json")
+	out, err := os.ReadFile("../summarize/testdata/keys-log.json")
 	require.NoError(t, err)
 
 	require.Equal(t, string(out), sb.String())

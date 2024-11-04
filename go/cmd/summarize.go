@@ -19,10 +19,10 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	vtbenchstat "github.com/vitessio/vt/go/summarize"
+	"github.com/vitessio/vt/go/summarize"
 )
 
-func summarize() *cobra.Command {
+func summarizeCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "summarize old_file.json [new_file.json]",
 		Aliases: []string{"benchstat"},
@@ -30,7 +30,7 @@ func summarize() *cobra.Command {
 		Example: "vt summarize old.json new.json",
 		Args:    cobra.RangeArgs(1, 2),
 		Run: func(_ *cobra.Command, args []string) {
-			vtbenchstat.Run(args)
+			summarize.Run(args)
 		},
 	}
 }

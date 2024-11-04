@@ -183,7 +183,7 @@ Summary:
 	assert.Equal(t, want, s)
 }
 
-func TestBenchStatTraceFile(t *testing.T) {
+func TestSummarizeTraceFile(t *testing.T) {
 	file := readTraceFile("testdata/trace-log.json")
 	sb := &strings.Builder{}
 	printTraceSummary(sb, 80, noHighlight, file)
@@ -390,7 +390,7 @@ Line # 695
 	assert.Equal(t, expected, sb.String())
 }
 
-func TestBenchStatKeysFile(t *testing.T) {
+func TestSummarizeKeysFile(t *testing.T) {
 	file := readTraceFile("testdata/keys-log.json")
 	sb := &strings.Builder{}
 	printKeysSummary(sb, file)
