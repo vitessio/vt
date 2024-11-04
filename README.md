@@ -4,8 +4,8 @@ The `vt` binary encapsulates several utility tools for Vitess, providing a compr
 
 ## Tools Included
 - **`vt test`**: A testing utility using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
-- **`vt benchstat`**: A tool used to summarize or compare trace logs or key logs for deeper analysis.
-- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, and column usage. It integrates with `vt benchstat` for summarizing and comparing query logs.
+- **`vt summarize`**: A tool used to summarize or compare trace logs or key logs for deeper analysis.
+- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, and column usage. It integrates with `vt summarize` for summarizing and comparing query logs.
 - **`vt trace`**: A tool that generates a trace of the query execution plan using the `vexplain trace` tool for detailed analysis. 
 
 ## Installation
@@ -47,23 +47,23 @@ To run `vt tester` with tracing:
 vt tester --sharded --trace=trace-log.json t/tpch.test
 ```
 
-The generated trace logs can be summarized or compared using `vt benchstat`:
+The generated trace logs can be summarized or compared using `vt summarize`:
 
 - **Summarize a trace log**:
 
   ```bash
-  vt benchstat trace-log.json
+  vt summarize trace-log.json
   ```
 
 - **Compare two trace logs**:
 
   ```bash
-  vt benchstat trace-log1.json trace-log2.json
+  vt summarize trace-log1.json trace-log2.json
   ```
 
 ## Key Analysis Workflow
 
-`vt keys` analyzes a query log and outputs detailed information about table and column usage in queries. This data can be summarized using `vt benchstat`. Here's a typical workflow:
+`vt keys` analyzes a query log and outputs detailed information about table and column usage in queries. This data can be summarized using `vt summarize`. Here's a typical workflow:
 
 1. **Run `vt keys` to analyze the query log**:
 
@@ -73,10 +73,10 @@ The generated trace logs can be summarized or compared using `vt benchstat`:
 
    This command generates a `keys-log.json` file that contains a detailed analysis of table and column usage from the query log.
 
-2. **Summarize the `keys-log` using `vt benchstat`**:
+2. **Summarize the `keys-log` using `vt summarize`**:
 
    ```bash
-   vt benchstat keys-log.json
+   vt summarize keys-log.json
    ```
 
    This command summarizes the key analysis, providing insight into which tables and columns are used across queries, and how frequently they are involved in filters, groupings, and joins.
