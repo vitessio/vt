@@ -408,6 +408,13 @@ Table: customer used in 8 queries
 | c_nationkey  | 0.00%    | 0.00%      | 50.00% |
 | c_phone      | 0.00%    | 12.50%     | 0.00%  |
 +--------------+----------+------------+--------+
++---------------------------------------------+
+|               Join Predicate                |
++---------------------------------------------+
+| customer.c_custkey = orders.o_custkey       |
+| customer.c_nationkey = supplier.s_nationkey |
+| customer.c_nationkey = nation.n_nationkey   |
++---------------------------------------------+
 
 Table: lineitem used in 18 queries
 +---------------+----------+------------+--------+
@@ -418,10 +425,21 @@ Table: lineitem used in 18 queries
 | l_partkey     | 0.00%    | 0.00%      | 16.67% |
 | l_receiptdate | 27.78%   | 0.00%      | 0.00%  |
 | l_returnflag  | 5.56%    | 0.00%      | 0.00%  |
-| l_shipdate    | 16.67%   | 0.00%      | 0.00%  |
+| l_shipdate    | 22.22%   | 0.00%      | 0.00%  |
 | l_shipmode    | 5.56%    | 5.56%      | 0.00%  |
 | l_suppkey     | 0.00%    | 0.00%      | 38.89% |
 +---------------+----------+------------+--------+
++-------------------------------------------+
+|              Join Predicate               |
++-------------------------------------------+
+| lineitem.l_orderkey = orders.o_orderkey   |
+| lineitem.l_suppkey = supplier.s_suppkey   |
+| part.p_partkey = lineitem.l_partkey       |
+| partsupp.ps_suppkey = lineitem.l_suppkey  |
+| partsupp.ps_partkey = lineitem.l_partkey  |
+| lineitem.l_orderkey = lineitem.l_orderkey |
+| lineitem.l_suppkey != lineitem.l_suppkey  |
++-------------------------------------------+
 
 Table: nation used in 11 queries
 +-------------+----------+------------+--------+
@@ -431,6 +449,13 @@ Table: nation used in 11 queries
 | n_nationkey | 0.00%    | 0.00%      | 90.91% |
 | n_regionkey | 0.00%    | 0.00%      | 27.27% |
 +-------------+----------+------------+--------+
++-------------------------------------------+
+|              Join Predicate               |
++-------------------------------------------+
+| supplier.s_nationkey = nation.n_nationkey |
+| nation.n_regionkey = region.r_regionkey   |
+| customer.c_nationkey = nation.n_nationkey |
++-------------------------------------------+
 
 Table: orders used in 12 queries
 +-----------------+----------+------------+--------+
@@ -438,13 +463,19 @@ Table: orders used in 12 queries
 +-----------------+----------+------------+--------+
 | o_comment       | 8.33%    | 0.00%      | 0.00%  |
 | o_custkey       | 0.00%    | 0.00%      | 58.33% |
-| o_orderdate     | 33.33%   | 16.67%     | 0.00%  |
+| o_orderdate     | 41.67%   | 16.67%     | 0.00%  |
 | o_orderkey      | 8.33%    | 8.33%      | 83.33% |
 | o_orderpriority | 0.00%    | 8.33%      | 0.00%  |
 | o_orderstatus   | 8.33%    | 0.00%      | 0.00%  |
 | o_shippriority  | 0.00%    | 8.33%      | 0.00%  |
 | o_totalprice    | 0.00%    | 8.33%      | 0.00%  |
 +-----------------+----------+------------+--------+
++-----------------------------------------+
+|             Join Predicate              |
++-----------------------------------------+
+| customer.c_custkey = orders.o_custkey   |
+| lineitem.l_orderkey = orders.o_orderkey |
++-----------------------------------------+
 
 Table: part used in 6 queries
 +-----------+----------+------------+--------+
@@ -456,6 +487,12 @@ Table: part used in 6 queries
 | p_size    | 16.67%   | 16.67%     | 0.00%  |
 | p_type    | 33.33%   | 16.67%     | 0.00%  |
 +-----------+----------+------------+--------+
++--------------------------------------+
+|            Join Predicate            |
++--------------------------------------+
+| part.p_partkey = lineitem.l_partkey  |
+| part.p_partkey = partsupp.ps_partkey |
++--------------------------------------+
 
 Table: partsupp used in 5 queries
 +------------+----------+------------+--------+
@@ -464,6 +501,14 @@ Table: partsupp used in 5 queries
 | ps_partkey | 0.00%    | 40.00%     | 40.00% |
 | ps_suppkey | 20.00%   | 0.00%      | 60.00% |
 +------------+----------+------------+--------+
++------------------------------------------+
+|              Join Predicate              |
++------------------------------------------+
+| partsupp.ps_suppkey = lineitem.l_suppkey |
+| partsupp.ps_partkey = lineitem.l_partkey |
+| partsupp.ps_suppkey = supplier.s_suppkey |
+| part.p_partkey = partsupp.ps_partkey     |
++------------------------------------------+
 
 Table: region used in 3 queries
 +-------------+----------+------------+--------+
@@ -472,6 +517,11 @@ Table: region used in 3 queries
 | r_name      | 66.67%   | 0.00%      | 0.00%  |
 | r_regionkey | 0.00%    | 0.00%      | 66.67% |
 +-------------+----------+------------+--------+
++-----------------------------------------+
+|             Join Predicate              |
++-----------------------------------------+
+| nation.n_regionkey = region.r_regionkey |
++-----------------------------------------+
 
 Table: supplier used in 9 queries
 +-------------+----------+------------+--------+
@@ -482,6 +532,14 @@ Table: supplier used in 9 queries
 | s_nationkey | 0.00%    | 0.00%      | 77.78% |
 | s_suppkey   | 0.00%    | 0.00%      | 77.78% |
 +-------------+----------+------------+--------+
++---------------------------------------------+
+|               Join Predicate                |
++---------------------------------------------+
+| lineitem.l_suppkey = supplier.s_suppkey     |
+| customer.c_nationkey = supplier.s_nationkey |
+| supplier.s_nationkey = nation.n_nationkey   |
+| partsupp.ps_suppkey = supplier.s_suppkey    |
++---------------------------------------------+
 
 The 1 following queries have failed:
 +-----------------------+--------------------------------+

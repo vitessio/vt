@@ -116,15 +116,19 @@
           "orders.o_shippriority"
         ],
         "joinColumns": [
-          "customer.c_custkey",
-          "lineitem.l_orderkey",
-          "orders.o_custkey",
-          "orders.o_orderkey"
+          "customer.c_custkey =",
+          "lineitem.l_orderkey =",
+          "orders.o_custkey =",
+          "orders.o_orderkey ="
+        ],
+        "joinPredicates": [
+          "customer.c_custkey = orders.o_custkey",
+          "lineitem.l_orderkey = orders.o_orderkey"
         ],
         "filterColumns": [
-          "customer.c_mktsegment",
-          "lineitem.l_shipdate",
-          "orders.o_orderdate"
+          "customer.c_mktsegment =",
+          "lineitem.l_shipdate gt",
+          "orders.o_orderdate lt"
         ],
         "statementType": "SELECT"
       },
@@ -142,13 +146,17 @@
           "orders.o_orderpriority"
         ],
         "joinColumns": [
-          "lineitem.l_orderkey",
-          "orders.o_orderkey"
+          "lineitem.l_orderkey =",
+          "orders.o_orderkey ="
+        ],
+        "joinPredicates": [
+          "lineitem.l_orderkey = orders.o_orderkey"
         ],
         "filterColumns": [
-          "lineitem.l_commitdate",
-          "lineitem.l_receiptdate",
-          "orders.o_orderdate"
+          "lineitem.l_commitdate lt",
+          "lineitem.l_receiptdate gt",
+          "orders.o_orderdate ge",
+          "orders.o_orderdate lt"
         ],
         "statementType": "SELECT"
       },
@@ -170,21 +178,30 @@
           "nation.n_name"
         ],
         "joinColumns": [
-          "customer.c_custkey",
-          "customer.c_nationkey",
-          "lineitem.l_orderkey",
-          "lineitem.l_suppkey",
-          "nation.n_nationkey",
-          "nation.n_regionkey",
-          "orders.o_custkey",
-          "orders.o_orderkey",
-          "region.r_regionkey",
-          "supplier.s_nationkey",
-          "supplier.s_suppkey"
+          "customer.c_custkey =",
+          "customer.c_nationkey =",
+          "lineitem.l_orderkey =",
+          "lineitem.l_suppkey =",
+          "nation.n_nationkey =",
+          "nation.n_regionkey =",
+          "orders.o_custkey =",
+          "orders.o_orderkey =",
+          "region.r_regionkey =",
+          "supplier.s_nationkey =",
+          "supplier.s_suppkey ="
+        ],
+        "joinPredicates": [
+          "customer.c_custkey = orders.o_custkey",
+          "lineitem.l_orderkey = orders.o_orderkey",
+          "lineitem.l_suppkey = supplier.s_suppkey",
+          "customer.c_nationkey = supplier.s_nationkey",
+          "supplier.s_nationkey = nation.n_nationkey",
+          "nation.n_regionkey = region.r_regionkey"
         ],
         "filterColumns": [
-          "orders.o_orderdate",
-          "region.r_name"
+          "orders.o_orderdate ge",
+          "orders.o_orderdate lt",
+          "region.r_name ="
         ],
         "statementType": "SELECT"
       },
@@ -214,15 +231,26 @@
           "nation"
         ],
         "joinColumns": [
-          "customer.c_custkey",
-          "customer.c_nationkey",
-          "lineitem.l_orderkey",
-          "lineitem.l_suppkey",
-          "nation.n_nationkey",
-          "orders.o_custkey",
-          "orders.o_orderkey",
-          "supplier.s_nationkey",
-          "supplier.s_suppkey"
+          "customer.c_custkey =",
+          "customer.c_nationkey =",
+          "lineitem.l_orderkey =",
+          "lineitem.l_suppkey =",
+          "nation.n_nationkey =",
+          "orders.o_custkey =",
+          "orders.o_orderkey =",
+          "supplier.s_nationkey =",
+          "supplier.s_suppkey ="
+        ],
+        "joinPredicates": [
+          "supplier.s_suppkey = lineitem.l_suppkey",
+          "orders.o_orderkey = lineitem.l_orderkey",
+          "customer.c_custkey = orders.o_custkey",
+          "supplier.s_nationkey = nation.n_nationkey",
+          "customer.c_nationkey = nation.n_nationkey"
+        ],
+        "filterColumns": [
+          "lineitem.l_shipdate ge",
+          "lineitem.l_shipdate le"
         ],
         "statementType": "SELECT"
       },
@@ -243,23 +271,34 @@
           "region"
         ],
         "joinColumns": [
-          "customer.c_custkey",
-          "customer.c_nationkey",
-          "lineitem.l_orderkey",
-          "lineitem.l_partkey",
-          "lineitem.l_suppkey",
-          "nation.n_nationkey",
-          "nation.n_regionkey",
-          "orders.o_custkey",
-          "orders.o_orderkey",
-          "part.p_partkey",
-          "region.r_regionkey",
-          "supplier.s_nationkey",
-          "supplier.s_suppkey"
+          "customer.c_custkey =",
+          "customer.c_nationkey =",
+          "lineitem.l_orderkey =",
+          "lineitem.l_partkey =",
+          "lineitem.l_suppkey =",
+          "nation.n_nationkey =",
+          "nation.n_regionkey =",
+          "orders.o_custkey =",
+          "orders.o_orderkey =",
+          "part.p_partkey =",
+          "region.r_regionkey =",
+          "supplier.s_nationkey =",
+          "supplier.s_suppkey ="
+        ],
+        "joinPredicates": [
+          "part.p_partkey = lineitem.l_partkey",
+          "supplier.s_suppkey = lineitem.l_suppkey",
+          "lineitem.l_orderkey = orders.o_orderkey",
+          "orders.o_custkey = customer.c_custkey",
+          "customer.c_nationkey = nation.n_nationkey",
+          "nation.n_regionkey = region.r_regionkey",
+          "supplier.s_nationkey = nation.n_nationkey"
         ],
         "filterColumns": [
-          "part.p_type",
-          "region.r_name"
+          "orders.o_orderdate ge",
+          "orders.o_orderdate le",
+          "part.p_type =",
+          "region.r_name ="
         ],
         "statementType": "SELECT"
       },
@@ -278,19 +317,27 @@
           "nation"
         ],
         "joinColumns": [
-          "lineitem.l_orderkey",
-          "lineitem.l_partkey",
-          "lineitem.l_suppkey",
-          "nation.n_nationkey",
-          "orders.o_orderkey",
-          "part.p_partkey",
-          "partsupp.ps_partkey",
-          "partsupp.ps_suppkey",
-          "supplier.s_nationkey",
-          "supplier.s_suppkey"
+          "lineitem.l_orderkey =",
+          "lineitem.l_partkey =",
+          "lineitem.l_suppkey =",
+          "nation.n_nationkey =",
+          "orders.o_orderkey =",
+          "part.p_partkey =",
+          "partsupp.ps_partkey =",
+          "partsupp.ps_suppkey =",
+          "supplier.s_nationkey =",
+          "supplier.s_suppkey ="
+        ],
+        "joinPredicates": [
+          "supplier.s_suppkey = lineitem.l_suppkey",
+          "partsupp.ps_suppkey = lineitem.l_suppkey",
+          "partsupp.ps_partkey = lineitem.l_partkey",
+          "part.p_partkey = lineitem.l_partkey",
+          "orders.o_orderkey = lineitem.l_orderkey",
+          "supplier.s_nationkey = nation.n_nationkey"
         ],
         "filterColumns": [
-          "part.p_name"
+          "part.p_name like"
         ],
         "statementType": "SELECT"
       },
@@ -316,16 +363,22 @@
           "nation.n_name"
         ],
         "joinColumns": [
-          "customer.c_custkey",
-          "customer.c_nationkey",
-          "lineitem.l_orderkey",
-          "nation.n_nationkey",
-          "orders.o_custkey",
-          "orders.o_orderkey"
+          "customer.c_custkey =",
+          "customer.c_nationkey =",
+          "lineitem.l_orderkey =",
+          "nation.n_nationkey =",
+          "orders.o_custkey =",
+          "orders.o_orderkey ="
+        ],
+        "joinPredicates": [
+          "customer.c_custkey = orders.o_custkey",
+          "lineitem.l_orderkey = orders.o_orderkey",
+          "customer.c_nationkey = nation.n_nationkey"
         ],
         "filterColumns": [
-          "lineitem.l_returnflag",
-          "orders.o_orderdate"
+          "lineitem.l_returnflag =",
+          "orders.o_orderdate ge",
+          "orders.o_orderdate lt"
         ],
         "statementType": "SELECT"
       },
@@ -347,13 +400,17 @@
           "partsupp.ps_partkey"
         ],
         "joinColumns": [
-          "nation.n_nationkey",
-          "partsupp.ps_suppkey",
-          "supplier.s_nationkey",
-          "supplier.s_suppkey"
+          "nation.n_nationkey =",
+          "partsupp.ps_suppkey =",
+          "supplier.s_nationkey =",
+          "supplier.s_suppkey ="
+        ],
+        "joinPredicates": [
+          "partsupp.ps_suppkey = supplier.s_suppkey",
+          "supplier.s_nationkey = nation.n_nationkey"
         ],
         "filterColumns": [
-          "nation.n_name"
+          "nation.n_name ="
         ],
         "statementType": "SELECT"
       },
@@ -371,14 +428,20 @@
           "lineitem.l_shipmode"
         ],
         "joinColumns": [
-          "lineitem.l_orderkey",
-          "orders.o_orderkey"
+          "lineitem.l_orderkey =",
+          "orders.o_orderkey ="
+        ],
+        "joinPredicates": [
+          "orders.o_orderkey = lineitem.l_orderkey"
         ],
         "filterColumns": [
-          "lineitem.l_commitdate",
-          "lineitem.l_receiptdate",
-          "lineitem.l_shipdate",
-          "lineitem.l_shipmode"
+          "lineitem.l_commitdate lt",
+          "lineitem.l_commitdate gt",
+          "lineitem.l_receiptdate gt",
+          "lineitem.l_receiptdate ge",
+          "lineitem.l_receiptdate lt",
+          "lineitem.l_shipdate lt",
+          "lineitem.l_shipmode in"
         ],
         "statementType": "SELECT"
       },
@@ -396,11 +459,14 @@
           "customer.c_custkey"
         ],
         "joinColumns": [
-          "customer.c_custkey",
-          "orders.o_custkey"
+          "customer.c_custkey =",
+          "orders.o_custkey ="
+        ],
+        "joinPredicates": [
+          "customer.c_custkey = orders.o_custkey"
         ],
         "filterColumns": [
-          "orders.o_comment"
+          "orders.o_comment not like"
         ],
         "statementType": "SELECT"
       },
@@ -415,11 +481,15 @@
           "part"
         ],
         "joinColumns": [
-          "lineitem.l_partkey",
-          "part.p_partkey"
+          "lineitem.l_partkey =",
+          "part.p_partkey ="
+        ],
+        "joinPredicates": [
+          "lineitem.l_partkey = part.p_partkey"
         ],
         "filterColumns": [
-          "lineitem.l_shipdate"
+          "lineitem.l_shipdate ge",
+          "lineitem.l_shipdate lt"
         ],
         "statementType": "SELECT"
       },
@@ -440,15 +510,18 @@
           "part.p_type"
         ],
         "joinColumns": [
-          "part.p_partkey",
-          "partsupp.ps_partkey"
+          "part.p_partkey =",
+          "partsupp.ps_partkey ="
+        ],
+        "joinPredicates": [
+          "part.p_partkey = partsupp.ps_partkey"
         ],
         "filterColumns": [
-          "part.p_brand",
-          "part.p_size",
-          "part.p_type",
-          "partsupp.ps_suppkey",
-          "supplier.s_comment"
+          "part.p_brand !=",
+          "part.p_size in",
+          "part.p_type not like",
+          "partsupp.ps_suppkey not in",
+          "supplier.s_comment like"
         ],
         "statementType": "SELECT"
       },
@@ -473,13 +546,17 @@
           "orders.o_totalprice"
         ],
         "joinColumns": [
-          "customer.c_custkey",
-          "lineitem.l_orderkey",
-          "orders.o_custkey",
-          "orders.o_orderkey"
+          "customer.c_custkey =",
+          "lineitem.l_orderkey =",
+          "orders.o_custkey =",
+          "orders.o_orderkey ="
+        ],
+        "joinPredicates": [
+          "customer.c_custkey = orders.o_custkey",
+          "orders.o_orderkey = lineitem.l_orderkey"
         ],
         "filterColumns": [
-          "orders.o_orderkey"
+          "orders.o_orderkey in"
         ],
         "statementType": "SELECT"
       },
@@ -513,18 +590,27 @@
           "supplier.s_name"
         ],
         "joinColumns": [
-          "lineitem.l_orderkey",
-          "lineitem.l_suppkey",
-          "nation.n_nationkey",
-          "orders.o_orderkey",
-          "supplier.s_nationkey",
-          "supplier.s_suppkey"
+          "lineitem.l_orderkey =",
+          "lineitem.l_suppkey !=",
+          "lineitem.l_suppkey =",
+          "lineitem.l_suppkey !=",
+          "nation.n_nationkey =",
+          "orders.o_orderkey =",
+          "supplier.s_nationkey =",
+          "supplier.s_suppkey ="
+        ],
+        "joinPredicates": [
+          "supplier.s_suppkey = lineitem.l_suppkey",
+          "orders.o_orderkey = lineitem.l_orderkey",
+          "supplier.s_nationkey = nation.n_nationkey",
+          "lineitem.l_orderkey = lineitem.l_orderkey",
+          "lineitem.l_suppkey != lineitem.l_suppkey"
         ],
         "filterColumns": [
-          "lineitem.l_commitdate",
-          "lineitem.l_receiptdate",
-          "nation.n_name",
-          "orders.o_orderstatus"
+          "lineitem.l_commitdate lt",
+          "lineitem.l_receiptdate gt",
+          "nation.n_name =",
+          "orders.o_orderstatus ="
         ],
         "statementType": "SELECT"
       }
