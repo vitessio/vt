@@ -93,19 +93,23 @@ func (p Position) String() string {
 }
 
 func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
-	columns := make([][2]interface{}, 0, len(ts.Columns))
+	type colDetails struct {
+		ci ColumnInformation
+		cu ColumnUsage
+	}
+	columns := make([]colDetails, 0, len(ts.Columns))
 	for colInfo, usage := range ts.Columns {
-		columns = append(columns, [2]interface{}{colInfo, usage})
+		columns = append(columns, colDetails{ci: colInfo, cu: usage})
 	}
 	sort.Slice(columns, func(i, j int) bool {
-		if columns[i][0].(ColumnInformation).Name == columns[j][0].(ColumnInformation).Name {
-			return columns[i][0].(ColumnInformation).Pos < columns[j][0].(ColumnInformation).Pos
+		if columns[i].ci.Name == columns[j].ci.Name {
+			return columns[i].cu.Percentage < columns[j].cu.Percentage
 		}
-		return columns[i][0].(ColumnInformation).Name < columns[j][0].(ColumnInformation).Name
+		return columns[i].ci.Name < columns[j].ci.Name
 	})
 	return func(yield func(ColumnInformation, ColumnUsage) bool) {
 		for _, col := range columns {
-			if !yield(col[0].(ColumnInformation), col[1].(ColumnUsage)) {
+			if !yield(col.ci, col.cu) {
 				break
 			}
 		}

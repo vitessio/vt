@@ -10,6 +10,7 @@ require (
 require (
 	github.com/alecthomas/chroma v0.10.0
 	github.com/fatih/color v1.17.0
+	github.com/google/go-cmp v0.6.0
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.8.1
@@ -44,7 +45,6 @@ require (
 	github.com/golang/glog v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/safehtml v0.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
