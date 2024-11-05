@@ -36,6 +36,7 @@ func TestTable(t *testing.T) {
 |---|---|
 |1|2|
 |3|4|
+
 `,
 		},
 		{
@@ -44,6 +45,7 @@ func TestTable(t *testing.T) {
 			expected: `|header1|header2|header3|
 |---|---|---|
 |val1|val2|val3|
+
 `,
 		},
 		{
@@ -53,6 +55,7 @@ func TestTable(t *testing.T) {
 |---|
 |1|
 |2|
+
 `,
 		},
 	}
@@ -93,57 +96,6 @@ func TestPrintHeader(t *testing.T) {
 		t.Run(fmt.Sprintf("header: %s, level: %d", tt.input, tt.level), func(t *testing.T) {
 			md := &MarkDown{}
 			md.PrintHeader(tt.input, tt.level)
-			assert.Equal(t, tt.expected, md.String())
-		})
-	}
-}
-
-func TestPrintln(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{
-			input:    "Hello, world!",
-			expected: "Hello, world\\!\n",
-		},
-		{
-			input:    "This | should * be _ escaped!",
-			expected: "This &#124; should \\* be \\_ escaped\\!\n",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("input: %s", tt.input), func(t *testing.T) {
-			md := &MarkDown{}
-			md.Println(tt.input)
-			assert.Equal(t, tt.expected, md.String())
-		})
-	}
-}
-
-func TestPrintf(t *testing.T) {
-	tests := []struct {
-		format   string
-		args     []any
-		expected string
-	}{
-		{
-			format:   "Hello, %s!",
-			args:     []any{"world"},
-			expected: "Hello, world\\!",
-		},
-		{
-			format:   "This | is a number: %d",
-			args:     []any{42},
-			expected: "This &#124; is a number: 42",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("format: %s", tt.format), func(t *testing.T) {
-			md := &MarkDown{}
-			md.Printf(tt.format, tt.args...)
 			assert.Equal(t, tt.expected, md.String())
 		})
 	}

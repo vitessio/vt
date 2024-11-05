@@ -27,43 +27,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/olekukonko/tablewriter"
-	"github.com/vitessio/vt/go/markdown"
 	"vitess.io/vitess/go/slice"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/markdown"
 )
-
-type Position int
-
-const (
-	Join Position = iota
-	JoinRange
-	Where
-	WhereRange
-	Grouping
-)
-
-func (p Position) String() string {
-	switch p {
-	case Join:
-		return "JOIN"
-	case JoinRange:
-		return "JOIN RANGE"
-	case Where:
-		return "WHERE"
-	case WhereRange:
-		return "WHERE RANGE"
-	case Grouping:
-		return "GROUP"
-	}
-
-	panic("unknown Position")
-}
 
 type (
+	Position    int
 	ColumnUsage struct {
 		Percentage float64
 		Count      int
@@ -91,8 +64,33 @@ type (
 		Tbl1, Tbl2 string
 	}
 
-	queryGraph map[graphKey][]operators.JoinPredicate
+	queryGraph map[graphKey]map[operators.JoinPredicate]int
 )
+
+const (
+	Join Position = iota
+	JoinRange
+	Where
+	WhereRange
+	Grouping
+)
+
+func (p Position) String() string {
+	switch p {
+	case Join:
+		return "JOIN"
+	case JoinRange:
+		return "JOIN RANGE"
+	case Where:
+		return "WHERE"
+	case WhereRange:
+		return "WHERE RANGE"
+	case Grouping:
+		return "GROUP"
+	}
+
+	panic("unknown Position")
+}
 
 func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
 	columns := make([][2]interface{}, 0, len(ts.Columns))
@@ -114,19 +112,27 @@ func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
 	}
 }
 
+func (ts TableSummary) UseCount() int {
+	return ts.ReadQueryCount + ts.WriteQueryCount
+}
+
 // printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
 // and prints this summary information to the output.
-func printKeysSummary(out io.Writer, file readingSummary) {
-	var md = &markdown.MarkDown{}
+func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
+	md := &markdown.MarkDown{}
 
-	md.PrintHeader(fmt.Sprintf("Keys analyzed %s", time.Now().Format(time.DateTime)), 1)
-	md.Println(fmt.Sprintf("File analyzed: %s", file.Name))
-	md.NewLine()
+	msg := `# Query Analysis Report
+
+**Date of Analysis**: %s  
+**Analyzed File**: ` + "`%s`" + `
+
+`
+	md.Printf(msg, file.Name, now.Format(time.DateTime))
 
 	tableSummaries, failuresSummaries := summarizeKeysQueries(file.AnalysedQueries)
 
 	renderTableUsage(tableSummaries, md)
-	renderJoinPredicatesUsage(md, file.AnalysedQueries)
+	renderTablesJoined(md, file.AnalysedQueries)
 	renderFailures(md, failuresSummaries)
 
 	_, err := md.WriteTo(out)
@@ -140,6 +146,10 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
 		return
 	}
 
+	sort.Slice(tableSummaries, func(i, j int) bool {
+		return tableSummaries[i].UseCount() > tableSummaries[j].UseCount()
+	})
+
 	md.PrintHeader("Tables", 2)
 	renderTableOverview(md, tableSummaries)
 
@@ -150,7 +160,7 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
 }
 
 func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary) {
-	headers := []string{"Table Name", "Read Query Count", "Write Query Count"}
+	headers := []string{"Table Name", "Reads", "Writes"}
 	var rows [][]string
 	for _, summary := range tableSummaries {
 		rows = append(rows, []string{
@@ -165,24 +175,32 @@ func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary) {
 func renderColumnUsageTable(md *markdown.MarkDown, summary TableSummary) {
 	md.PrintHeader(fmt.Sprintf("Table: `%s` (%d reads and %d writes)", summary.Table, summary.ReadQueryCount, summary.WriteQueryCount), 4)
 
-	headers := []string{"Column", "Position", "Used", "Used %"}
+	headers := []string{"Column", "Position", "Used %"}
 	var rows [][]string
 	for colInfo, usage := range summary.GetColumns() {
 		rows = append(rows, []string{
 			colInfo.Name,
 			colInfo.Pos.String(),
-			fmt.Sprintf("%d", usage.Count),
-			fmt.Sprintf("%.2f%%", usage.Percentage),
+			fmt.Sprintf("%.0f%%", usage.Percentage),
 		})
 	}
+
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i][2] > rows[j][2]
+	})
 	md.PrintTable(headers, rows)
 }
 
 func (g queryGraph) AddJoinPredicate(key graphKey, pred operators.JoinPredicate) {
-	g[key] = append(g[key], pred)
+	if in, exists := g[key]; exists {
+		in[pred]++
+		return
+	}
+
+	g[key] = map[operators.JoinPredicate]int{pred: 1}
 }
 
-func renderJoinPredicatesUsage(md *markdown.MarkDown, summary *keys.Output) {
+func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 	g := make(queryGraph)
 	for _, query := range summary.Queries {
 		for _, pred := range query.JoinPredicates {
@@ -199,14 +217,37 @@ func renderJoinPredicatesUsage(md *markdown.MarkDown, summary *keys.Output) {
 	})
 
 	if len(g) > 0 {
-		md.PrintHeader("Table Relationships", 2)
+		md.PrintHeader("Tables Joined", 2)
 	}
-	for key, predicates := range g {
+
+	// we really want the output to be deterministic
+	tables := slices.Collect(maps.Keys(g))
+	sort.Slice(tables, func(i, j int) bool {
+		if tables[i].Tbl1 == tables[j].Tbl1 {
+			return tables[i].Tbl2 < tables[j].Tbl2
+		}
+		return tables[i].Tbl1 < tables[j].Tbl1
+	})
+
+	for _, table := range tables {
+		predicates := g[table]
 		md.Println("```")
-		md.Printf("%s <> %s\n", key.Tbl1, key.Tbl2)
-		md.Printf("|\n")
-		for _, predicate := range predicates {
-			md.Printf("|- %s\n", predicate.String())
+		md.Printf("%s ↔ %s\n", table.Tbl1, table.Tbl2)
+		numberOfPreds := len(predicates)
+		totalt := 0
+		for _, count := range predicates {
+			totalt += count
+		}
+
+		for predicate, count := range predicates {
+			numberOfPreds--
+			var s string
+			if numberOfPreds == 0 {
+				s = "└─"
+			} else {
+				s = "├─"
+			}
+			md.Printf("%s %s %d%%\n", s, predicate.String(), (count*100)/totalt)
 		}
 		md.Println("```")
 		md.NewLine()
@@ -234,14 +275,6 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	}
 
 	return graphKey{rhs.Table, lhs.Table}
-}
-
-func createTableWriter(out io.Writer, cols []string) *tablewriter.Table {
-	table := tablewriter.NewWriter(out)
-	table.SetAutoFormatHeaders(false)
-	table.SetHeader(cols)
-	table.SetAutoWrapText(false)
-	return table
 }
 
 func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSummary) {

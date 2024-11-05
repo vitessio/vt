@@ -172,8 +172,8 @@
           "customer.c_nationkey = supplier.s_nationkey",
           "lineitem.l_orderkey = orders.o_orderkey",
           "lineitem.l_suppkey = supplier.s_suppkey",
-          "nation.n_regionkey = region.r_regionkey",
-          "supplier.s_nationkey = nation.n_nationkey"
+          "nation.n_nationkey = supplier.s_nationkey",
+          "nation.n_regionkey = region.r_regionkey"
         ],
         "filterColumns": [
           "orders.o_orderdate ge",
@@ -210,9 +210,9 @@
         "joinPredicates": [
           "customer.c_custkey = orders.o_custkey",
           "customer.c_nationkey = nation.n_nationkey",
-          "orders.o_orderkey = lineitem.l_orderkey",
-          "supplier.s_nationkey = nation.n_nationkey",
-          "supplier.s_suppkey = lineitem.l_suppkey"
+          "lineitem.l_orderkey = orders.o_orderkey",
+          "lineitem.l_suppkey = supplier.s_suppkey",
+          "nation.n_nationkey = supplier.s_nationkey"
         ],
         "filterColumns": [
           "lineitem.l_shipdate ge",
@@ -237,13 +237,13 @@
           "region"
         ],
         "joinPredicates": [
+          "customer.c_custkey = orders.o_custkey",
           "customer.c_nationkey = nation.n_nationkey",
           "lineitem.l_orderkey = orders.o_orderkey",
-          "nation.n_regionkey = region.r_regionkey",
-          "orders.o_custkey = customer.c_custkey",
-          "part.p_partkey = lineitem.l_partkey",
-          "supplier.s_nationkey = nation.n_nationkey",
-          "supplier.s_suppkey = lineitem.l_suppkey"
+          "lineitem.l_partkey = part.p_partkey",
+          "lineitem.l_suppkey = supplier.s_suppkey",
+          "nation.n_nationkey = supplier.s_nationkey",
+          "nation.n_regionkey = region.r_regionkey"
         ],
         "filterColumns": [
           "orders.o_orderdate ge",
@@ -268,12 +268,12 @@
           "nation"
         ],
         "joinPredicates": [
-          "orders.o_orderkey = lineitem.l_orderkey",
-          "part.p_partkey = lineitem.l_partkey",
-          "partsupp.ps_partkey = lineitem.l_partkey",
-          "partsupp.ps_suppkey = lineitem.l_suppkey",
-          "supplier.s_nationkey = nation.n_nationkey",
-          "supplier.s_suppkey = lineitem.l_suppkey"
+          "lineitem.l_orderkey = orders.o_orderkey",
+          "lineitem.l_partkey = part.p_partkey",
+          "lineitem.l_partkey = partsupp.ps_partkey",
+          "lineitem.l_suppkey = partsupp.ps_suppkey",
+          "lineitem.l_suppkey = supplier.s_suppkey",
+          "nation.n_nationkey = supplier.s_nationkey"
         ],
         "filterColumns": [
           "part.p_name like"
@@ -331,8 +331,8 @@
           "partsupp.ps_partkey"
         ],
         "joinPredicates": [
-          "partsupp.ps_suppkey = supplier.s_suppkey",
-          "supplier.s_nationkey = nation.n_nationkey"
+          "nation.n_nationkey = supplier.s_nationkey",
+          "partsupp.ps_suppkey = supplier.s_suppkey"
         ],
         "filterColumns": [
           "nation.n_name ="
@@ -353,7 +353,7 @@
           "lineitem.l_shipmode"
         ],
         "joinPredicates": [
-          "orders.o_orderkey = lineitem.l_orderkey"
+          "lineitem.l_orderkey = orders.o_orderkey"
         ],
         "filterColumns": [
           "lineitem.l_commitdate lt",
@@ -456,7 +456,7 @@
         ],
         "joinPredicates": [
           "customer.c_custkey = orders.o_custkey",
-          "orders.o_orderkey = lineitem.l_orderkey"
+          "lineitem.l_orderkey = orders.o_orderkey"
         ],
         "filterColumns": [
           "orders.o_orderkey in"
@@ -494,10 +494,10 @@
         ],
         "joinPredicates": [
           "lineitem.l_orderkey = lineitem.l_orderkey",
+          "lineitem.l_orderkey = orders.o_orderkey",
           "lineitem.l_suppkey != lineitem.l_suppkey",
-          "orders.o_orderkey = lineitem.l_orderkey",
-          "supplier.s_nationkey = nation.n_nationkey",
-          "supplier.s_suppkey = lineitem.l_suppkey"
+          "lineitem.l_suppkey = supplier.s_suppkey",
+          "nation.n_nationkey = supplier.s_nationkey"
         ],
         "filterColumns": [
           "lineitem.l_commitdate lt",

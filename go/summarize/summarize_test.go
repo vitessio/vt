@@ -17,9 +17,13 @@ limitations under the License.
 package summarize
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -393,163 +397,10 @@ Line # 695
 func TestSummarizeKeysFile(t *testing.T) {
 	file := readTraceFile("testdata/keys-log.json")
 	sb := &strings.Builder{}
-	printKeysSummary(sb, file)
-	expected := `Summary from trace file testdata/keys-log.json
-Table: customer used in 8 queries
-+--------------+----------+------------+--------+
-|    Column    | Filter % | Grouping % | Join % |
-+--------------+----------+------------+--------+
-| c_acctbal    | 0.00%    | 12.50%     | 0.00%  |
-| c_address    | 0.00%    | 12.50%     | 0.00%  |
-| c_comment    | 0.00%    | 12.50%     | 0.00%  |
-| c_custkey    | 0.00%    | 37.50%     | 87.50% |
-| c_mktsegment | 12.50%   | 0.00%      | 0.00%  |
-| c_name       | 0.00%    | 25.00%     | 0.00%  |
-| c_nationkey  | 0.00%    | 0.00%      | 50.00% |
-| c_phone      | 0.00%    | 12.50%     | 0.00%  |
-+--------------+----------+------------+--------+
-+---------------------------------------------+
-|               Join Predicate                |
-+---------------------------------------------+
-| customer.c_custkey = orders.o_custkey       |
-| customer.c_nationkey = supplier.s_nationkey |
-| customer.c_nationkey = nation.n_nationkey   |
-+---------------------------------------------+
-
-Table: lineitem used in 18 queries
-+---------------+----------+------------+--------+
-|    Column     | Filter % | Grouping % | Join % |
-+---------------+----------+------------+--------+
-| l_commitdate  | 27.78%   | 0.00%      | 0.00%  |
-| l_orderkey    | 0.00%    | 16.67%     | 72.22% |
-| l_partkey     | 0.00%    | 0.00%      | 16.67% |
-| l_receiptdate | 27.78%   | 0.00%      | 0.00%  |
-| l_returnflag  | 5.56%    | 0.00%      | 0.00%  |
-| l_shipdate    | 22.22%   | 0.00%      | 0.00%  |
-| l_shipmode    | 5.56%    | 5.56%      | 0.00%  |
-| l_suppkey     | 0.00%    | 0.00%      | 38.89% |
-+---------------+----------+------------+--------+
-+-------------------------------------------+
-|              Join Predicate               |
-+-------------------------------------------+
-| lineitem.l_orderkey = orders.o_orderkey   |
-| lineitem.l_suppkey = supplier.s_suppkey   |
-| part.p_partkey = lineitem.l_partkey       |
-| partsupp.ps_suppkey = lineitem.l_suppkey  |
-| partsupp.ps_partkey = lineitem.l_partkey  |
-| lineitem.l_orderkey = lineitem.l_orderkey |
-| lineitem.l_suppkey != lineitem.l_suppkey  |
-+-------------------------------------------+
-
-Table: nation used in 11 queries
-+-------------+----------+------------+--------+
-|   Column    | Filter % | Grouping % | Join % |
-+-------------+----------+------------+--------+
-| n_name      | 27.27%   | 18.18%     | 0.00%  |
-| n_nationkey | 0.00%    | 0.00%      | 90.91% |
-| n_regionkey | 0.00%    | 0.00%      | 27.27% |
-+-------------+----------+------------+--------+
-+-------------------------------------------+
-|              Join Predicate               |
-+-------------------------------------------+
-| supplier.s_nationkey = nation.n_nationkey |
-| nation.n_regionkey = region.r_regionkey   |
-| customer.c_nationkey = nation.n_nationkey |
-+-------------------------------------------+
-
-Table: orders used in 12 queries
-+-----------------+----------+------------+--------+
-|     Column      | Filter % | Grouping % | Join % |
-+-----------------+----------+------------+--------+
-| o_comment       | 8.33%    | 0.00%      | 0.00%  |
-| o_custkey       | 0.00%    | 0.00%      | 58.33% |
-| o_orderdate     | 41.67%   | 16.67%     | 0.00%  |
-| o_orderkey      | 8.33%    | 8.33%      | 83.33% |
-| o_orderpriority | 0.00%    | 8.33%      | 0.00%  |
-| o_orderstatus   | 8.33%    | 0.00%      | 0.00%  |
-| o_shippriority  | 0.00%    | 8.33%      | 0.00%  |
-| o_totalprice    | 0.00%    | 8.33%      | 0.00%  |
-+-----------------+----------+------------+--------+
-+-----------------------------------------+
-|             Join Predicate              |
-+-----------------------------------------+
-| customer.c_custkey = orders.o_custkey   |
-| lineitem.l_orderkey = orders.o_orderkey |
-+-----------------------------------------+
-
-Table: part used in 6 queries
-+-----------+----------+------------+--------+
-|  Column   | Filter % | Grouping % | Join % |
-+-----------+----------+------------+--------+
-| p_brand   | 16.67%   | 16.67%     | 0.00%  |
-| p_name    | 16.67%   | 0.00%      | 0.00%  |
-| p_partkey | 0.00%    | 0.00%      | 66.67% |
-| p_size    | 16.67%   | 16.67%     | 0.00%  |
-| p_type    | 33.33%   | 16.67%     | 0.00%  |
-+-----------+----------+------------+--------+
-+--------------------------------------+
-|            Join Predicate            |
-+--------------------------------------+
-| part.p_partkey = lineitem.l_partkey  |
-| part.p_partkey = partsupp.ps_partkey |
-+--------------------------------------+
-
-Table: partsupp used in 5 queries
-+------------+----------+------------+--------+
-|   Column   | Filter % | Grouping % | Join % |
-+------------+----------+------------+--------+
-| ps_partkey | 0.00%    | 40.00%     | 40.00% |
-| ps_suppkey | 20.00%   | 0.00%      | 60.00% |
-+------------+----------+------------+--------+
-+------------------------------------------+
-|              Join Predicate              |
-+------------------------------------------+
-| partsupp.ps_suppkey = lineitem.l_suppkey |
-| partsupp.ps_partkey = lineitem.l_partkey |
-| partsupp.ps_suppkey = supplier.s_suppkey |
-| part.p_partkey = partsupp.ps_partkey     |
-+------------------------------------------+
-
-Table: region used in 3 queries
-+-------------+----------+------------+--------+
-|   Column    | Filter % | Grouping % | Join % |
-+-------------+----------+------------+--------+
-| r_name      | 66.67%   | 0.00%      | 0.00%  |
-| r_regionkey | 0.00%    | 0.00%      | 66.67% |
-+-------------+----------+------------+--------+
-+-----------------------------------------+
-|             Join Predicate              |
-+-----------------------------------------+
-| nation.n_regionkey = region.r_regionkey |
-+-----------------------------------------+
-
-Table: supplier used in 9 queries
-+-------------+----------+------------+--------+
-|   Column    | Filter % | Grouping % | Join % |
-+-------------+----------+------------+--------+
-| s_comment   | 11.11%   | 0.00%      | 0.00%  |
-| s_name      | 0.00%    | 11.11%     | 0.00%  |
-| s_nationkey | 0.00%    | 0.00%      | 77.78% |
-| s_suppkey   | 0.00%    | 0.00%      | 77.78% |
-+-------------+----------+------------+--------+
-+---------------------------------------------+
-|               Join Predicate                |
-+---------------------------------------------+
-| lineitem.l_suppkey = supplier.s_suppkey     |
-| customer.c_nationkey = supplier.s_nationkey |
-| supplier.s_nationkey = nation.n_nationkey   |
-| partsupp.ps_suppkey = supplier.s_suppkey    |
-+---------------------------------------------+
-
-The 1 following queries have failed:
-+-----------------------+--------------------------------+
-|         Query         |             Error              |
-+-----------------------+--------------------------------+
-| I am a failing query; | syntax error at position 2     |
-|                       | near 'I'                       |
-+-----------------------+--------------------------------+
-
-`
-	x := sb.String()
-	require.Equal(t, expected, x)
+	printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
+	expected, err := os.ReadFile("testdata/keys-summary.md")
+	require.NoError(t, err)
+	diff := cmp.Diff(string(expected), sb.String())
+	fmt.Println(diff)
+	require.Equal(t, string(expected), sb.String())
 }

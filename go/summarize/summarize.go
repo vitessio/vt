@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/chroma/quick"
 	"golang.org/x/term"
@@ -49,7 +50,7 @@ func Run(args []string) {
 		if firstTrace.AnalysedQueries == nil {
 			printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
 		} else {
-			printKeysSummary(os.Stdout, firstTrace)
+			printKeysSummary(os.Stdout, firstTrace, time.Now())
 		}
 	} else {
 		compareTraces(os.Stdout, terminalWidth(), highlightQuery, firstTrace, traces[1])
