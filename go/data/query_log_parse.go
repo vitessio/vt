@@ -22,9 +22,9 @@ import (
 	"regexp"
 )
 
-var reg = regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
-
 func ParseMySQLQueryLog(fileName string) (queries []Query, err error) {
+	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
+
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
