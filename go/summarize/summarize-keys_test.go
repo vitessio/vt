@@ -39,17 +39,17 @@ func TestTableSummary(t *testing.T) {
 
 	ts := TableSummary{
 		Columns: map[ColumnInformation]ColumnUsage{
-			ColumnInformation{Name: "l_shipmode", Pos: WhereRange}:    {Percentage: 6},
-			ColumnInformation{Name: "l_receiptdate", Pos: WhereRange}: {Percentage: 28},
-			ColumnInformation{Name: "l_shipdate", Pos: WhereRange}:    {Percentage: 22},
-			ColumnInformation{Name: "l_orderkey", Pos: Grouping}:      {Percentage: 17},
-			ColumnInformation{Name: "l_orderkey", Pos: Join}:          {Percentage: 72},
-			ColumnInformation{Name: "l_suppkey", Pos: Join}:           {Percentage: 39},
-			ColumnInformation{Name: "l_shipmode", Pos: Grouping}:      {Percentage: 6},
-			ColumnInformation{Name: "l_returnflag", Pos: Where}:       {Percentage: 6},
-			ColumnInformation{Name: "l_partkey", Pos: Join}:           {Percentage: 17},
-			ColumnInformation{Name: "l_suppkey", Pos: JoinRange}:      {Percentage: 17},
-			ColumnInformation{Name: "l_commitdate", Pos: WhereRange}:  {Percentage: 28},
+			{Name: "l_shipmode", Pos: WhereRange}:    {Percentage: 6},
+			{Name: "l_receiptdate", Pos: WhereRange}: {Percentage: 28},
+			{Name: "l_shipdate", Pos: WhereRange}:    {Percentage: 22},
+			{Name: "l_orderkey", Pos: Grouping}:      {Percentage: 17},
+			{Name: "l_orderkey", Pos: Join}:          {Percentage: 72},
+			{Name: "l_suppkey", Pos: Join}:           {Percentage: 39},
+			{Name: "l_shipmode", Pos: Grouping}:      {Percentage: 6},
+			{Name: "l_returnflag", Pos: Where}:       {Percentage: 6},
+			{Name: "l_partkey", Pos: Join}:           {Percentage: 17},
+			{Name: "l_suppkey", Pos: JoinRange}:      {Percentage: 17},
+			{Name: "l_commitdate", Pos: WhereRange}:  {Percentage: 28},
 		},
 	}
 
