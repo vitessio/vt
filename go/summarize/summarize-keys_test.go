@@ -57,7 +57,7 @@ func TestTableSummary(t *testing.T) {
 	}
 
 	var got []string
-	for ci, _ := range ts.GetColumns() {
+	for ci, _ := range ts.GetColumns() { // nolint
 		got = append(got, ci.String())
 	}
 

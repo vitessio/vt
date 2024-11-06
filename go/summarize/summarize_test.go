@@ -17,9 +17,10 @@ limitations under the License.
 package summarize
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func tf1() readingSummary {

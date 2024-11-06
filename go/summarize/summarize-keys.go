@@ -260,7 +260,7 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 
 	md.Println("```")
 	for _, table := range tables {
-		var predicates = g[table]
+		predicates := g[table]
 		numberOfPreds := len(predicates)
 		totalt := 0
 		for _, count := range predicates {
