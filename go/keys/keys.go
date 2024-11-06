@@ -90,23 +90,7 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 	case *sqlparser.CreateTable:
 		si.handleCreateTable(ast)
 	case sqlparser.Statement:
-		if q.Query == "UPDATE _vt.schema_migrations\t\tSET\t\t\tmigration_status='queued',\t\t\ttablet='test_misc-0000004915',\t\t\tretries=retries + 1,\t\t\ttablet_failure=0,\t\t\tmessage='',\t\t\tstage='',\t\t\tcutover_attempts=0,\t\t\tready_timestamp=NULL,\t\t\tstarted_timestamp=NULL,\t\t\tliveness_timestamp=NULL,\t\t\tcancelled_timestamp=NULL,\t\t\tcompleted_timestamp=NULL,\t\t\tlast_cutover_attempt_timestamp=NULL,\t\t\tcleanup_timestamp=NULL\t\tWHERE\t\t\tmigration_status IN ('failed', 'cancelled')\t\t\tAND (\t\ttablet_failure=1\t\tAND migration_status='failed'\t\tAND retries=0\t)\t\t\tLIMIT 1" {
-			fmt.Println(1)
-		}
-		st, err := semantics.Analyze(ast, "ks", si)
-		if err != nil {
-			ql.failed = append(ql.failed, QueryFailedResult{
-				Query:      q.Query,
-				LineNumber: q.Line,
-				Error:      err.Error(),
-			})
-			return
-		}
-		ctx := &plancontext.PlanningContext{
-			ReservedVars: sqlparser.NewReservedVars("", bv),
-			SemTable:     st,
-		}
-		ql.processQuery(ctx, ast, q)
+		ql.processQuery(si, ast, q, bv)
 	}
 }
 
@@ -121,9 +105,10 @@ type queryList struct {
 	failed  []QueryFailedResult
 }
 
-func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparser.Statement, q data.Query) {
-	bv := make(map[string]*querypb.BindVariable)
-	err := sqlparser.Normalize(ast, ctx.ReservedVars, bv)
+func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
+	mapBv := make(map[string]*querypb.BindVariable)
+	reservedVars := sqlparser.NewReservedVars("", bv)
+	err := sqlparser.Normalize(ast, reservedVars, mapBv)
 	if err != nil {
 		ql.failed = append(ql.failed, QueryFailedResult{
 			Query:      q.Query,
@@ -132,6 +117,21 @@ func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparse
 		})
 		return
 	}
+
+	st, err := semantics.Analyze(ast, "ks", si)
+	if err != nil {
+		ql.failed = append(ql.failed, QueryFailedResult{
+			Query:      q.Query,
+			LineNumber: q.Line,
+			Error:      err.Error(),
+		})
+		return
+	}
+	ctx := &plancontext.PlanningContext{
+		ReservedVars: reservedVars,
+		SemTable:     st,
+	}
+
 	structure := sqlparser.CanonicalString(ast)
 	r, found := ql.queries[structure]
 	if found {

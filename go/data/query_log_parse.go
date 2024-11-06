@@ -54,7 +54,7 @@ func (MySQLLogLoader) Load(fileName string) (queries []Query, err error) {
 			// that don't match the regexp, but are not part of the queries.
 			// To ignore them, we just check if we have already started with a query.
 			if prevQuery != "" {
-				prevQuery += line
+				prevQuery += " " + line
 			}
 			continue
 		}

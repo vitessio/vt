@@ -17,10 +17,12 @@ limitations under the License.
 package keys
 
 import (
-	"github.com/vitessio/vt/go/data"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/typ"
 
 	"github.com/stretchr/testify/require"
 )
@@ -38,4 +40,21 @@ func TestKeys(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, string(out), sb.String())
+}
+
+func TestKeysNonAuthoritativeTable(t *testing.T) {
+	q := data.Query{
+		Query: "select id from user where id = 20",
+		Type:  typ.Query,
+	}
+	si := &schemaInfo{}
+	ql := &queryList{
+		queries: make(map[string]*QueryAnalysisResult),
+	}
+	process(q, si, ql)
+
+	require.Len(t, ql.queries, 1)
+	for _, result := range ql.queries {
+		require.NotEmpty(t, result.FilterColumns)
+	}
 }

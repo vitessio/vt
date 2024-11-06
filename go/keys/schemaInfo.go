@@ -62,7 +62,7 @@ func (s *schemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes
 		if found {
 			tbl = &vindexes.Table{
 				Name:                    tablename.Name,
-				Keyspace:                &vindexes.Keyspace{Name: s.ksName},
+				Keyspace:                &vindexes.Keyspace{Name: s.ksName, Sharded: true},
 				Columns:                 columns,
 				ColumnListAuthoritative: true,
 			}
@@ -73,7 +73,7 @@ func (s *schemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes
 		// This is a table from another keyspace, or we couldn't find it in our keyspace
 		tbl = &vindexes.Table{
 			Name:                    tablename.Name,
-			Keyspace:                &vindexes.Keyspace{Name: ks},
+			Keyspace:                &vindexes.Keyspace{Name: ks, Sharded: true},
 			ColumnListAuthoritative: false,
 		}
 	}
