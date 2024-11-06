@@ -253,15 +253,22 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 
 	md.Println("```")
 	for _, table := range tables {
-		predicates := g[table]
+		var predicates = g[table]
 		numberOfPreds := len(predicates)
 		totalt := 0
 		for _, count := range predicates {
 			totalt += count
 		}
-		md.Printf("%s ↔ %s Count - %d\n", table.Tbl1, table.Tbl2, totalt)
+		md.Printf("%s ↔ %s (Occurrences: %d)\n", table.Tbl1, table.Tbl2, totalt)
 
-		for predicate, count := range predicates {
+		// we want the output to be deterministic
+		preds := slices.Collect(maps.Keys(predicates))
+		sort.Slice(preds, func(i, j int) bool {
+			return preds[i].String() < preds[j].String()
+		})
+
+		for _, predicate := range preds {
+			count := predicates[predicate]
 			numberOfPreds--
 			var s string
 			if numberOfPreds == 0 {

@@ -104,42 +104,42 @@
 
 ## Tables Joined
 ```
-customer ↔ nation Count - 3
+customer ↔ nation (Occurrences: 3)
 └─ customer.c_nationkey = nation.n_nationkey 100%
 
-customer ↔ orders Count - 7
+customer ↔ orders (Occurrences: 7)
 └─ customer.c_custkey = orders.o_custkey 100%
 
-customer ↔ supplier Count - 1
+customer ↔ supplier (Occurrences: 1)
 └─ customer.c_nationkey = supplier.s_nationkey 100%
 
-lineitem ↔ lineitem Count - 2
+lineitem ↔ lineitem (Occurrences: 2)
 ├─ lineitem.l_orderkey = lineitem.l_orderkey 50%
 └─ lineitem.l_suppkey != lineitem.l_suppkey 50%
 
-lineitem ↔ orders Count - 10
+lineitem ↔ orders (Occurrences: 10)
 └─ lineitem.l_orderkey = orders.o_orderkey 100%
 
-lineitem ↔ part Count - 3
+lineitem ↔ part (Occurrences: 3)
 └─ lineitem.l_partkey = part.p_partkey 100%
 
-lineitem ↔ partsupp Count - 2
+lineitem ↔ partsupp (Occurrences: 2)
 ├─ lineitem.l_partkey = partsupp.ps_partkey 50%
 └─ lineitem.l_suppkey = partsupp.ps_suppkey 50%
 
-lineitem ↔ supplier Count - 5
+lineitem ↔ supplier (Occurrences: 5)
 └─ lineitem.l_suppkey = supplier.s_suppkey 100%
 
-nation ↔ region Count - 2
+nation ↔ region (Occurrences: 2)
 └─ nation.n_regionkey = region.r_regionkey 100%
 
-nation ↔ supplier Count - 6
+nation ↔ supplier (Occurrences: 6)
 └─ nation.n_nationkey = supplier.s_nationkey 100%
 
-part ↔ partsupp Count - 1
+part ↔ partsupp (Occurrences: 1)
 └─ part.p_partkey = partsupp.ps_partkey 100%
 
-partsupp ↔ supplier Count - 1
+partsupp ↔ supplier (Occurrences: 1)
 └─ partsupp.ps_suppkey = supplier.s_suppkey 100%
 
 ```
