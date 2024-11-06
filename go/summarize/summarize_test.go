@@ -17,13 +17,11 @@ limitations under the License.
 package summarize
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -400,7 +398,5 @@ func TestSummarizeKeysFile(t *testing.T) {
 	printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
 	expected, err := os.ReadFile("testdata/keys-summary.md")
 	require.NoError(t, err)
-	diff := cmp.Diff(string(expected), sb.String())
-	fmt.Println(diff)
 	require.Equal(t, string(expected), sb.String())
 }

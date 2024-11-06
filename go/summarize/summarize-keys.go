@@ -152,7 +152,7 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
 **Analyzed File**: ` + "`%s`" + `
 
 `
-	md.Printf(msg, file.Name, now.Format(time.DateTime))
+	md.Printf(msg, now.Format(time.DateTime), file.Name)
 
 	tableSummaries, failuresSummaries := summarizeKeysQueries(file.AnalysedQueries)
 
@@ -251,15 +251,15 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 		return tables[i].Tbl1 < tables[j].Tbl1
 	})
 
+	md.Println("```")
 	for _, table := range tables {
 		predicates := g[table]
-		md.Println("```")
-		md.Printf("%s ↔ %s\n", table.Tbl1, table.Tbl2)
 		numberOfPreds := len(predicates)
 		totalt := 0
 		for _, count := range predicates {
 			totalt += count
 		}
+		md.Printf("%s ↔ %s Count - %d\n", table.Tbl1, table.Tbl2, totalt)
 
 		for predicate, count := range predicates {
 			numberOfPreds--
@@ -271,9 +271,9 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 			}
 			md.Printf("%s %s %d%%\n", s, predicate.String(), (count*100)/totalt)
 		}
-		md.Println("```")
 		md.NewLine()
 	}
+	md.Println("```")
 }
 
 func renderFailures(md *markdown.MarkDown, failures []FailuresSummary) {
@@ -306,7 +306,7 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 
 	// First pass: collect all data and count occurrences
 	for _, query := range queries.Queries {
-		for _, table := range query.TableName {
+		for _, table := range query.TableNames {
 			if _, exists := tableSummaries[table]; !exists {
 				tableSummaries[table] = &TableSummary{
 					Table:   table,
@@ -321,7 +321,7 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 				tableUsageReadCounts[table] += query.UsageCount
 			}
 
-			summarizeColumnUsage(table, tableSummaries, query)
+			summarizeColumnUsage(tableSummaries[table], query)
 			summarizeJoinPredicates(query.JoinPredicates, table, tableSummaries)
 		}
 	}
@@ -331,9 +331,9 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 		summary.ReadQueryCount = tableUsageReadCounts[summary.Table]
 		summary.WriteQueryCount = tableUsageWriteCounts[summary.Table]
 		count := summary.ReadQueryCount + summary.WriteQueryCount
+		countF := float64(count)
 		for colName, usage := range summary.Columns {
-			countF := float64(count)
-			usage.Percentage = (usage.Percentage / countF) * 100
+			usage.Percentage = (float64(usage.Count) / countF) * 100
 			summary.Columns[colName] = usage
 		}
 	}
@@ -360,7 +360,7 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 	return result, failures
 }
 
-func summarizeColumnUsage(table string, tableSummaries map[string]*TableSummary, query keys.QueryAnalysisResult) {
+func summarizeColumnUsage(tableSummary *TableSummary, query keys.QueryAnalysisResult) {
 	updateColumnUsage := func(columns []ColumnInformation) {
 		sort.Slice(columns, func(i, j int) bool {
 			if columns[i].Name == columns[j].Name {
@@ -371,39 +371,40 @@ func summarizeColumnUsage(table string, tableSummaries map[string]*TableSummary,
 		columns = slices.Compact(columns)
 
 		for _, col := range columns {
-			if strings.HasPrefix(col.Name, table+".") {
-				col.Name = strings.TrimPrefix(col.Name, table+".")
-				usage := tableSummaries[table].Columns[col]
-				queryUsageCount := query.UsageCount
-				usage.Percentage += float64(queryUsageCount)
-				usage.Count += queryUsageCount
-				tableSummaries[table].Columns[col] = usage
-			}
+			usage := tableSummary.Columns[col]
+			usage.Count += query.UsageCount
+			tableSummary.Columns[col] = usage
 		}
 	}
 
-	updateColumnUsage(slice.Map(query.FilterColumns, func(col operators.ColumnUse) ColumnInformation {
+	updateColumnUsage(slice.Map(slice.Filter(query.FilterColumns, func(col operators.ColumnUse) bool {
+		return col.Column.Table == tableSummary.Table
+	}), func(col operators.ColumnUse) ColumnInformation {
 		pos := Where
 		if col.Uses != sqlparser.EqualOp {
 			pos = WhereRange
 		}
-		return ColumnInformation{Name: col.Column.String(), Pos: pos}
+		return ColumnInformation{Name: col.Column.Name, Pos: pos}
 	}))
 
-	updateColumnUsage(slice.Map(query.GroupingColumns, func(col operators.Column) ColumnInformation {
-		return ColumnInformation{Name: col.String(), Pos: Grouping}
+	updateColumnUsage(slice.Map(slice.Filter(query.GroupingColumns, func(col operators.Column) bool {
+		return col.Table == tableSummary.Table
+	}), func(col operators.Column) ColumnInformation {
+		return ColumnInformation{Name: col.Name, Pos: Grouping}
 	}))
 
-	updateColumnUsage(slice.Map(query.JoinPredicates, func(pred operators.JoinPredicate) ColumnInformation {
+	updateColumnUsage(slice.Map(slice.Filter(query.JoinPredicates, func(pred operators.JoinPredicate) bool {
+		return pred.LHS.Table == tableSummary.Table || pred.RHS.Table == tableSummary.Table
+	}), func(pred operators.JoinPredicate) ColumnInformation {
 		ci := ColumnInformation{Pos: Join}
 		if pred.Uses != sqlparser.EqualOp {
 			ci.Pos = JoinRange
 		}
-		switch table {
+		switch tableSummary.Table {
 		case pred.LHS.Table:
-			ci.Name = pred.LHS.String()
+			ci.Name = pred.LHS.Name
 		case pred.RHS.Table:
-			ci.Name = pred.RHS.String()
+			ci.Name = pred.RHS.Name
 		}
 		return ci
 	}))
