@@ -92,20 +92,41 @@ func (p Position) String() string {
 	panic("unknown Position")
 }
 
+func (ci ColumnInformation) String() string {
+	return fmt.Sprintf("%s %s", ci.Name, ci.Pos)
+}
+
 func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
 	type colDetails struct {
 		ci ColumnInformation
 		cu ColumnUsage
 	}
 	columns := make([]colDetails, 0, len(ts.Columns))
+	maxColUse := make(map[string]float64)
 	for colInfo, usage := range ts.Columns {
 		columns = append(columns, colDetails{ci: colInfo, cu: usage})
-	}
-	sort.Slice(columns, func(i, j int) bool {
-		if columns[i].ci.Name == columns[j].ci.Name {
-			return columns[i].cu.Percentage < columns[j].cu.Percentage
+		if maxColUse[colInfo.Name] < usage.Percentage {
+			maxColUse[colInfo.Name] = usage.Percentage
 		}
-		return columns[i].ci.Name < columns[j].ci.Name
+	}
+
+	sort.Slice(columns, func(i, j int) bool {
+		nameI := columns[i].ci.Name
+		nameJ := columns[j].ci.Name
+		maxPercenI := maxColUse[nameI]
+		maxPercenJ := maxColUse[nameJ]
+
+		if nameI == nameJ {
+			if columns[i].cu.Percentage == columns[j].cu.Percentage {
+				return columns[i].ci.Pos < columns[j].ci.Pos
+			}
+			return columns[i].cu.Percentage > columns[j].cu.Percentage
+		}
+		if maxPercenI == maxPercenJ {
+			return nameI < nameJ
+		}
+
+		return maxPercenI > maxPercenJ
 	})
 	return func(yield func(ColumnInformation, ColumnUsage) bool) {
 		for _, col := range columns {
@@ -189,9 +210,6 @@ func renderColumnUsageTable(md *markdown.MarkDown, summary TableSummary) {
 		})
 	}
 
-	sort.Slice(rows, func(i, j int) bool {
-		return rows[i][2] > rows[j][2]
-	})
 	md.PrintTable(headers, rows)
 }
 

@@ -1,7 +1,7 @@
 # Query Analysis Report
 
-**Date of Analysis**: testdata/keys-log.json  
-**Analyzed File**: `2024-01-01 01:02:03`
+**Date of Analysis**: /Users/florentpoinsard/Code/vitess-tester/go/summarize/testdata/keys-log.json  
+**Analyzed File**: `2024-11-05 09:39:52`
 
 ## Tables
 |Table Name|Reads|Writes|
@@ -21,8 +21,8 @@
 |---|---|---|
 |l_orderkey|JOIN|72%|
 |l_returnflag|WHERE|6%|
-|l_shipmode|WHERE RANGE|6%|
 |l_shipmode|GROUP|6%|
+|l_shipmode|WHERE RANGE|6%|
 |l_suppkey|JOIN|39%|
 |l_commitdate|WHERE RANGE|28%|
 |l_receiptdate|WHERE RANGE|28%|
@@ -84,9 +84,9 @@
 |p_name|WHERE RANGE|17%|
 |p_size|WHERE RANGE|17%|
 |p_size|GROUP|17%|
-|p_type|WHERE|17%|
 |p_type|WHERE RANGE|17%|
 |p_type|GROUP|17%|
+|p_type|WHERE|17%|
 
 #### Table: `partsupp` (4 reads and 1 writes)
 |Column|Position|Used %|
