@@ -17,7 +17,10 @@ limitations under the License.
 package summarize
 
 import (
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -59,4 +62,13 @@ func TestTableSummary(t *testing.T) {
 	}
 
 	require.Equal(t, expected, got)
+}
+
+func TestSummarizeKeysFile(t *testing.T) {
+	file := readTraceFile("testdata/keys-log.json")
+	sb := &strings.Builder{}
+	printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
+	expected, err := os.ReadFile("testdata/keys-summary.md")
+	require.NoError(t, err)
+	require.Equal(t, string(expected), sb.String())
 }

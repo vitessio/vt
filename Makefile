@@ -22,7 +22,7 @@ build:
 	$(GO) build -o vt ./go/vt
 
 test:
-	$(GO) test ./go/...
+	$(GO) test -count=1 ./go/...
 
 tidy:
 	$(GO) mod tidy

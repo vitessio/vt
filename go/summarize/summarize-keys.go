@@ -202,9 +202,16 @@ func renderColumnUsageTable(md *markdown.MarkDown, summary TableSummary) {
 
 	headers := []string{"Column", "Position", "Used %"}
 	var rows [][]string
+	var lastName string
 	for colInfo, usage := range summary.GetColumns() {
+		name := colInfo.Name
+		if lastName == name {
+			name = ""
+		} else {
+			lastName = name
+		}
 		rows = append(rows, []string{
-			colInfo.Name,
+			name,
 			colInfo.Pos.String(),
 			fmt.Sprintf("%.0f%%", usage.Percentage),
 		})
