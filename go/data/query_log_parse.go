@@ -18,9 +18,10 @@ package data
 
 import (
 	"bufio"
-	"github.com/vitessio/vt/go/typ"
 	"os"
 	"regexp"
+
+	"github.com/vitessio/vt/go/typ"
 )
 
 type MySQLLogLoader struct{}

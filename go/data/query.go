@@ -18,7 +18,9 @@ package data
 
 import (
 	"fmt"
+
 	log "github.com/sirupsen/logrus"
+
 	"github.com/vitessio/vt/go/typ"
 )
 
