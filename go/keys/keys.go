@@ -147,9 +147,8 @@ func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparse
 		StatementType:   result.StatementType,
 		UsageCount:      1,
 		LineNumbers:     []int{q.Line},
-		TableName:       tableNames,
+		TableNames:      tableNames,
 		GroupingColumns: result.GroupingColumns,
-		JoinColumns:     result.JoinColumns,
 		JoinPredicates:  result.JoinPredicates,
 		FilterColumns:   result.FilterColumns,
 	}
@@ -190,9 +189,8 @@ type QueryAnalysisResult struct {
 	QueryStructure  string                    `json:"queryStructure"`
 	UsageCount      int                       `json:"usageCount"`
 	LineNumbers     []int                     `json:"lineNumbers"`
-	TableName       []string                  `json:"tableName,omitempty"`
+	TableNames      []string                  `json:"tableNames,omitempty"`
 	GroupingColumns []operators.Column        `json:"groupingColumns,omitempty"`
-	JoinColumns     []operators.ColumnUse     `json:"joinColumns,omitempty"`
 	JoinPredicates  []operators.JoinPredicate `json:"joinPredicates,omitempty"`
 	FilterColumns   []operators.ColumnUse     `json:"filterColumns,omitempty"`
 	StatementType   string                    `json:"statementType"`
