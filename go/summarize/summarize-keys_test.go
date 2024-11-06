@@ -57,7 +57,7 @@ func TestTableSummary(t *testing.T) {
 	}
 
 	var got []string
-	for ci, _ := range ts.GetColumns() { // nolint
+	for ci, _ := range ts.GetColumns() { //nolint:unused // Ignore unused variable check for this loop
 		got = append(got, ci.String())
 	}
 
