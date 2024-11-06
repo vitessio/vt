@@ -17,6 +17,7 @@ limitations under the License.
 package summarize
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -27,17 +28,17 @@ import (
 
 func TestTableSummary(t *testing.T) {
 	expected := []string{
-		"l_orderkey " + Join.String(),
-		"l_orderkey " + Grouping.String(),
-		"l_suppkey " + Join.String(),
-		"l_suppkey " + JoinRange.String(),
-		"l_commitdate " + WhereRange.String(),
-		"l_receiptdate " + WhereRange.String(),
-		"l_shipdate " + WhereRange.String(),
-		"l_partkey " + Join.String(),
-		"l_returnflag " + Where.String(),
-		"l_shipmode " + WhereRange.String(),
-		"l_shipmode " + Grouping.String(),
+		"l_orderkey " + Join.String() + " 72%",
+		"l_orderkey " + Grouping.String() + " 17%",
+		"l_suppkey " + Join.String() + " 39%",
+		"l_suppkey " + JoinRange.String() + " 17%",
+		"l_commitdate " + WhereRange.String() + " 28%",
+		"l_receiptdate " + WhereRange.String() + " 28%",
+		"l_shipdate " + WhereRange.String() + " 22%",
+		"l_partkey " + Join.String() + " 17%",
+		"l_returnflag " + Where.String() + " 6%",
+		"l_shipmode " + WhereRange.String() + " 6%",
+		"l_shipmode " + Grouping.String() + " 6%",
 	}
 
 	ts := TableSummary{
@@ -57,9 +58,8 @@ func TestTableSummary(t *testing.T) {
 	}
 
 	var got []string
-	//nolint:unused // Ignore unused variable check for this loop
-	for ci, _ := range ts.GetColumns() {
-		got = append(got, ci.String())
+	for ci, cu := range ts.GetColumns() {
+		got = append(got, fmt.Sprintf("%s %.0f%%", ci.String(), cu.Percentage))
 	}
 
 	require.Equal(t, expected, got)
