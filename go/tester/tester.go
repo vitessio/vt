@@ -222,7 +222,7 @@ func (t *Tester) Run() (err error) {
 			err = errors.Join(err, postErr)
 		}()
 	}
-	queries, err := data.LoadQueries(t.name)
+	queries, err := data.SQLScriptLoader{}.Load(t.name)
 	if err != nil {
 		t.reporter.AddFailure(err)
 		return err

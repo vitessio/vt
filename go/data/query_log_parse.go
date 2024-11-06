@@ -18,11 +18,14 @@ package data
 
 import (
 	"bufio"
+	"github.com/vitessio/vt/go/typ"
 	"os"
 	"regexp"
 )
 
-func ParseMySQLQueryLog(fileName string) (queries []Query, err error) {
+type MySQLLogLoader struct{}
+
+func (MySQLLogLoader) Load(fileName string) (queries []Query, err error) {
 	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
 
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
@@ -36,7 +39,10 @@ func ParseMySQLQueryLog(fileName string) (queries []Query, err error) {
 
 	// Go over each line
 	prevQuery := ""
+	lineNumber := 0
+	queryStart := 0
 	for scanner.Scan() {
+		lineNumber++
 		line := scanner.Text()
 		if len(line) == 0 {
 			continue
@@ -53,11 +59,16 @@ func ParseMySQLQueryLog(fileName string) (queries []Query, err error) {
 			continue
 		}
 		if prevQuery != "" {
-			queries = append(queries, Query{Query: prevQuery})
+			queries = append(queries, Query{
+				Query: prevQuery,
+				Line:  queryStart,
+				Type:  typ.Query,
+			})
 			prevQuery = ""
 		}
 		if matches[3] == "Query" {
 			prevQuery = matches[4]
+			queryStart = lineNumber
 		}
 	}
 

@@ -17,8 +17,6 @@ limitations under the License.
 package keys
 
 import (
-	"fmt"
-
 	"vitess.io/vitess/go/mysql/collations"
 	"vitess.io/vitess/go/vt/key"
 	"vitess.io/vitess/go/vt/proto/topodata"
@@ -52,25 +50,35 @@ func (s *schemaInfo) handleCreateTable(create *sqlparser.CreateTable) {
 }
 
 func (s *schemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes.Table, vindexes.Vindex, string, topodata.TabletType, key.Destination, error) {
-	if tablename.Qualifier.NotEmpty() && tablename.Qualifier.String() != s.ksName {
-		return nil, nil, "", topodata.TabletType_REPLICA, nil, fmt.Errorf("unknown keyspace %s", tablename.Qualifier.String())
+	var tbl *vindexes.Table
+	ks := tablename.Qualifier.String()
+	if ks == "" {
+		ks = s.ksName
 	}
 
-	columns, found := s.tables[tablename.Name.String()]
-	if !found {
-		return &vindexes.Table{
+	if !tablename.Qualifier.NotEmpty() || tablename.Qualifier.String() == s.ksName {
+		// This is a table from our keyspace. We should be able to find it
+		columns, found := s.tables[tablename.Name.String()]
+		if found {
+			tbl = &vindexes.Table{
+				Name:                    tablename.Name,
+				Keyspace:                &vindexes.Keyspace{Name: s.ksName},
+				Columns:                 columns,
+				ColumnListAuthoritative: true,
+			}
+		}
+	}
+
+	if tbl == nil {
+		// This is a table from another keyspace, or we couldn't find it in our keyspace
+		tbl = &vindexes.Table{
 			Name:                    tablename.Name,
-			Keyspace:                &vindexes.Keyspace{Name: s.ksName},
+			Keyspace:                &vindexes.Keyspace{Name: ks},
 			ColumnListAuthoritative: false,
-		}, nil, s.ksName, topodata.TabletType_REPLICA, nil, nil
+		}
 	}
 
-	return &vindexes.Table{
-		Name:                    tablename.Name,
-		Keyspace:                &vindexes.Keyspace{Name: s.ksName},
-		Columns:                 columns,
-		ColumnListAuthoritative: true,
-	}, nil, s.ksName, topodata.TabletType_REPLICA, nil, nil
+	return tbl, nil, ks, topodata.TabletType_REPLICA, nil, nil
 }
 
 func (s *schemaInfo) ConnCollation() collations.ID {

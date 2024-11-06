@@ -17,6 +17,7 @@ limitations under the License.
 package keys
 
 import (
+	"github.com/vitessio/vt/go/data"
 	"os"
 	"strings"
 	"testing"
@@ -26,7 +27,11 @@ import (
 
 func TestKeys(t *testing.T) {
 	sb := &strings.Builder{}
-	err := run(sb, "../../t/tpch_failing_queries.test")
+	cfg := Config{
+		FileName: "../../t/tpch_failing_queries.test",
+		Loader:   data.SQLScriptLoader{},
+	}
+	err := run(sb, cfg)
 	require.NoError(t, err)
 
 	out, err := os.ReadFile("../summarize/testdata/keys-log.json")

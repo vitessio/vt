@@ -24,19 +24,10 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/vitessio/vt/go/typ"
 )
 
-type (
-	Query struct {
-		FirstWord string
-		Query     string
-		Line      int
-		Type      typ.CmdType
-	}
-)
+type SQLScriptLoader struct{}
 
 func readData(url string) ([]byte, error) {
 	if strings.HasPrefix(url, "http") {
@@ -54,7 +45,7 @@ func readData(url string) ([]byte, error) {
 	return os.ReadFile(url)
 }
 
-func LoadQueries(url string) ([]Query, error) {
+func (SQLScriptLoader) Load(url string) ([]Query, error) {
 	data, err := readData(url)
 	if err != nil {
 		return nil, err
@@ -144,24 +135,4 @@ func ParseQueries(qs ...Query) ([]Query, error) {
 		queries = append(queries, q)
 	}
 	return queries, nil
-}
-
-// for a single query, it has some prefix. Prefix mapps to a query type.
-// e.g query_vertical maps to typ.Q_QUERY_VERTICAL
-func (q *Query) getQueryType(qu string) error {
-	tp := typ.FindType(q.FirstWord)
-	if tp > 0 {
-		q.Type = tp
-	} else {
-		// No mysqltest command matched
-		if q.Type != typ.CommentWithCommand {
-			// A query that will sent to vitess
-			q.Query = qu
-			q.Type = typ.Query
-		} else {
-			log.WithFields(log.Fields{"line": q.Line, "command": q.FirstWord, "arguments": q.Query}).Error("invalid command")
-			return fmt.Errorf("invalid command %s", q.FirstWord)
-		}
-	}
-	return nil
 }

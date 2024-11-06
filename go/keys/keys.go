@@ -33,18 +33,23 @@ import (
 	"github.com/vitessio/vt/go/typ"
 )
 
-func Run(fileName string) error {
-	return run(os.Stdout, fileName)
+type Config struct {
+	FileName string
+	Loader   data.Loader
 }
 
-func run(out io.Writer, fileName string) error {
+func Run(cfg Config) error {
+	return run(os.Stdout, cfg)
+}
+
+func run(out io.Writer, cfg Config) error {
 	si := &schemaInfo{
 		tables: make(map[string]columns),
 	}
 	ql := &queryList{
 		queries: make(map[string]*QueryAnalysisResult),
 	}
-	queries, err := data.LoadQueries(fileName)
+	queries, err := cfg.Loader.Load(cfg.FileName)
 	if err != nil {
 		return err
 	}
@@ -85,6 +90,9 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 	case *sqlparser.CreateTable:
 		si.handleCreateTable(ast)
 	case sqlparser.Statement:
+		if q.Query == "UPDATE _vt.schema_migrations\t\tSET\t\t\tmigration_status='queued',\t\t\ttablet='test_misc-0000004915',\t\t\tretries=retries + 1,\t\t\ttablet_failure=0,\t\t\tmessage='',\t\t\tstage='',\t\t\tcutover_attempts=0,\t\t\tready_timestamp=NULL,\t\t\tstarted_timestamp=NULL,\t\t\tliveness_timestamp=NULL,\t\t\tcancelled_timestamp=NULL,\t\t\tcompleted_timestamp=NULL,\t\t\tlast_cutover_attempt_timestamp=NULL,\t\t\tcleanup_timestamp=NULL\t\tWHERE\t\t\tmigration_status IN ('failed', 'cancelled')\t\t\tAND (\t\ttablet_failure=1\t\tAND migration_status='failed'\t\tAND retries=0\t)\t\t\tLIMIT 1" {
+			fmt.Println(1)
+		}
 		st, err := semantics.Analyze(ast, "ks", si)
 		if err != nil {
 			ql.failed = append(ql.failed, QueryFailedResult{
@@ -135,7 +143,7 @@ func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparse
 	var tableNames []string
 	for _, t := range ctx.SemTable.Tables {
 		rtbl, ok := t.(*semantics.RealTable)
-		if !ok {
+		if !ok || rtbl.Table == nil {
 			continue
 		}
 		tableNames = append(tableNames, rtbl.Table.Name.String())
