@@ -84,7 +84,7 @@ func (SQLScriptLoader) Load(url string) ([]Query, error) {
 	return ParseQueries(queries...)
 }
 
-func apa(rs Query) (*Query, error) {
+func parseQuery(rs Query) (*Query, error) {
 	realS := rs.Query
 	s := rs.Query
 	q := Query{}
@@ -134,8 +134,6 @@ func apa(rs Query) (*Query, error) {
 // findFirstWord will calculate first word length(the command), terminated
 // by 'space' , '(' or 'delimiter'
 func findFirstWord(s string) (i int) {
-	// Calculate first word length(the command), terminated
-	// by 'space' , '(' or 'delimiter'
 	for {
 		if !(i < len(s) && s[i] != '(' && s[i] != ' ' && s[i] != ';') || s[i] == '\n' {
 			break
@@ -150,7 +148,7 @@ func findFirstWord(s string) (i int) {
 func ParseQueries(qs ...Query) ([]Query, error) {
 	queries := make([]Query, 0, len(qs))
 	for _, rs := range qs {
-		q, err := apa(rs)
+		q, err := parseQuery(rs)
 		if err != nil {
 			return nil, err
 		}
