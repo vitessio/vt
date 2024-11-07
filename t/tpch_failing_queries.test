@@ -459,6 +459,9 @@ group by
 order by
 	value desc;
 
+# Failing query #1
+I am a failing query;
+
 # Q12 Shipping Modes and Order Priority Query
 select
 	l_shipmode,
@@ -774,5 +777,5 @@ order by
 	cntrycode;
 
 
-# Failing query
+# Failing query #2
 I am a failing query;

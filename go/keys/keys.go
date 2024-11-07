@@ -106,6 +106,17 @@ type queryList struct {
 }
 
 func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
+	// handle panics
+	defer func() {
+		if r := recover(); r != nil {
+			ql.failed = append(ql.failed, QueryFailedResult{
+				Query:      q.Query,
+				LineNumber: q.Line,
+				Error:      fmt.Sprintf("panic: %v", r),
+			})
+		}
+	}()
+
 	mapBv := make(map[string]*querypb.BindVariable)
 	reservedVars := sqlparser.NewReservedVars("", bv)
 	err := sqlparser.Normalize(ast, reservedVars, mapBv)

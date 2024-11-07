@@ -23,11 +23,15 @@
 ||GROUP|17%|
 |l_suppkey|JOIN|39%|
 ||JOIN RANGE|17%|
+|l_shipdate|WHERE RANGE|33%|
 |l_commitdate|WHERE RANGE|28%|
 |l_receiptdate|WHERE RANGE|28%|
-|l_shipdate|WHERE RANGE|22%|
 |l_partkey|JOIN|17%|
+|l_discount|WHERE RANGE|6%|
+|l_linestatus|GROUP|6%|
+|l_quantity|WHERE RANGE|6%|
 |l_returnflag|WHERE|6%|
+||GROUP|6%|
 |l_shipmode|WHERE RANGE|6%|
 ||GROUP|6%|
 
@@ -146,5 +150,6 @@ partsupp ↔ supplier (Occurrences: 1)
 ## Failures
 |Query|Error|
 |---|---|
+|I am a failing query;|syntax error at position 2 near 'I'|
 |I am a failing query;|syntax error at position 2 near 'I'|
 

@@ -29,7 +29,7 @@ func keysCmd() *cobra.Command {
 	var inputType string
 
 	cmd := &cobra.Command{
-		Use:     "keys file.test",
+		Use:     "keys ",
 		Short:   "Runs vexplain keys on all queries of the test file",
 		Example: "vt keys file.test",
 		Args:    cobra.ExactArgs(1),
