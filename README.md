@@ -54,25 +54,18 @@ vt test --sharded --trace-file=trace-log.json t/tpch.test
 `vt trace` focuses solely on analyzing query execution in Vitess without MySQL comparison:
 
 ```bash
-# Basic usage, with an unsharded keyspace
-vt trace t/tpch.test > trace-log.json
-
 # With VSchema and backup initialization
 vt trace --vschema=t/vschema.json --backup-path=/path/to/backup --number-of-shards=4 t/tpch.test > trace-log.json
-
-# With sharding enabled
-vt trace --sharded --vschema=t/vschema.json t/tpch.test > trace-log.json
 ```
 
 `vt trace` accepts most of the same configuration flags as `vt test`, including:
-- `--sharded`: Enable sharded mode
+- `--sharded`: Enable auto-sharded mode - uses primary keys as sharding keys. Not a good idea for a production environment, but can be used to ensure that all queries work in a sharded environment. 
 - `--vschema`: Specify the VSchema configuration
 - `--backup-path`: Initialize from a backup
 - `--number-of-shards`: Specify the number of shards to bring up
 - Other database configuration flags
 
 Both `vt trace` and `vt keys` support different input file formats through the `--input-type` flag:
-
 
 Example using different input types:
 ```bash
@@ -92,7 +85,9 @@ vt summarize trace-log1.json trace-log2.json  # Compare two traces
 
 ## Key Analysis Workflow
 
-`vt keys` analyzes query logs and outputs detailed information about table and column usage in queries. This data can be summarized using `vt summarize`. Here's a typical workflow:
+`vt keys` analyzes query logs and outputs detailed information about tables, columns usage and joins in queries.
+This data can be summarized using `vt summarize`. 
+Here's a typical workflow:
 
 1. **Run `vt keys` to analyze queries**:
 
