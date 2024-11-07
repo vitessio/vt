@@ -50,6 +50,7 @@ func testerCmd() *cobra.Command {
 
 func tracerCmd() *cobra.Command {
 	var cfg vttester.Config
+	var inputType string
 
 	cmd := &cobra.Command{
 		Use:   "trace ",
@@ -61,11 +62,18 @@ func tracerCmd() *cobra.Command {
 			}
 			cfg.Tests = args
 			cfg.Compare = false
+			loader, err := configureLoader(inputType)
+			if err != nil {
+				return err
+			}
+			cfg.Loader = loader
+
 			return usageErr(cmd, vttester.Run(cfg))
 		},
 	}
 
 	commonFlags(cmd, &cfg)
+	addInputTypeFlag(cmd, &inputType)
 
 	return cmd
 }

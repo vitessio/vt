@@ -42,20 +42,18 @@ const (
 
 func ExecuteTests(
 	info ClusterInfo,
-	fileNames []string,
+	cfg Config,
 	s Suite,
-	vschemaFile, vtexplainVschemaFile string,
-	olap bool,
 	factory QueryRunnerFactory,
 ) (failed bool) {
-	vschemaF := vschemaFile
+	vschemaF := cfg.VschemaFile
 	if vschemaF == "" {
-		vschemaF = vtexplainVschemaFile
+		vschemaF = cfg.VtExplainVschemaFile
 	}
 
-	for _, name := range fileNames {
+	for _, name := range cfg.Tests {
 		errReporter := s.NewReporterForFile(name)
-		vTester := NewTester(name, errReporter, info, olap, info.vschema, vschemaF, factory)
+		vTester := NewTester(name, errReporter, info, cfg.OLAP, info.vschema, vschemaF, factory, cfg.Loader)
 		err := vTester.Run()
 		if err != nil {
 			failed = true

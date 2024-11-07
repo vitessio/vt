@@ -26,6 +26,8 @@ import (
 	"github.com/fatih/color"
 	log "github.com/sirupsen/logrus"
 	"vitess.io/vitess/go/test/endtoend/cluster"
+
+	"github.com/vitessio/vt/go/data"
 )
 
 type Config struct {
@@ -41,6 +43,7 @@ type Config struct {
 	Compare              bool
 
 	BackupDir string
+	Loader    data.Loader
 }
 
 func (cfg Config) GetNumberOfShards() int {
@@ -114,7 +117,7 @@ func Run(cfg Config) error {
 	} else {
 		reporterSuite = NewFileReporterSuite(getVschema(clusterInfo.clusterInstance))
 	}
-	failed := ExecuteTests(clusterInfo, cfg.Tests, reporterSuite, cfg.VschemaFile, cfg.VtExplainVschemaFile, cfg.OLAP, getQueryRunnerFactory(cfg))
+	failed := ExecuteTests(clusterInfo, cfg, reporterSuite, getQueryRunnerFactory(cfg))
 	outputFile := reporterSuite.Close()
 	if failed {
 		return fmt.Errorf("some tests failed 😭\nsee errors in %v", outputFile)

@@ -38,21 +38,33 @@ func keysCmd() *cobra.Command {
 				FileName: args[0],
 			}
 
-			// Set the input type in config based on the flag
-			switch inputType {
-			case "sql":
-				cfg.Loader = data.SQLScriptLoader{}
-			case "mysql-log":
-				cfg.Loader = data.MySQLLogLoader{}
-			default:
-				return errors.New("invalid input type: must be 'sql' or 'mysql-log'")
+			loader, err := configureLoader(inputType)
+			if err != nil {
+				return err
 			}
+			cfg.Loader = loader
 
 			return keys.Run(cfg)
 		},
 	}
 
-	cmd.Flags().StringVar(&inputType, "input-type", "sql", "Specifies the type of input file: 'sql' or 'mysql-log'")
+	addInputTypeFlag(cmd, &inputType)
 
 	return cmd
+}
+
+func addInputTypeFlag(cmd *cobra.Command, s *string) {
+	*s = "sql"
+	cmd.Flags().StringVar(s, "input-type", "sql", "Specifies the type of input file: 'sql' or 'mysql-log'")
+}
+
+func configureLoader(inputType string) (data.Loader, error) {
+	switch inputType {
+	case "sql":
+		return data.SQLScriptLoader{}, nil
+	case "mysql-log":
+		return data.MySQLLogLoader{}, nil
+	default:
+		return nil, errors.New("invalid input type: must be 'sql' or 'mysql-log'")
+	}
 }
