@@ -4,9 +4,9 @@ The `vt` binary encapsulates several utility tools for Vitess, providing a compr
 
 ## Tools Included
 - **`vt test`**: A testing utility using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
-- **`vt summarize`**: A tool used to summarize or compare trace logs or key logs for deeper analysis.
-- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, and column usage. It integrates with `vt summarize` for summarizing and comparing query logs.
-- **`vt trace`**: A tool that generates a trace of the query execution plan using the `vexplain trace` tool for detailed analysis. 
+- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, joins, and column usage.
+- **`vt trace`**: A tool that generates execution traces for queries without comparing against MySQL. It helps analyze query behavior and performance in Vitess environments.
+- **`vt summarize`**: A tool used to summarize or compare trace logs or key logs for easier human consumption.
 
 ## Installation
 You can install `vt` using the following command:
@@ -26,52 +26,80 @@ To verify compatibility and correctness, the testing strategy involves running i
 This dual-testing strategy ensures high confidence in vtgate's compatibility with MySQL.
 
 ### Sharded Testing Strategy
-Vitess operates in a sharded environment, presenting unique challenges, especially during schema changes (DDL). The `vt tester` tool handles these by converting DDL statements into VSchema commands.
+Vitess operates in a sharded environment, presenting unique challenges, especially during schema changes (DDL). The `vt test` tool handles these by converting DDL statements into VSchema commands.
 
-Here’s an example of running `vt tester`:
-
-```bash
-vt tester --sharded t/basic.test  # Runs a test on a sharded database
-```
-
-Custom schemas and configurations can be applied using directives. 
-Run `vt tester --help`, and check out `directives.test` for more examples.
-
-## Tracing and Key Analysis
-
-`vt tester` can also operate in tracing mode to generate a trace of the query execution plan using the `vexplain trace` tool for detailed execution analysis.
-
-To run `vt tester` with tracing:
+Here's an example of running `vt test`:
 
 ```bash
-vt tester --sharded --trace=trace-log.json t/tpch.test
+vt test --sharded t/basic.test  # Runs tests on a sharded database
 ```
 
-The generated trace logs can be summarized or compared using `vt summarize`:
+Custom schemas and configurations can be applied using directives.
+Run `vt test --help`, and check out `directives.test` for more examples.
 
-- **Summarize a trace log**:
+## Tracing and Query Analysis
 
-  ```bash
-  vt summarize trace-log.json
-  ```
+Vitess provides two main approaches for tracing query execution:
 
-- **Compare two trace logs**:
+### Comparative Tracing with `vt test`
 
-  ```bash
-  vt summarize trace-log1.json trace-log2.json
-  ```
+`vt test` can generate traces while comparing behavior with MySQL using the `--trace-file` flag:
+
+```bash
+vt test --sharded --trace-file=trace-log.json t/tpch.test
+```
+
+### Standalone Tracing with `vt trace`
+
+`vt trace` focuses solely on analyzing query execution in Vitess without MySQL comparison:
+
+```bash
+# With VSchema and backup initialization
+vt trace --vschema=t/vschema.json --backup-path=/path/to/backup --number-of-shards=4 t/tpch.test > trace-log.json
+```
+
+`vt trace` accepts most of the same configuration flags as `vt test`, including:
+- `--sharded`: Enable auto-sharded mode - uses primary keys as sharding keys. Not a good idea for a production environment, but can be used to ensure that all queries work in a sharded environment. 
+- `--vschema`: Specify the VSchema configuration
+- `--backup-path`: Initialize from a backup
+- `--number-of-shards`: Specify the number of shards to bring up
+- Other database configuration flags
+
+Both `vt trace` and `vt keys` support different input file formats through the `--input-type` flag:
+
+Example using different input types:
+```bash
+# Analyze SQL file or slow query log
+vt trace slow-query.log > trace-log.json
+
+# Analyze MySQL general query log
+vt trace --input-type=mysql-log general-query.log > trace-log.json
+```
+
+Both types of trace logs can be analyzed using `vt summarize`:
+
+```bash
+vt summarize trace-log.json  # Summarize a single trace
+vt summarize trace-log1.json trace-log2.json  # Compare two traces
+```
 
 ## Key Analysis Workflow
 
-`vt keys` analyzes a query log and outputs detailed information about table and column usage in queries. This data can be summarized using `vt summarize`. Here's a typical workflow:
+`vt keys` analyzes query logs and outputs detailed information about tables, columns usage and joins in queries.
+This data can be summarized using `vt summarize`. 
+Here's a typical workflow:
 
-1. **Run `vt keys` to analyze the query log**:
+1. **Run `vt keys` to analyze queries**:
 
    ```bash
-   vt keys t/tpch.test > keys-log.json
+   # Analyze an SQL file or slow query log
+   vt keys slow-query.log > keys-log.json
+
+   # Analyze a MySQL general query log
+   vt keys --input-type=mysql-log general-query.log > keys-log.json
    ```
 
-   This command generates a `keys-log.json` file that contains a detailed analysis of table and column usage from the query log.
+This command generates a `keys-log.json` file that contains a detailed analysis of table and column usage from the queries.
 
 2. **Summarize the `keys-log` using `vt summarize`**:
 
@@ -79,32 +107,12 @@ The generated trace logs can be summarized or compared using `vt summarize`:
    vt summarize keys-log.json
    ```
 
-   This command summarizes the key analysis, providing insight into which tables and columns are used across queries, and how frequently they are involved in filters, groupings, and joins.
-
-3. **Example of output from the summarized key analysis**:
-
-   ```
-   Summary from trace file testdata/keys-log.json
-   Table: customer used in 8 queries
-   +--------------+----------+------------+--------+
-   |    Column    | Filter % | Grouping % | Join % |
-   +--------------+----------+------------+--------+
-   | c_acctbal    | 0.00%    | 12.50%     | 0.00%  |
-   | c_address    | 0.00%    | 12.50%     | 0.00%  |
-   | c_comment    | 0.00%    | 12.50%     | 0.00%  |
-   | c_custkey    | 0.00%    | 37.50%     | 87.50% |
-   | c_mktsegment | 12.50%   | 0.00%      | 0.00%  |
-   | c_name       | 0.00%    | 25.00%     | 0.00%  |
-   | c_nationkey  | 0.00%    | 0.00%      | 50.00% |
-   | c_phone      | 0.00%    | 12.50%     | 0.00%  |
-   +--------------+----------+------------+--------+
-   ```
-
-   This summary shows the columns of the `customer` table, along with their usage percentages in filters, groupings, and joins across the queries in the log.
+   This command summarizes the key analysis, providing insight into which tables and columns are used across queries, and how frequently they are involved in filters, groupings, and joins.  
+   [Here](https://github.com/vitessio/vt/blob/main/go/summarize/testdata/keys-summary.md) is an example summary report.
 
 ## Using `--backup-path` Flag
 
-The `--backup-path` flag allows `tester` and `trace` to initialize tests from a database backup rather than an empty database.
+The `--backup-path` flag allows `vt test` and `vt trace` to initialize tests from a database backup rather than an empty database.
 This is particularly helpful when verifying compatibility during version upgrades or testing stateful operations.
 
 Example:

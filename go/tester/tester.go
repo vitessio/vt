@@ -59,7 +59,8 @@ type (
 
 		reporter Reporter
 
-		qr QueryRunner
+		qr     QueryRunner
+		loader data.Loader
 	}
 
 	QueryRunner interface {
@@ -72,7 +73,7 @@ type (
 	}
 )
 
-func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vschema *vindexes.VSchema, vschemaFile string, factory QueryRunnerFactory) *Tester {
+func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vschema *vindexes.VSchema, vschemaFile string, factory QueryRunnerFactory, loader data.Loader) *Tester {
 	t := &Tester{
 		name:            name,
 		reporter:        reporter,
@@ -84,6 +85,7 @@ func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vsch
 		vschemaFile:     vschemaFile,
 		olap:            olap,
 		state:           state.NewState(utils.BinaryIsAtLeastAtVersion),
+		loader:          loader,
 	}
 
 	var mcmp utils.MySQLCompare
@@ -222,7 +224,7 @@ func (t *Tester) Run() (err error) {
 			err = errors.Join(err, postErr)
 		}()
 	}
-	queries, err := data.LoadQueries(t.name)
+	queries, err := t.loader.Load(t.name)
 	if err != nil {
 		t.reporter.AddFailure(err)
 		return err

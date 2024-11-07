@@ -89,13 +89,20 @@
         "statementType": "INSERT"
       },
       {
-        "queryStructure": "SELECT `l_returnflag`, `l_linestatus`, sum(`l_quantity`) AS `sum_qty`, sum(`l_extendedprice`) AS `sum_base_price`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `sum_disc_price`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`) * (:1 /* INT64 */ + `l_tax`)) AS `sum_charge`, avg(`l_quantity`) AS `avg_qty`, avg(`l_extendedprice`) AS `avg_price`, avg(`l_discount`) AS `avg_disc`, count(*) AS `count_order` FROM `lineitem` WHERE `l_shipdate` \u003c= DATE_SUB(:2 /* VARCHAR */, INTERVAL :3 /* INT64 */ day) GROUP BY `l_returnflag`, `l_linestatus` ORDER BY `l_returnflag` ASC, `l_linestatus` ASC",
+        "queryStructure": "SELECT `l_returnflag`, `l_linestatus`, sum(`l_quantity`) AS `sum_qty`, sum(`l_extendedprice`) AS `sum_base_price`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `sum_disc_price`, sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`) * (:1 /* INT64 */ + `l_tax`)) AS `sum_charge`, avg(`l_quantity`) AS `avg_qty`, avg(`l_extendedprice`) AS `avg_price`, avg(`l_discount`) AS `avg_disc`, count(*) AS `count_order` FROM `lineitem` WHERE `l_shipdate` \u003c= DATE_SUB(:2 /* VARCHAR */, INTERVAL :3 /* INT64 */ day) GROUP BY `l_returnflag`, `l_linestatus` ORDER BY `lineitem`.`l_returnflag` ASC, `lineitem`.`l_linestatus` ASC",
         "usageCount": 1,
         "lineNumbers": [
           131
         ],
         "tableNames": [
           "lineitem"
+        ],
+        "groupingColumns": [
+          "lineitem.l_linestatus",
+          "lineitem.l_returnflag"
+        ],
+        "filterColumns": [
+          "lineitem.l_shipdate le"
         ],
         "statementType": "SELECT"
       },
@@ -190,6 +197,13 @@
         ],
         "tableNames": [
           "lineitem"
+        ],
+        "filterColumns": [
+          "lineitem.l_discount ge",
+          "lineitem.l_discount le",
+          "lineitem.l_quantity lt",
+          "lineitem.l_shipdate ge",
+          "lineitem.l_shipdate lt"
         ],
         "statementType": "SELECT"
       },
@@ -343,7 +357,7 @@
         "queryStructure": "SELECT `l_shipmode`, sum(CASE WHEN `o_orderpriority` = :_o_orderpriority /* VARCHAR */ OR `o_orderpriority` = :_o_orderpriority1 /* VARCHAR */ THEN :1 /* INT64 */ ELSE :2 /* INT64 */ END) AS `high_line_count`, sum(CASE WHEN `o_orderpriority` != :_o_orderpriority /* VARCHAR */ AND `o_orderpriority` != :_o_orderpriority1 /* VARCHAR */ THEN :1 /* INT64 */ ELSE :2 /* INT64 */ END) AS `low_line_count` FROM `orders`, `lineitem` WHERE `o_orderkey` = `l_orderkey` AND `l_shipmode` IN ::3 AND `l_commitdate` \u003c `l_receiptdate` AND `l_shipdate` \u003c `l_commitdate` AND `l_receiptdate` \u003e= :_l_receiptdate /* VARCHAR */ AND `l_receiptdate` \u003c DATE_ADD(:_l_receiptdate /* VARCHAR */, INTERVAL :4 /* VARCHAR */ year) GROUP BY `l_shipmode` ORDER BY `lineitem`.`l_shipmode` ASC",
         "usageCount": 1,
         "lineNumbers": [
-          463
+          466
         ],
         "tableNames": [
           "orders",
@@ -370,7 +384,7 @@
         "queryStructure": "SELECT `c_count`, count(*) AS `custdist` FROM (SELECT `c_custkey`, COUNT(`o_orderkey`) AS `c_count` FROM `customer` LEFT JOIN `orders` ON `c_custkey` = `o_custkey` AND `o_comment` NOT LIKE :_o_comment /* VARCHAR */ GROUP BY `c_custkey`) AS `c_orders` GROUP BY `c_count` ORDER BY count(*) DESC, `c_orders`.`c_count` DESC",
         "usageCount": 1,
         "lineNumbers": [
-          493
+          496
         ],
         "tableNames": [
           "customer",
@@ -391,7 +405,7 @@
         "queryStructure": "SELECT :1 /* DECIMAL(5,2) */ * sum(CASE WHEN `p_type` LIKE :_p_type /* VARCHAR */ THEN `l_extendedprice` * (:2 /* INT64 */ - `l_discount`) ELSE :3 /* INT64 */ END) / sum(`l_extendedprice` * (:2 /* INT64 */ - `l_discount`)) AS `promo_revenue` FROM `lineitem`, `part` WHERE `l_partkey` = `p_partkey` AND `l_shipdate` \u003e= :_l_shipdate /* VARCHAR */ AND `l_shipdate` \u003c DATE_ADD(:_l_shipdate /* VARCHAR */, INTERVAL :4 /* VARCHAR */ month)",
         "usageCount": 1,
         "lineNumbers": [
-          515
+          518
         ],
         "tableNames": [
           "lineitem",
@@ -410,7 +424,7 @@
         "queryStructure": "SELECT `p_brand`, `p_type`, `p_size`, COUNT(DISTINCT `ps_suppkey`) AS `supplier_cnt` FROM `partsupp`, `part` WHERE `p_partkey` = `ps_partkey` AND `p_brand` != :_p_brand /* VARCHAR */ AND `p_type` NOT LIKE :_p_type /* VARCHAR */ AND `p_size` IN ::1 AND `ps_suppkey` NOT IN (SELECT `s_suppkey` FROM `supplier` WHERE `s_comment` LIKE :_s_comment /* VARCHAR */) GROUP BY `p_brand`, `p_type`, `p_size` ORDER BY COUNT(DISTINCT `partsupp`.`ps_suppkey`) DESC, `part`.`p_brand` ASC, `part`.`p_type` ASC, `part`.`p_size` ASC",
         "usageCount": 1,
         "lineNumbers": [
-          530
+          533
         ],
         "tableNames": [
           "partsupp",
@@ -438,7 +452,7 @@
         "queryStructure": "SELECT `c_name`, `c_custkey`, `o_orderkey`, `o_orderdate`, `o_totalprice`, sum(`l_quantity`) FROM `customer`, `orders`, `lineitem` WHERE `o_orderkey` IN (SELECT `l_orderkey` FROM `lineitem` GROUP BY `l_orderkey` HAVING sum(`l_quantity`) \u003e :1 /* INT64 */) AND `c_custkey` = `o_custkey` AND `o_orderkey` = `l_orderkey` GROUP BY `c_name`, `c_custkey`, `o_orderkey`, `o_orderdate`, `o_totalprice` ORDER BY `orders`.`o_totalprice` DESC, `orders`.`o_orderdate` ASC LIMIT :2 /* INT64 */",
         "usageCount": 1,
         "lineNumbers": [
-          582
+          585
         ],
         "tableNames": [
           "customer",
@@ -467,7 +481,7 @@
         "queryStructure": "SELECT sum(`l_extendedprice` * (:1 /* INT64 */ - `l_discount`)) AS `revenue` FROM `lineitem`, `part` WHERE `p_partkey` = `l_partkey` AND `p_brand` = :_p_brand /* VARCHAR */ AND `p_container` IN ::2 AND `l_quantity` \u003e= :_l_quantity /* INT64 */ AND `l_quantity` \u003c= :_l_quantity /* INT64 */ + :3 /* INT64 */ AND `p_size` BETWEEN :1 /* INT64 */ AND :4 /* INT64 */ AND `l_shipmode` IN ::5 AND `l_shipinstruct` = :_l_shipinstruct /* VARCHAR */ OR `p_partkey` = `l_partkey` AND `p_brand` = :_p_brand1 /* VARCHAR */ AND `p_container` IN ::6 AND `l_quantity` \u003e= :_l_quantity1 /* INT64 */ AND `l_quantity` \u003c= :_l_quantity1 /* INT64 */ + :3 /* INT64 */ AND `p_size` BETWEEN :1 /* INT64 */ AND :3 /* INT64 */ AND `l_shipmode` IN ::7 AND `l_shipinstruct` = :_l_shipinstruct /* VARCHAR */ OR `p_partkey` = `l_partkey` AND `p_brand` = :_p_brand2 /* VARCHAR */ AND `p_container` IN ::8 AND `l_quantity` \u003e= :_l_quantity2 /* INT64 */ AND `l_quantity` \u003c= :_l_quantity2 /* INT64 */ + :3 /* INT64 */ AND `p_size` BETWEEN :1 /* INT64 */ AND :9 /* INT64 */ AND `l_shipmode` IN ::10 AND `l_shipinstruct` = :_l_shipinstruct /* VARCHAR */",
         "usageCount": 1,
         "lineNumbers": [
-          617
+          620
         ],
         "tableNames": [
           "lineitem",
@@ -479,7 +493,7 @@
         "queryStructure": "SELECT `s_name`, count(*) AS `numwait` FROM `supplier`, `lineitem` AS `l1`, `orders`, `nation` WHERE `s_suppkey` = `l1`.`l_suppkey` AND `o_orderkey` = `l1`.`l_orderkey` AND `o_orderstatus` = :_o_orderstatus /* VARCHAR */ AND `l1`.`l_receiptdate` \u003e `l1`.`l_commitdate` AND EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` AS `l2` WHERE `l2`.`l_orderkey` = `l1`.`l_orderkey` AND `l2`.`l_suppkey` != `l1`.`l_suppkey`) AND NOT EXISTS (SELECT `L_ORDERKEY`, `L_PARTKEY`, `L_SUPPKEY`, `L_LINENUMBER`, `L_QUANTITY`, `L_EXTENDEDPRICE`, `L_DISCOUNT`, `L_TAX`, `L_RETURNFLAG`, `L_LINESTATUS`, `L_SHIPDATE`, `L_COMMITDATE`, `L_RECEIPTDATE`, `L_SHIPINSTRUCT`, `L_SHIPMODE`, `L_COMMENT` FROM `lineitem` AS `l3` WHERE `l3`.`l_orderkey` = `l1`.`l_orderkey` AND `l3`.`l_suppkey` != `l1`.`l_suppkey` AND `l3`.`l_receiptdate` \u003e `l3`.`l_commitdate`) AND `s_nationkey` = `n_nationkey` AND `n_name` = :_n_name /* VARCHAR */ GROUP BY `s_name` ORDER BY count(*) DESC, `supplier`.`s_name` ASC LIMIT :1 /* INT64 */",
         "usageCount": 1,
         "lineNumbers": [
-          695
+          698
         ],
         "tableNames": [
           "supplier",
@@ -511,7 +525,12 @@
     "failed": [
       {
         "query": "I am a failing query;",
-        "lineNumber": 778,
+        "lineNumber": 463,
+        "error": "syntax error at position 2 near 'I'"
+      },
+      {
+        "query": "I am a failing query;",
+        "lineNumber": 781,
         "error": "syntax error at position 2 near 'I'"
       }
     ]

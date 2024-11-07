@@ -1,0 +1,1745 @@
+/opt/homebrew/bin/mysqld, Version: 5.7.44-log (Homebrew). started with:
+Tcp port: 6709  Unix socket: /Users/manangupta/vitess/vtdataroot/vtroot_6701/vt_0000004915/mysql.sock
+Time                 Id Command    Argument
+2024-11-06T09:57:35.187996Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.188264Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:35.188365Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.188464Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:35.188550Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.188586Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:35.188660Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.188694Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:35.188766Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:35.188829Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.188871Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:35.188900Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.188952Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:35.188992Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.189028Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:35.189081Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.189167Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:35.189905Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.189964Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:35.190000Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.190064Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:35.190124Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.190178Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:35.190222Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.190287Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:35.190903Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.190963Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:35.191541Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.191613Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:35.192332Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.192422Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:35.193243Z	    7 Query	SELECT 1
+2024-11-06T09:57:35.193350Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:35.907785Z	   32 Query	SET GLOBAL log_output = 'FILE'
+2024-11-06T09:57:37.183888Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.184043Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:37.184110Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.184161Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:37.184215Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.184331Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:37.184435Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.184504Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:37.184584Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:37.184656Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.184724Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:37.184850Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.185049Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:37.185128Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.185269Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:37.185359Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.185457Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:37.186264Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.186327Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:37.186371Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.186422Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:37.186476Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.186521Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:37.186581Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.186645Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:37.187559Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.187745Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:37.188281Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.188385Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:37.188992Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.189060Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:37.189943Z	    7 Query	SELECT 1
+2024-11-06T09:57:37.190029Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:39.187070Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187199Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:39.187279Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187349Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:39.187381Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187402Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:39.187457Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187489Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:39.187527Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:39.187563Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187605Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:39.187629Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187693Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:39.187745Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187786Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:39.187824Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.187887Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:39.188564Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.188612Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:39.188653Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.188709Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:39.188757Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.188782Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:39.188806Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.188861Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:39.189457Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.189495Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:39.189904Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.189956Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:39.190315Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.190345Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:39.190814Z	    7 Query	SELECT 1
+2024-11-06T09:57:39.190839Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:41.056862Z	   32 Query	show databases
+2024-11-06T09:57:41.183590Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.183684Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:41.183754Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.183791Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:41.183816Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.183836Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:41.183883Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.183907Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:41.183943Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:41.183975Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.184009Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:41.184040Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.184076Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:41.184105Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.184127Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:41.184153Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.184192Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:41.184796Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.184835Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:41.184863Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.184891Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:41.184935Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.184976Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:41.185001Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.185031Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:41.185486Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.185516Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:41.185894Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.185930Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:41.186282Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.186315Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:41.186982Z	    7 Query	SELECT 1
+2024-11-06T09:57:41.187017Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:42.897963Z	   24 Query	UPDATE _vt.schema_migrations
+		SET
+			migration_status='queued',
+			tablet='test_misc-0000004915',
+			retries=retries + 1,
+			tablet_failure=0,
+			message='',
+			stage='',
+			cutover_attempts=0,
+			ready_timestamp=NULL,
+			started_timestamp=NULL,
+			liveness_timestamp=NULL,
+			cancelled_timestamp=NULL,
+			completed_timestamp=NULL,
+			last_cutover_attempt_timestamp=NULL,
+			cleanup_timestamp=NULL
+		WHERE
+			migration_status IN ('failed', 'cancelled')
+			AND (
+		tablet_failure=1
+		AND migration_status='failed'
+		AND retries=0
+	)
+			LIMIT 1
+2024-11-06T09:57:42.900713Z	   33 Connect	vt_dba@localhost on vt_uks using Socket
+2024-11-06T09:57:42.900926Z	   24 Query	SELECT
+			migration_uuid
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='queued'
+			AND reviewed_timestamp IS NULL
+		ORDER BY id
+2024-11-06T09:57:42.901378Z	   24 Query	SELECT
+			migration_uuid,
+			ddl_action,
+			is_view,
+			is_immediate_operation,
+			postpone_launch,
+			postpone_completion,
+			ready_to_complete
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='queued'
+  		AND reviewed_timestamp IS NOT NULL
+		ORDER BY id
+2024-11-06T09:57:42.903221Z	   24 Query	SELECT
+			migration_uuid,
+			migration_context,
+			keyspace,
+			mysql_table,
+			migration_status
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status IN ('queued', 'ready', 'running')
+		ORDER BY id
+2024-11-06T09:57:42.903413Z	   24 Query	SELECT
+			migration_uuid
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='ready'
+		ORDER BY id
+2024-11-06T09:57:42.903596Z	   24 Query	SELECT
+			migration_uuid,
+			postpone_completion,
+			force_cutover,
+			cutover_attempts,
+			ifnull(timestampdiff(microsecond, ready_to_complete_timestamp, now(6)), 0) as microseconds_since_ready_to_complete,
+			ifnull(timestampdiff(second, last_cutover_attempt_timestamp, now()), 0) as seconds_since_last_cutover_attempt,
+			timestampdiff(second, started_timestamp, now()) as elapsed_seconds
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='running'
+		ORDER BY id
+2024-11-06T09:57:42.903693Z	   24 Query	SELECT
+			migration_uuid,
+			migration_context,
+			keyspace,
+			mysql_table,
+			migration_status
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status IN ('queued', 'ready', 'running')
+		ORDER BY id
+2024-11-06T09:57:42.903803Z	   24 Query	SELECT
+			migration_uuid
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='running'
+			AND liveness_timestamp < NOW() - INTERVAL 180 MINUTE
+		ORDER BY id
+2024-11-06T09:57:42.903922Z	   24 Query	SELECT
+			migration_uuid,
+			artifacts,
+			log_path
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status IN ('complete', 'cancelled', 'failed')
+			AND cleanup_timestamp IS NULL
+			AND completed_timestamp <= IF(retain_artifacts_seconds=0,
+				NOW() - INTERVAL 86400 SECOND,
+				NOW() - INTERVAL retain_artifacts_seconds SECOND
+			)
+		ORDER BY id
+2024-11-06T09:57:43.190111Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190215Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:43.190271Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190330Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:43.190408Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190445Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:43.190511Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190534Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:43.190584Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:43.190619Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190652Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:43.190690Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190739Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:43.190779Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190830Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:43.190876Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.190931Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:43.191654Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.191710Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:43.191750Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.191786Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:43.191814Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.191852Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:43.191874Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.191906Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:43.192492Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.192534Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:43.192977Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.193012Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:43.193447Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.193479Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:43.194018Z	    7 Query	SELECT 1
+2024-11-06T09:57:43.194052Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:44.965666Z	   32 Query	SELECT DATABASE()
+2024-11-06T09:57:44.965873Z	   32 Init DB	mysql
+2024-11-06T09:57:44.966338Z	   32 Query	show databases
+2024-11-06T09:57:44.967347Z	   32 Query	show tables
+2024-11-06T09:57:44.967978Z	   32 Field List	columns_priv
+2024-11-06T09:57:44.968095Z	   32 Field List	db
+2024-11-06T09:57:44.968328Z	   32 Field List	engine_cost
+2024-11-06T09:57:44.968452Z	   32 Field List	event
+2024-11-06T09:57:44.968700Z	   32 Field List	func
+2024-11-06T09:57:44.968769Z	   32 Field List	general_log
+2024-11-06T09:57:44.968867Z	   32 Field List	gtid_executed
+2024-11-06T09:57:44.968949Z	   32 Field List	help_category
+2024-11-06T09:57:44.972284Z	   32 Field List	help_keyword
+2024-11-06T09:57:44.981996Z	   32 Field List	help_relation
+2024-11-06T09:57:44.982705Z	   32 Field List	help_topic
+2024-11-06T09:57:44.983893Z	   32 Field List	innodb_index_stats
+2024-11-06T09:57:44.984350Z	   32 Field List	innodb_table_stats
+2024-11-06T09:57:44.984630Z	   32 Field List	ndb_binlog_index
+2024-11-06T09:57:44.985277Z	   32 Field List	plugin
+2024-11-06T09:57:44.985325Z	   32 Field List	proc
+2024-11-06T09:57:44.985935Z	   32 Field List	procs_priv
+2024-11-06T09:57:44.986003Z	   32 Field List	proxies_priv
+2024-11-06T09:57:44.986075Z	   32 Field List	server_cost
+2024-11-06T09:57:44.986124Z	   32 Field List	servers
+2024-11-06T09:57:44.986211Z	   32 Field List	slave_master_info
+2024-11-06T09:57:44.986480Z	   32 Field List	slave_relay_log_info
+2024-11-06T09:57:44.986591Z	   32 Field List	slave_worker_info
+2024-11-06T09:57:44.986749Z	   32 Field List	slow_log
+2024-11-06T09:57:44.993909Z	   32 Field List	tables_priv
+2024-11-06T09:57:44.994338Z	   32 Field List	time_zone
+2024-11-06T09:57:44.994554Z	   32 Field List	time_zone_leap_second
+2024-11-06T09:57:44.994793Z	   32 Field List	time_zone_name
+2024-11-06T09:57:44.994902Z	   32 Field List	time_zone_transition
+2024-11-06T09:57:44.995017Z	   32 Field List	time_zone_transition_type
+2024-11-06T09:57:44.995227Z	   32 Field List	user
+2024-11-06T09:57:45.191940Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.192107Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:45.192190Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.192253Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:45.192321Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.192374Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:45.192485Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.192539Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:45.192612Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:45.192665Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.192715Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:45.192759Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.192840Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:45.192915Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.193020Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:45.193158Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.193263Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:45.194374Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.194464Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:45.194544Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.194619Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:45.194729Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.194843Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:45.194892Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.194959Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:45.196024Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.196110Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:45.196980Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.197056Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:45.197713Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.197802Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:45.198953Z	    7 Query	SELECT 1
+2024-11-06T09:57:45.199030Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:47.143489Z	   32 Query	show tables
+2024-11-06T09:57:47.192931Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193091Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:47.193167Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193226Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:47.193259Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193291Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:47.193345Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193371Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:47.193412Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:47.193459Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193487Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:47.193516Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193566Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:47.193601Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193640Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:47.193665Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.193702Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:47.194383Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.194433Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:47.194465Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.194490Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:47.194520Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.194568Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:47.194595Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.194631Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:47.195061Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.195114Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:47.195582Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.195628Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:47.196041Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.196081Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:47.196566Z	    7 Query	SELECT 1
+2024-11-06T09:57:47.196593Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:49.194253Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.194428Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:49.194506Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.194532Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:49.194559Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.194602Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:49.194699Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.194742Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:49.194795Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:49.194829Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.194868Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:49.194939Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.194989Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:49.195033Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.195088Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:49.195154Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.195214Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:49.195818Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.195867Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:49.195899Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.195930Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:49.195954Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.195974Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:49.195997Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.196034Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:49.196521Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.196558Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:49.196955Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.196981Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:49.197276Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.197305Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:49.197838Z	    7 Query	SELECT 1
+2024-11-06T09:57:49.197871Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:50.102024Z	   32 Query	select * from user
+2024-11-06T09:57:51.187989Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188116Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:51.188179Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188232Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:51.188271Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188295Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:51.188355Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188382Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:51.188415Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:51.188443Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188471Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:51.188491Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188534Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:51.188580Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188620Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:51.188654Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.188703Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:51.189403Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.189453Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:51.189491Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.189545Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:51.189587Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.189628Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:51.189661Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.189703Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:51.190331Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.190365Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:51.190700Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.190730Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:51.191079Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.191145Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:51.191680Z	    7 Query	SELECT 1
+2024-11-06T09:57:51.191712Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:52.919788Z	   34 Connect	vt_filtered@localhost on vt_uks using Socket
+2024-11-06T09:57:52.920007Z	   34 Query	select * from _vt.vdiff where state = 'error' and json_unquote(json_extract(options, '$.core_options.auto_retry')) = 'true'
+2024-11-06T09:57:53.184071Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184167Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:53.184211Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184244Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:53.184273Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184303Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:53.184363Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184403Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:53.184461Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:53.184496Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184538Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:53.184565Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184606Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:53.184637Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184658Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:53.184678Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.184715Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:53.185323Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.185362Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:53.185390Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.185419Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:53.185451Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.185482Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:53.185509Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.185545Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:53.186076Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.186112Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:53.186429Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.186459Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:53.186787Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.186822Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:53.187255Z	    7 Query	SELECT 1
+2024-11-06T09:57:53.187287Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:53.265331Z	   32 Query	select * from plugin
+2024-11-06T09:57:55.187799Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.187941Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:55.188035Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.188074Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:55.188103Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.188152Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:55.188231Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.188276Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:55.188352Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:55.188400Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.188429Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:55.188459Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.188508Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:55.188553Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.188579Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:55.188608Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.188668Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:55.189178Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.189204Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:55.189224Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.189247Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:55.189280Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.189358Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:55.189418Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.189482Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:55.190115Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.190179Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:55.190590Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.190636Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:55.190959Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.190993Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:55.191759Z	    7 Query	SELECT 1
+2024-11-06T09:57:55.191815Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:57.193447Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.193587Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:57.193701Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.193758Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:57.193820Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.193863Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:57.193936Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.193973Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:57.194031Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:57.194066Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.194101Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:57.194138Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.194252Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:57.194308Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.194373Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:57.194437Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.194517Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:57.195341Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.195396Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:57.195437Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.195496Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:57.195563Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.195598Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:57.195627Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.195685Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:57.196522Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.196585Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:57.197247Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.197313Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:57.197807Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.197875Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:57.198793Z	    7 Query	SELECT 1
+2024-11-06T09:57:57.198845Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:59.187767Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.187910Z	    7 Query	select @@global.server_id
+2024-11-06T09:57:59.187960Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.188007Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:59.188047Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.188080Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:57:59.188143Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.188179Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:57:59.188216Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:57:59.188244Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.188267Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:57:59.188302Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.188406Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:57:59.188500Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.188544Z	    7 Query	select @@global.version_comment
+2024-11-06T09:57:59.188580Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.188637Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:57:59.189286Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.189352Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:57:59.189424Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.189479Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:57:59.189527Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.189563Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:57:59.189602Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.189649Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:57:59.190314Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.190366Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:57:59.190771Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.190821Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:57:59.191201Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.191234Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:57:59.191769Z	    7 Query	SELECT 1
+2024-11-06T09:57:59.191801Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:57:59.348363Z	   32 Query	select * from plugin
+2024-11-06T09:58:01.188239Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.188455Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:01.188567Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.188648Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:01.188710Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.188757Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:01.188821Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.188859Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:01.188913Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:01.188962Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189004Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:01.189027Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189070Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:01.189114Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189155Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:01.189191Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189253Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:01.189706Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189757Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:01.189794Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189845Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:01.189889Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189920Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:01.189947Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.189995Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:01.190554Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.190602Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:01.191038Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.191071Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:01.191413Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.191440Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:01.192017Z	    7 Query	SELECT 1
+2024-11-06T09:58:01.192063Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:02.405919Z	   32 Query	select * from user
+2024-11-06T09:58:03.190883Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191032Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:03.191079Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191132Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:03.191177Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191222Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:03.191305Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191382Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:03.191443Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:03.191497Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191555Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:03.191593Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191663Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:03.191741Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191795Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:03.191841Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.191879Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:03.192434Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.192484Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:03.192520Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.192558Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:03.192589Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.192626Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:03.192656Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.192698Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:03.193238Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.193275Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:03.193735Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.193770Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:03.194111Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.194150Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:03.194653Z	    7 Query	SELECT 1
+2024-11-06T09:58:03.194698Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:05.183912Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.184019Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:05.184085Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.184164Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:05.184213Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.184245Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:05.184288Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.184319Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:05.184378Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:05.184419Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.184453Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:05.184494Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.184564Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:05.184604Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.184645Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:05.185446Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.185486Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:05.186078Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.186123Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:05.186163Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.186201Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:05.186235Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.186261Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:05.186282Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.186306Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:05.186827Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.186879Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:05.187290Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.187330Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:05.187642Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.187675Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:05.188156Z	    7 Query	SELECT 1
+2024-11-06T09:58:05.188198Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:07.194627Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.194734Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:07.194775Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.194817Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:07.194895Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.194961Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:07.195040Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.195085Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:07.195127Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:07.195176Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.195253Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:07.195314Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.195385Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:07.195448Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.195506Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:07.195556Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.195625Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:07.196148Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.196196Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:07.196247Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.196296Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:07.196336Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.196381Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:07.196421Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.196477Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:07.197024Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.197071Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:07.197501Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.197550Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:07.197957Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.198004Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:07.198533Z	    7 Query	SELECT 1
+2024-11-06T09:58:07.198585Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:09.184155Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.184280Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:09.184361Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.184431Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:09.184468Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.184501Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:09.184555Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.184594Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:09.184642Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:09.184680Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.184725Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:09.184781Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.184845Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:09.184887Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.184940Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:09.184983Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.185047Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:09.185661Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.185702Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:09.185744Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.185799Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:09.185828Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.185855Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:09.185884Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.185931Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:09.186478Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.186526Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:09.186951Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.187002Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:09.187397Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.187429Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:09.187945Z	    7 Query	SELECT 1
+2024-11-06T09:58:09.188022Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:11.185378Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.185483Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:11.185556Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.185597Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:11.185645Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.185686Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:11.185784Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.185858Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:11.185917Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:11.185959Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.185984Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:11.186010Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.186051Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:11.186086Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.186122Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:11.186151Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.186186Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:11.186800Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.186866Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:11.186942Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.186972Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:11.187007Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.187037Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:11.187065Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.187111Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:11.187655Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.187694Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:11.188100Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.188142Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:11.188484Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.188541Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:11.189087Z	    7 Query	SELECT 1
+2024-11-06T09:58:11.189136Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:13.186383Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.186540Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:13.186630Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.186684Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:13.186727Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.186766Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:13.186827Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.186874Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:13.186950Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:13.186987Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.187022Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:13.187072Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.187148Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:13.187204Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.187261Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:13.187301Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.187365Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:13.188012Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.188049Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:13.188078Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.188120Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:13.188154Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.188198Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:13.188241Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.188298Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:13.188979Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.189017Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:13.189326Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.189365Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:13.189744Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.189783Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:13.190343Z	    7 Query	SELECT 1
+2024-11-06T09:58:13.190391Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:15.184040Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.184208Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:15.184311Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.184394Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:15.184442Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.184473Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:15.184527Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.184559Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:15.184630Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:15.184697Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.184754Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:15.184805Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.184875Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:15.184940Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.184995Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:15.185046Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.185095Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:15.185688Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.185740Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:15.185788Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.185828Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:15.185885Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.185918Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:15.185954Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.186033Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:15.186537Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.186606Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:15.187055Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.187108Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:15.187481Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.187543Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:15.188120Z	    7 Query	SELECT 1
+2024-11-06T09:58:15.188199Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:17.184330Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.184463Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:17.184552Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.184609Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:17.184643Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.184685Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:17.184741Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.184792Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:17.184832Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:17.184885Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.184960Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:17.185009Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.185085Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:17.185141Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.185177Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:17.185213Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.185258Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:17.185816Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.185863Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:17.185903Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.185936Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:17.185963Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.185990Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:17.186015Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.186055Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:17.186679Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.186715Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:17.187097Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.187156Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:17.187718Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.187776Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:17.188358Z	    7 Query	SELECT 1
+2024-11-06T09:58:17.188426Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:19.185344Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185449Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:19.185496Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185531Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:19.185554Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185574Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:19.185622Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185644Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:19.185676Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:19.185708Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185744Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:19.185777Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185815Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:19.185846Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185872Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:19.185901Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.185930Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:19.186429Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.186457Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:19.186481Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.186510Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:19.186541Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.186559Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:19.186576Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.186598Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:19.187055Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.187128Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:19.187486Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.187575Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:19.187974Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.188025Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:19.188554Z	    7 Query	SELECT 1
+2024-11-06T09:58:19.188606Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:21.184471Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.184581Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:21.184658Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.184721Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:21.184783Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.184831Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:21.184917Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.184954Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:21.184997Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:21.185045Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.185089Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:21.185117Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.185179Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:21.185229Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.185272Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:21.185322Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.185371Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:21.186161Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.186205Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:21.186258Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.186335Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:21.186402Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.186451Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:21.186491Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.186559Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:21.187137Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.187203Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:21.187663Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.187711Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:21.188066Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.188112Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:21.188735Z	    7 Query	SELECT 1
+2024-11-06T09:58:21.188802Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:22.920708Z	   35 Connect	vt_filtered@localhost on vt_uks using Socket
+2024-11-06T09:58:22.920939Z	   35 Query	select * from _vt.vdiff where state = 'error' and json_unquote(json_extract(options, '$.core_options.auto_retry')) = 'true'
+2024-11-06T09:58:23.184467Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.184613Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:23.184720Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.184781Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:23.184833Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.184883Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:23.184960Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.185018Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:23.185074Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:23.185109Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.185140Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:23.185167Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.185218Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:23.185281Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.185323Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:23.185362Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.185409Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:23.186071Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.186103Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:23.186133Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.186172Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:23.186207Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.186236Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:23.186265Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.186317Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:23.186833Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.186868Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:23.187232Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.187265Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:23.187655Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.187699Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:23.188240Z	    7 Query	SELECT 1
+2024-11-06T09:58:23.188277Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:25.184132Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184248Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:25.184308Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184354Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:25.184399Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184428Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:25.184477Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184498Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:25.184538Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:25.184564Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184584Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:25.184607Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184657Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:25.184697Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184728Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:25.184748Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.184783Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:25.185294Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.185326Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:25.185352Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.185388Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:25.185445Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.185474Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:25.185506Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.185542Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:25.186013Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.186058Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:25.186430Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.186471Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:25.186932Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.187016Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:25.187490Z	    7 Query	SELECT 1
+2024-11-06T09:58:25.187548Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:27.196382Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.196505Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:27.196617Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.196662Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:27.196798Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.196963Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:27.197095Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.197155Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:27.197240Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:27.197416Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.197483Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:27.197544Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.197627Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:27.197681Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.197752Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:27.197806Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.197861Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:27.198537Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.198595Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:27.198648Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.198697Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:27.198744Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.198789Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:27.198824Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.198865Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:27.199406Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.199458Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:27.199837Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.199890Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:27.200277Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.200306Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:27.200812Z	    7 Query	SELECT 1
+2024-11-06T09:58:27.200855Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:29.184531Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.184645Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:29.184709Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.184809Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:29.184890Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.184937Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:29.185004Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.185038Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:29.185075Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:29.185105Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.185133Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:29.185168Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.185211Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:29.185258Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.185328Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:29.185381Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.185426Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:29.185936Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.185977Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:29.186041Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.186069Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:29.186103Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.186151Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:29.186188Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.186230Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:29.186649Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.186696Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:29.187137Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.187182Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:29.187608Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.187642Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:29.188065Z	    7 Query	SELECT 1
+2024-11-06T09:58:29.188095Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:31.186327Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.186459Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:31.186510Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.186563Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:31.186603Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.186635Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:31.186722Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.186799Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:31.186860Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:31.186909Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.186940Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:31.186970Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.187018Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:31.187062Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.187118Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:31.187182Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.187234Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:31.187757Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.187791Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:31.187820Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.187847Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:31.187882Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.187925Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:31.187956Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.187993Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:31.188613Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.188704Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:31.189117Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.189180Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:31.189594Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.189697Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:31.190261Z	    7 Query	SELECT 1
+2024-11-06T09:58:31.190309Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:33.184622Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.184797Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:33.184886Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.184941Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:33.185002Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.185056Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:33.185123Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.185169Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:33.185226Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:33.185284Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.185342Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:33.185390Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.185454Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:33.185508Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.185573Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:33.185632Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.185688Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:33.186189Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.186230Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:33.186265Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.186336Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:33.186389Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.186445Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:33.186478Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.186512Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:33.187079Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.187142Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:33.187627Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.187695Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:33.188120Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.188166Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:33.188770Z	    7 Query	SELECT 1
+2024-11-06T09:58:33.188848Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:35.184644Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.184818Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:35.184912Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.184967Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:35.185006Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.185044Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:35.185104Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.185134Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:35.185174Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:35.185207Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.185236Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:35.185262Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.185348Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:35.185401Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.185475Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:35.185543Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.185592Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:35.186178Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.186209Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:35.186234Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.186271Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:35.186301Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.186325Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:35.186358Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.186398Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:35.186927Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.186955Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:35.187349Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.187410Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:35.187802Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.187858Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:35.188382Z	    7 Query	SELECT 1
+2024-11-06T09:58:35.188425Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:37.186776Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.186963Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:37.187019Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.187070Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:37.187130Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.187233Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:37.187309Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.187366Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:37.187419Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:37.187481Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.187508Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:37.187532Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.187580Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:37.187626Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.187681Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:37.187739Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.187787Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:37.188418Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.188452Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:37.188479Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.188542Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:37.188590Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.188617Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:37.188645Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.188676Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:37.189139Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.189173Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:37.189579Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.189614Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:37.190016Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.190062Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:37.190569Z	    7 Query	SELECT 1
+2024-11-06T09:58:37.190601Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:39.187290Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.187417Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:39.187451Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.187487Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:39.187555Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.187626Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:39.187693Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.187735Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:39.187791Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:39.187824Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.187850Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:39.187877Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.187923Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:39.187968Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.188000Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:39.188031Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.188091Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:39.188587Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.188622Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:39.188665Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.188724Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:39.188782Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.188829Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:39.188877Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.188928Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:39.189410Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.189459Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:39.189827Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.189864Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:39.190227Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.190297Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:39.190904Z	    7 Query	SELECT 1
+2024-11-06T09:58:39.190958Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:41.206515Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.206675Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:41.206759Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.206801Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:41.206857Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.206897Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:41.206971Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.207013Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:41.207062Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:41.207109Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.207148Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:41.207187Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.207242Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:41.207292Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.207368Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:41.207444Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.207498Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:41.208092Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.208129Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:41.208174Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.208222Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:41.208290Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.208321Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:41.208348Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.208382Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:41.208871Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.208936Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:41.209243Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.209284Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:41.209631Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.209677Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:41.210217Z	    7 Query	SELECT 1
+2024-11-06T09:58:41.210268Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:42.905071Z	   24 Query	UPDATE _vt.schema_migrations
+		SET
+			migration_status='queued',
+			tablet='test_misc-0000004915',
+			retries=retries + 1,
+			tablet_failure=0,
+			message='',
+			stage='',
+			cutover_attempts=0,
+			ready_timestamp=NULL,
+			started_timestamp=NULL,
+			liveness_timestamp=NULL,
+			cancelled_timestamp=NULL,
+			completed_timestamp=NULL,
+			last_cutover_attempt_timestamp=NULL,
+			cleanup_timestamp=NULL
+		WHERE
+			migration_status IN ('failed', 'cancelled')
+			AND (
+		tablet_failure=1
+		AND migration_status='failed'
+		AND retries=0
+	)
+			LIMIT 1
+2024-11-06T09:58:42.905527Z	   36 Connect	vt_dba@localhost on vt_uks using Socket
+2024-11-06T09:58:42.905642Z	   24 Query	SELECT
+			migration_uuid
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='queued'
+			AND reviewed_timestamp IS NULL
+		ORDER BY id
+2024-11-06T09:58:42.905934Z	   24 Query	SELECT
+			migration_uuid,
+			ddl_action,
+			is_view,
+			is_immediate_operation,
+			postpone_launch,
+			postpone_completion,
+			ready_to_complete
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='queued'
+			AND reviewed_timestamp IS NOT NULL
+		ORDER BY id
+2024-11-06T09:58:42.906235Z	   24 Query	SELECT
+			migration_uuid,
+			migration_context,
+			keyspace,
+			mysql_table,
+			migration_status
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status IN ('queued', 'ready', 'running')
+		ORDER BY id
+2024-11-06T09:58:42.906437Z	   24 Query	SELECT
+			migration_uuid
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='ready'
+		ORDER BY id
+2024-11-06T09:58:42.906628Z	   24 Query	SELECT
+			migration_uuid,
+			postpone_completion,
+			force_cutover,
+			cutover_attempts,
+			ifnull(timestampdiff(microsecond, ready_to_complete_timestamp, now(6)), 0) as microseconds_since_ready_to_complete,
+			ifnull(timestampdiff(second, last_cutover_attempt_timestamp, now()), 0) as seconds_since_last_cutover_attempt,
+			timestampdiff(second, started_timestamp, now()) as elapsed_seconds
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='running'
+		ORDER BY id
+2024-11-06T09:58:42.907093Z	   24 Query	SELECT
+			migration_uuid,
+			migration_context,
+			keyspace,
+			mysql_table,
+			migration_status
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status IN ('queued', 'ready', 'running')
+		ORDER BY id
+2024-11-06T09:58:42.907438Z	   24 Query	SELECT
+			migration_uuid
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status='running'
+			AND liveness_timestamp < NOW() - INTERVAL 180 MINUTE
+		ORDER BY id
+2024-11-06T09:58:42.907765Z	   24 Query	SELECT
+			migration_uuid,
+			artifacts,
+			log_path
+		FROM _vt.schema_migrations
+		WHERE
+			migration_status IN ('complete', 'cancelled', 'failed')
+			AND cleanup_timestamp IS NULL
+			AND completed_timestamp <= IF(retain_artifacts_seconds=0,
+				NOW() - INTERVAL 86400 SECOND,
+				NOW() - INTERVAL retain_artifacts_seconds SECOND
+			)
+		ORDER BY id
+2024-11-06T09:58:43.184687Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.184802Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:43.184868Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.184950Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:43.184996Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.185043Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:43.185113Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.185158Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:43.185196Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:43.185227Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.185264Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:43.185290Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.185337Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:43.185380Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.185446Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:43.185480Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.185517Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:43.185998Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.186035Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:43.186062Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.186088Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:43.186114Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.186141Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:43.186174Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.186207Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:43.186639Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.186680Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:43.187075Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.187104Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:43.187394Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.187449Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:43.188099Z	    7 Query	SELECT 1
+2024-11-06T09:58:43.188141Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:45.190230Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190339Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:45.190400Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190455Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:45.190486Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190508Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:45.190555Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190572Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:45.190601Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:45.190630Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190661Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:45.190707Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190751Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:45.190792Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190826Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:45.190865Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.190944Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:45.191568Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.191610Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:45.191632Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.191658Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:45.191684Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.191732Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:45.191782Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.191826Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:45.192412Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.192448Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:45.192856Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.192907Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:45.193280Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.193340Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:45.193856Z	    7 Query	SELECT 1
+2024-11-06T09:58:45.193905Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:47.188527Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.188653Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:47.188694Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.188744Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:47.188800Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.188846Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:47.188925Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.188966Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:47.189013Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:47.189095Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.189151Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:47.189192Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.189256Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:47.189296Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.189336Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:47.189392Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.189437Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:47.190342Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.190520Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:47.190603Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.190666Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:47.190744Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.190785Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:47.190827Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.190899Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:47.191442Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.191531Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:47.191936Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.191984Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:47.192364Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.192399Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:47.192931Z	    7 Query	SELECT 1
+2024-11-06T09:58:47.192959Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:49.184694Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.184902Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:49.184965Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.184995Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:49.185017Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185036Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:49.185074Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185091Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:49.185116Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:49.185139Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185157Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:49.185173Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185208Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:49.185242Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185281Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:49.185310Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185348Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:49.185915Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185944Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:49.185970Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.185994Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:49.186018Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.186037Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:49.186053Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.186075Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:49.186530Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.186564Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:49.186916Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.186953Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:49.187346Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.187386Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:49.187989Z	    7 Query	SELECT 1
+2024-11-06T09:58:49.188020Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:51.188751Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.188893Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:51.188992Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.189045Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:51.189092Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.189135Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:51.189209Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.189251Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:51.189295Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:51.189334Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.189373Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:51.189409Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.189470Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:51.189530Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.189605Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:51.189663Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.189731Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:51.190400Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.190432Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:51.190454Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.190491Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:51.190527Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.190548Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:51.190573Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.190608Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:51.191042Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.191073Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:51.191347Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.191378Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:51.191761Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.191803Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:51.192284Z	    7 Query	SELECT 1
+2024-11-06T09:58:51.192320Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:52.928904Z	   37 Connect	vt_filtered@localhost on vt_uks using Socket
+2024-11-06T09:58:52.929202Z	   37 Query	select * from _vt.vdiff where state = 'error' and json_unquote(json_extract(options, '$.core_options.auto_retry')) = 'true'
+2024-11-06T09:58:53.190464Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.190663Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:53.190797Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.190870Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:53.190916Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.190960Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:53.191023Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.191068Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:53.191140Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:53.191244Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.191411Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:53.191456Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.191595Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:53.191683Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.191747Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:53.191776Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.191835Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:53.193048Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.193110Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:53.193167Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.193217Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:53.193252Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.193271Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:53.193297Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.193336Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:53.193976Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.194042Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:53.194873Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.194935Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:53.195244Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.195313Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:53.196158Z	    7 Query	SELECT 1
+2024-11-06T09:58:53.196206Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:55.188633Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.188779Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:55.188872Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.188920Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:55.188957Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.188988Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:55.189045Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.189072Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:55.189131Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:55.189178Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.189207Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:55.189235Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.189283Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:55.189359Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.189426Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:55.189474Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.189514Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:55.190090Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.190128Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:55.190165Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.190198Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:55.190229Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.190253Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:55.190279Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.190308Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:55.190776Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.190808Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:55.191206Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.191232Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:55.191555Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.191613Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:55.192055Z	    7 Query	SELECT 1
+2024-11-06T09:58:55.192088Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:57.186772Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.187809Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:57.187854Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.187886Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:57.187911Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.187978Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:57.188064Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.188116Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:57.188209Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:57.188260Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.188298Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:57.188330Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.188366Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:57.188405Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.188454Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:57.188511Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.188549Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:57.189126Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.189159Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:57.189198Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.189259Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:57.189325Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.189362Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:57.189401Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.189440Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:57.190100Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.190140Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:57.190492Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.190529Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:57.190831Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.190871Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:57.191416Z	    7 Query	SELECT 1
+2024-11-06T09:58:57.191449Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:58:59.188830Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.188973Z	    7 Query	select @@global.server_id
+2024-11-06T09:58:59.189073Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.189127Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:59.189164Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.189191Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:58:59.189244Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.189286Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:58:59.189327Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:58:59.189351Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.189371Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:58:59.189400Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.189441Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:58:59.189489Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.189521Z	    7 Query	select @@global.version_comment
+2024-11-06T09:58:59.189558Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.189606Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:58:59.190220Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.190285Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:58:59.190333Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.190382Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:58:59.190421Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.190448Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:58:59.190478Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.190528Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:58:59.191003Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.191067Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:58:59.191397Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.191454Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:58:59.191866Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.191905Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:58:59.192536Z	    7 Query	SELECT 1
+2024-11-06T09:58:59.192573Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:59:01.188544Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.188813Z	    7 Query	select @@global.server_id
+2024-11-06T09:59:01.188947Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.189014Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:59:01.189099Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.189151Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:59:01.189243Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.189297Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:59:01.189364Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:59:01.189420Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.189506Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:59:01.189614Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.189713Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:59:01.189806Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.189881Z	    7 Query	select @@global.version_comment
+2024-11-06T09:59:01.189953Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.190028Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:59:01.191063Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.191147Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:59:01.191217Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.191264Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:59:01.191309Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.191346Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:59:01.191385Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.191448Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:59:01.191964Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.192014Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:59:01.192351Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.192409Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:59:01.192783Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.192821Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:59:01.193459Z	    7 Query	SELECT 1
+2024-11-06T09:59:01.193504Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration
+2024-11-06T09:59:02.180762Z	   32 Query	select *
+from
+user
+2024-11-06T09:59:03.190387Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.190774Z	    7 Query	select @@global.server_id
+2024-11-06T09:59:03.191228Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.191298Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:59:03.191346Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.192415Z	    7 Query	SHOW SLAVE STATUS
+2024-11-06T09:59:03.192645Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.192717Z	    7 Query	SHOW MASTER STATUS
+2024-11-06T09:59:03.192763Z	    7 Query	SELECT @@global.server_uuid
+2024-11-06T09:59:03.192857Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.192900Z	    7 Query	SELECT @@global.gtid_purged
+2024-11-06T09:59:03.192921Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.192982Z	    7 Query	select concat('Ver ', @@global.version, ' ', @@global.version_comment) as version
+2024-11-06T09:59:03.193037Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.193076Z	    7 Query	select @@global.version_comment
+2024-11-06T09:59:03.193116Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.193164Z	    7 Query	SHOW VARIABLES LIKE 'read_only'
+2024-11-06T09:59:03.193892Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.193937Z	    7 Query	SELECT @@global.super_read_only
+2024-11-06T09:59:03.193987Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.194064Z	    7 Query	select @@global.binlog_format, @@global.log_bin, @@global.log_slave_updates, @@global.binlog_row_image
+2024-11-06T09:59:03.194112Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.194139Z	    7 Query	select @@global.gtid_mode
+2024-11-06T09:59:03.194170Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.194205Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%_enabled'
+2024-11-06T09:59:03.194897Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.194954Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_%_status'
+2024-11-06T09:59:03.195422Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.195504Z	    7 Query	SHOW STATUS LIKE 'Rpl_semi_sync_master_clients'
+2024-11-06T09:59:03.195984Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.196028Z	    7 Query	SHOW VARIABLES LIKE 'rpl_semi_sync_%'
+2024-11-06T09:59:03.196552Z	    7 Query	SELECT 1
+2024-11-06T09:59:03.196620Z	    7 Query	SELECT * FROM performance_schema.replication_connection_configuration

@@ -33,18 +33,23 @@ import (
 	"github.com/vitessio/vt/go/typ"
 )
 
-func Run(fileName string) error {
-	return run(os.Stdout, fileName)
+type Config struct {
+	FileName string
+	Loader   data.Loader
 }
 
-func run(out io.Writer, fileName string) error {
+func Run(cfg Config) error {
+	return run(os.Stdout, cfg)
+}
+
+func run(out io.Writer, cfg Config) error {
 	si := &schemaInfo{
 		tables: make(map[string]columns),
 	}
 	ql := &queryList{
 		queries: make(map[string]*QueryAnalysisResult),
 	}
-	queries, err := data.LoadQueries(fileName)
+	queries, err := cfg.Loader.Load(cfg.FileName)
 	if err != nil {
 		return err
 	}
@@ -85,20 +90,7 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 	case *sqlparser.CreateTable:
 		si.handleCreateTable(ast)
 	case sqlparser.Statement:
-		st, err := semantics.Analyze(ast, "ks", si)
-		if err != nil {
-			ql.failed = append(ql.failed, QueryFailedResult{
-				Query:      q.Query,
-				LineNumber: q.Line,
-				Error:      err.Error(),
-			})
-			return
-		}
-		ctx := &plancontext.PlanningContext{
-			ReservedVars: sqlparser.NewReservedVars("", bv),
-			SemTable:     st,
-		}
-		ql.processQuery(ctx, ast, q)
+		ql.processQuery(si, ast, q, bv)
 	}
 }
 
@@ -113,9 +105,21 @@ type queryList struct {
 	failed  []QueryFailedResult
 }
 
-func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparser.Statement, q data.Query) {
-	bv := make(map[string]*querypb.BindVariable)
-	err := sqlparser.Normalize(ast, ctx.ReservedVars, bv)
+func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
+	// handle panics
+	defer func() {
+		if r := recover(); r != nil {
+			ql.failed = append(ql.failed, QueryFailedResult{
+				Query:      q.Query,
+				LineNumber: q.Line,
+				Error:      fmt.Sprintf("panic: %v", r),
+			})
+		}
+	}()
+
+	mapBv := make(map[string]*querypb.BindVariable)
+	reservedVars := sqlparser.NewReservedVars("", bv)
+	err := sqlparser.Normalize(ast, reservedVars, mapBv)
 	if err != nil {
 		ql.failed = append(ql.failed, QueryFailedResult{
 			Query:      q.Query,
@@ -124,6 +128,21 @@ func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparse
 		})
 		return
 	}
+
+	st, err := semantics.Analyze(ast, "ks", si)
+	if err != nil {
+		ql.failed = append(ql.failed, QueryFailedResult{
+			Query:      q.Query,
+			LineNumber: q.Line,
+			Error:      err.Error(),
+		})
+		return
+	}
+	ctx := &plancontext.PlanningContext{
+		ReservedVars: reservedVars,
+		SemTable:     st,
+	}
+
 	structure := sqlparser.CanonicalString(ast)
 	r, found := ql.queries[structure]
 	if found {
@@ -135,7 +154,7 @@ func (ql *queryList) processQuery(ctx *plancontext.PlanningContext, ast sqlparse
 	var tableNames []string
 	for _, t := range ctx.SemTable.Tables {
 		rtbl, ok := t.(*semantics.RealTable)
-		if !ok {
+		if !ok || rtbl.Table == nil {
 			continue
 		}
 		tableNames = append(tableNames, rtbl.Table.Name.String())

@@ -37,10 +37,9 @@ jobs:
       - name: Run Tests and Convert to JUnit
         run: go test -v ./go/... | go-junit-report > report.xml
 
-      - name: Annotate Test Failures
+      - name: Test Summary
         if: true
-        uses: dorny/test-reporter@v1
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
-          name: go tests
-          path: report.xml
-          reporter: java-junit
+          paths: "report.xml"
+          show: "fail"
