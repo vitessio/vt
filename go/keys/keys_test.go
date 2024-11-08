@@ -50,6 +50,7 @@ func TestKeysNonAuthoritativeTable(t *testing.T) {
 	si := &schemaInfo{}
 	ql := &queryList{
 		queries: make(map[string]*QueryAnalysisResult),
+		failed:  make(map[string]*QueryFailedResult),
 	}
 	process(q, si, ql)
 

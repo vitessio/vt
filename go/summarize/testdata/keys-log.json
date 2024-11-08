@@ -525,12 +525,10 @@
     "failed": [
       {
         "query": "I am a failing query;",
-        "lineNumber": 463,
-        "error": "syntax error at position 2 near 'I'"
-      },
-      {
-        "query": "I am a failing query;",
-        "lineNumber": 781,
+        "lineNumbers": [
+          463,
+          781
+        ],
         "error": "syntax error at position 2 near 'I'"
       }
     ]

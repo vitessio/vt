@@ -48,6 +48,7 @@ func run(out io.Writer, cfg Config) error {
 	}
 	ql := &queryList{
 		queries: make(map[string]*QueryAnalysisResult),
+		failed:  make(map[string]*QueryFailedResult),
 	}
 	queries, err := cfg.Loader.Load(cfg.FileName)
 	if err != nil {
@@ -78,11 +79,7 @@ func run(out io.Writer, cfg Config) error {
 func process(q data.Query, si *schemaInfo, ql *queryList) {
 	ast, bv, err := sqlparser.NewTestParser().Parse2(q.Query)
 	if err != nil {
-		ql.failed = append(ql.failed, QueryFailedResult{
-			Query:      q.Query,
-			LineNumber: q.Line,
-			Error:      err.Error(),
-		})
+		ql.addFailedQuery(q, err)
 		return
 	}
 
@@ -102,18 +99,14 @@ type Output struct {
 
 type queryList struct {
 	queries map[string]*QueryAnalysisResult
-	failed  []QueryFailedResult
+	failed  map[string]*QueryFailedResult
 }
 
 func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
 	// handle panics
 	defer func() {
 		if r := recover(); r != nil {
-			ql.failed = append(ql.failed, QueryFailedResult{
-				Query:      q.Query,
-				LineNumber: q.Line,
-				Error:      fmt.Sprintf("panic: %v", r),
-			})
+			ql.addFailedQuery(q, fmt.Errorf("panic: %v", r))
 		}
 	}()
 
@@ -121,21 +114,13 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 	reservedVars := sqlparser.NewReservedVars("", bv)
 	err := sqlparser.Normalize(ast, reservedVars, mapBv)
 	if err != nil {
-		ql.failed = append(ql.failed, QueryFailedResult{
-			Query:      q.Query,
-			LineNumber: q.Line,
-			Error:      err.Error(),
-		})
+		ql.addFailedQuery(q, err)
 		return
 	}
 
 	st, err := semantics.Analyze(ast, "ks", si)
 	if err != nil {
-		ql.failed = append(ql.failed, QueryFailedResult{
-			Query:      q.Query,
-			LineNumber: q.Line,
-			Error:      err.Error(),
-		})
+		ql.addFailedQuery(q, err)
 		return
 	}
 	ctx := &plancontext.PlanningContext{
@@ -173,20 +158,40 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 	}
 }
 
+func (ql *queryList) addFailedQuery(q data.Query, err error) {
+	key := q.Query + err.Error()
+	if v, exists := ql.failed[key]; exists {
+		v.LineNumbers = append(v.LineNumbers, q.Line)
+	} else {
+		ql.failed[key] = &QueryFailedResult{
+			Query:       q.Query,
+			LineNumbers: []int{q.Line},
+			Error:       err.Error(),
+		}
+	}
+}
+
 // writeJsonTo writes the query list, sorted by the first line number of the query, to the given writer.
 func (ql *queryList) writeJSONTo(w io.Writer) error {
 	values := make([]QueryAnalysisResult, 0, len(ql.queries))
 	for _, result := range ql.queries {
 		values = append(values, *result)
 	}
-
 	sort.Slice(values, func(i, j int) bool {
 		return values[i].LineNumbers[0] < values[j].LineNumbers[0]
 	})
 
+	failedQueries := make([]QueryFailedResult, 0, len(ql.failed))
+	for _, result := range ql.failed {
+		failedQueries = append(failedQueries, *result)
+	}
+	sort.Slice(failedQueries, func(i, j int) bool {
+		return failedQueries[i].LineNumbers[0] < failedQueries[j].LineNumbers[0]
+	})
+
 	res := Output{
 		Queries: values,
-		Failed:  ql.failed,
+		Failed:  failedQueries,
 	}
 
 	jsonData, err := json.MarshalIndent(res, "  ", "  ")
@@ -216,7 +221,7 @@ type QueryAnalysisResult struct {
 }
 
 type QueryFailedResult struct {
-	Query      string `json:"query"`
-	LineNumber int    `json:"lineNumber"`
-	Error      string `json:"error"`
+	Query       string `json:"query"`
+	LineNumbers []int  `json:"lineNumbers"`
+	Error       string `json:"error"`
 }
