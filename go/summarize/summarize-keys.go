@@ -58,6 +58,7 @@ type (
 	FailuresSummary struct {
 		Query string
 		Error string
+		Count int
 	}
 
 	graphKey struct {
@@ -296,10 +297,10 @@ func renderFailures(md *markdown.MarkDown, failures []FailuresSummary) {
 	}
 	md.PrintHeader("Failures", 2)
 
-	headers := []string{"Query", "Error"}
+	headers := []string{"Query", "Error", "Count"}
 	var rows [][]string
 	for _, failure := range failures {
-		rows = append(rows, []string{failure.Query, failure.Error})
+		rows = append(rows, []string{failure.Query, failure.Error, strconv.Itoa(failure.Count)})
 	}
 	md.PrintTable(headers, rows)
 }
@@ -368,6 +369,7 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 		failures = append(failures, FailuresSummary{
 			Query: query.Query,
 			Error: query.Error,
+			Count: len(query.LineNumbers),
 		})
 	}
 
