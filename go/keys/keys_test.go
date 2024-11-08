@@ -21,10 +21,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/typ"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestKeys(t *testing.T) {
