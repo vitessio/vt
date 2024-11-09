@@ -242,13 +242,13 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 		md.PrintHeader("Tables Joined", 2)
 	}
 
-	type foo struct {
+	type joinDetails struct {
 		Tbl1, Tbl2  string
 		Occurrences int
 		predicates  []operators.JoinPredicate
 	}
 
-	var joins []foo
+	var joins []joinDetails
 	for tables, predicates := range g {
 		occurrences := 0
 		for _, count := range predicates {
@@ -258,7 +258,7 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 		sort.Slice(joinPredicates, func(i, j int) bool {
 			return joinPredicates[i].String() < joinPredicates[j].String()
 		})
-		joins = append(joins, foo{
+		joins = append(joins, joinDetails{
 			Tbl1:        tables.Tbl1,
 			Tbl2:        tables.Tbl2,
 			Occurrences: occurrences,

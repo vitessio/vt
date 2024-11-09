@@ -1,7 +1,7 @@
 # Query Analysis Report
 
-**Date of Analysis**: 2024-11-09 10:28:32  
-**Analyzed File**: `go/summarize/testdata/keys-log.json`
+**Date of Analysis**: 2024-01-01 01:02:03  
+**Analyzed File**: `testdata/keys-log.json`
 
 ## Tables
 |Table Name|Reads|Writes|
