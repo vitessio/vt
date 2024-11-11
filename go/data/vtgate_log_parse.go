@@ -37,9 +37,11 @@ type bindVarsVtGate struct {
 	Value any    `json:"value,omitempty"`
 }
 
-type VtGateLogLoader struct{}
+type VtGateLogLoader struct {
+	ignoreBindVars bool
+}
 
-func (VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
+func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
 	reg := regexp.MustCompile(`\t"([^"]+)"\t(\{(?:[^{}]|(?:\{[^{}]*\}))*\})`)
 
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
@@ -64,8 +66,20 @@ func (VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
 		match := reg.FindStringSubmatch(line)
 		if len(match) > 2 {
 			query := match[1]
-			bindVarsRaw := match[2]
+			if vll.ignoreBindVars {
+				queries = append(queries, Query{
+					Query: query,
+					Line:  lineNumber,
+					Type:  typ.Query,
+				})
+				continue
+			}
 
+			// If we care about bind variables (e.g. running 'trace') then we parse the query log
+			// output into bindVarsVtGate, we then transform it into something the Vitess library
+			// can understand (aka: map[string]*querypb.BindVariable), we then parse the query string
+			// and add the bind variables to it.
+			bindVarsRaw := match[2]
 			bvs, err := getBindVariables(bindVarsRaw, lineNumber)
 			if err != nil {
 				return nil, err
