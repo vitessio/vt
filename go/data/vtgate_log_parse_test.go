@@ -17,15 +17,42 @@ limitations under the License.
 package data
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseVtGateQueryLog(t *testing.T) {
-	gotQueries, err := VtGateLogLoader{}.Load("./testdata/vtgate.query.log")
+	gotQueries, err := VtGateLogLoader{NeedsBindVars: true}.Load("./testdata/vtgate.query.log")
+	require.NoError(t, err)
+
+	require.Len(t, gotQueries, 25)
+
+	expect, err := os.ReadFile("./testdata/vtgate.query.log.parsed.bv.txt")
+	require.NoError(t, err)
+
+	var got []string
+	for _, query := range gotQueries {
+		got = append(got, query.Query)
+	}
+
+	require.Equal(t, string(expect), strings.Join(got, "\n"))
+}
+
+func TestParseVtGateQueryLogNoBindVars(t *testing.T) {
+	gotQueries, err := VtGateLogLoader{NeedsBindVars: false}.Load("./testdata/vtgate.query.log")
 	require.NoError(t, err)
 	require.Len(t, gotQueries, 25)
 
-	require.Equal(t, "vexplain trace insert into pincode_areas(pincode, area_name) values (110001, 'Connaught Place'), (110002, 'Lodhi Road'), (110003, 'Civil Lines'), (110004, 'Kashmere Gate'), (110005, 'Chandni Chowk'), (110006, 'Barakhamba Road'), (110007, 'Kamla Nagar'), (110008, 'Karol Bagh'), (110009, 'Paharganj'), (110010, 'Patel Nagar'), (110011, 'South Extension'), (110012, 'Lajpat Nagar'), (110013, 'Sarojini Nagar'), (110014, 'Malviya Nagar'), (110015, 'Saket')", gotQueries[4].Query)
+	expect, err := os.ReadFile("./testdata/vtgate.query.log.parsed.txt")
+	require.NoError(t, err)
+
+	var got []string
+	for _, query := range gotQueries {
+		got = append(got, query.Query)
+	}
+
+	require.Equal(t, string(expect), strings.Join(got, "\n"))
 }
