@@ -24,6 +24,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestParseVtGateQueryLogRedacted(t *testing.T) {
+	_, err := VtGateLogLoader{NeedsBindVars: true}.Load("./testdata/vtgate.query.log.redacted")
+	require.EqualError(t, err, "line 1: query has redacted bind variables, cannot parse them")
+}
+
 func TestParseVtGateQueryLog(t *testing.T) {
 	gotQueries, err := VtGateLogLoader{NeedsBindVars: true}.Load("./testdata/vtgate.query.log")
 	require.NoError(t, err)

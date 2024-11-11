@@ -42,7 +42,7 @@ type VtGateLogLoader struct {
 }
 
 func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
-	reg := regexp.MustCompile(`\t"([^"]+)"\t(\{(?:[^{}]|(?:\{[^{}]*\}))*\})`)
+	reg := regexp.MustCompile(`\t"([^"]+)"\t(\{(?:[^{}]|(?:\{[^{}]*\}))*\}|"[^"]+")`)
 
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
@@ -125,6 +125,10 @@ func addBindVarsToQuery(query string, bvs map[string]*querypb.BindVariable) (str
 }
 
 func getBindVariables(bindVarsRaw string, lineNumber int) (map[string]*querypb.BindVariable, error) {
+	if strings.Contains(bindVarsRaw, "[REDACTED]") {
+		return nil, fmt.Errorf("line %d: query has redacted bind variables, cannot parse them", lineNumber)
+	}
+
 	bv := map[string]bindVarsVtGate{}
 	err := json.Unmarshal([]byte(bindVarsRaw), &bv)
 	if err != nil {
