@@ -62,7 +62,7 @@ func tracerCmd() *cobra.Command {
 			}
 			cfg.Tests = args
 			cfg.Compare = false
-			loader, err := configureLoader(inputType)
+			loader, err := configureLoader(inputType, true)
 			if err != nil {
 				return err
 			}

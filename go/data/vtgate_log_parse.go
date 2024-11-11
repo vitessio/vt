@@ -38,7 +38,7 @@ type bindVarsVtGate struct {
 }
 
 type VtGateLogLoader struct {
-	ignoreBindVars bool
+	NeedsBindVars bool
 }
 
 func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
@@ -66,7 +66,7 @@ func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
 		match := reg.FindStringSubmatch(line)
 		if len(match) > 2 {
 			query := match[1]
-			if vll.ignoreBindVars {
+			if !vll.NeedsBindVars {
 				queries = append(queries, Query{
 					Query: query,
 					Line:  lineNumber,

@@ -38,7 +38,7 @@ func keysCmd() *cobra.Command {
 				FileName: args[0],
 			}
 
-			loader, err := configureLoader(inputType)
+			loader, err := configureLoader(inputType, false)
 			if err != nil {
 				return err
 			}
@@ -58,12 +58,14 @@ func addInputTypeFlag(cmd *cobra.Command, s *string) {
 	cmd.Flags().StringVar(s, "input-type", "sql", "Specifies the type of input file: 'sql' or 'mysql-log'")
 }
 
-func configureLoader(inputType string) (data.Loader, error) {
+func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) {
 	switch inputType {
 	case "sql":
 		return data.SQLScriptLoader{}, nil
 	case "mysql-log":
 		return data.MySQLLogLoader{}, nil
+	case "vtgate-log":
+		return data.VtGateLogLoader{NeedsBindVars: needsBindVars}, nil
 	default:
 		return nil, errors.New("invalid input type: must be 'sql' or 'mysql-log'")
 	}
