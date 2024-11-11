@@ -128,7 +128,7 @@ func getBindVariables(bindVarsRaw string, lineNumber int) (map[string]*querypb.B
 	bv := map[string]bindVarsVtGate{}
 	err := json.Unmarshal([]byte(bindVarsRaw), &bv)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing bind variables from line %d: %v", lineNumber, err)
+		return nil, fmt.Errorf("line %d: error parsing bind variables: %v", lineNumber, err)
 	}
 
 	bvProcessed := make(map[string]*querypb.BindVariable)
@@ -142,7 +142,7 @@ func getBindVariables(bindVarsRaw string, lineNumber int) (map[string]*querypb.B
 		case bvType == sqltypes.Tuple:
 			// the query log of vtgate does not list all the values for a tuple
 			// instead it lists the following: "v2": {"type": "TUPLE", "value": "2 items"}
-			panic("unsupported tuple in bindvars")
+			return nil, fmt.Errorf("line %d: cannot parse tuple bind variables", lineNumber)
 		default:
 			val = []byte(value.Value.(string))
 		}
