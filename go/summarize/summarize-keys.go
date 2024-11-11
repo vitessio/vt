@@ -24,7 +24,6 @@ import (
 	"slices"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"vitess.io/vitess/go/slice"
@@ -238,53 +237,50 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 			g.AddJoinPredicate(key, pred)
 		}
 	}
-	ks := slices.Collect(maps.Keys(g))
-	slices.SortFunc(ks, func(a, b graphKey) int {
-		if a.Tbl1 == b.Tbl1 {
-			return strings.Compare(a.Tbl2, b.Tbl2)
-		}
-		return strings.Compare(a.Tbl1, b.Tbl1)
-	})
 
 	if len(g) > 0 {
 		md.PrintHeader("Tables Joined", 2)
 	}
 
-	// we really want the output to be deterministic
-	tables := slices.Collect(maps.Keys(g))
-	sort.Slice(tables, func(i, j int) bool {
-		if tables[i].Tbl1 == tables[j].Tbl1 {
-			return tables[i].Tbl2 < tables[j].Tbl2
+	type joinDetails struct {
+		Tbl1, Tbl2  string
+		Occurrences int
+		predicates  []operators.JoinPredicate
+	}
+
+	var joins []joinDetails
+	for tables, predicates := range g {
+		occurrences := 0
+		for _, count := range predicates {
+			occurrences += count
 		}
-		return tables[i].Tbl1 < tables[j].Tbl1
+		joinPredicates := slices.Collect(maps.Keys(predicates))
+		sort.Slice(joinPredicates, func(i, j int) bool {
+			return joinPredicates[i].String() < joinPredicates[j].String()
+		})
+		joins = append(joins, joinDetails{
+			Tbl1:        tables.Tbl1,
+			Tbl2:        tables.Tbl2,
+			Occurrences: occurrences,
+			predicates:  joinPredicates,
+		})
+	}
+
+	sort.Slice(joins, func(i, j int) bool {
+		return joins[i].Occurrences > joins[j].Occurrences
 	})
 
 	md.Println("```")
-	for _, table := range tables {
-		predicates := g[table]
-		numberOfPreds := len(predicates)
-		totalt := 0
-		for _, count := range predicates {
-			totalt += count
-		}
-		md.Printf("%s ↔ %s (Occurrences: %d)\n", table.Tbl1, table.Tbl2, totalt)
-
-		// we want the output to be deterministic
-		preds := slices.Collect(maps.Keys(predicates))
-		sort.Slice(preds, func(i, j int) bool {
-			return preds[i].String() < preds[j].String()
-		})
-
-		for _, predicate := range preds {
-			count := predicates[predicate]
-			numberOfPreds--
+	for _, join := range joins {
+		md.Printf("%s ↔ %s (Occurrences: %d)\n", join.Tbl1, join.Tbl2, join.Occurrences)
+		for i, pred := range join.predicates {
 			var s string
-			if numberOfPreds == 0 {
+			if i == len(join.predicates)-1 {
 				s = "└─"
 			} else {
 				s = "├─"
 			}
-			md.Printf("%s %s %d%%\n", s, predicate.String(), (count*100)/totalt)
+			md.Printf("%s %s\n", s, pred.String())
 		}
 		md.NewLine()
 	}

@@ -108,43 +108,43 @@
 
 ## Tables Joined
 ```
-customer ↔ nation (Occurrences: 3)
-└─ customer.c_nationkey = nation.n_nationkey 100%
+lineitem ↔ orders (Occurrences: 10)
+└─ lineitem.l_orderkey = orders.o_orderkey
 
 customer ↔ orders (Occurrences: 7)
-└─ customer.c_custkey = orders.o_custkey 100%
-
-customer ↔ supplier (Occurrences: 1)
-└─ customer.c_nationkey = supplier.s_nationkey 100%
-
-lineitem ↔ lineitem (Occurrences: 2)
-├─ lineitem.l_orderkey = lineitem.l_orderkey 50%
-└─ lineitem.l_suppkey != lineitem.l_suppkey 50%
-
-lineitem ↔ orders (Occurrences: 10)
-└─ lineitem.l_orderkey = orders.o_orderkey 100%
-
-lineitem ↔ part (Occurrences: 3)
-└─ lineitem.l_partkey = part.p_partkey 100%
-
-lineitem ↔ partsupp (Occurrences: 2)
-├─ lineitem.l_partkey = partsupp.ps_partkey 50%
-└─ lineitem.l_suppkey = partsupp.ps_suppkey 50%
-
-lineitem ↔ supplier (Occurrences: 5)
-└─ lineitem.l_suppkey = supplier.s_suppkey 100%
-
-nation ↔ region (Occurrences: 2)
-└─ nation.n_regionkey = region.r_regionkey 100%
+└─ customer.c_custkey = orders.o_custkey
 
 nation ↔ supplier (Occurrences: 6)
-└─ nation.n_nationkey = supplier.s_nationkey 100%
+└─ nation.n_nationkey = supplier.s_nationkey
 
-part ↔ partsupp (Occurrences: 1)
-└─ part.p_partkey = partsupp.ps_partkey 100%
+lineitem ↔ supplier (Occurrences: 5)
+└─ lineitem.l_suppkey = supplier.s_suppkey
+
+lineitem ↔ part (Occurrences: 3)
+└─ lineitem.l_partkey = part.p_partkey
+
+customer ↔ nation (Occurrences: 3)
+└─ customer.c_nationkey = nation.n_nationkey
+
+lineitem ↔ lineitem (Occurrences: 2)
+├─ lineitem.l_orderkey = lineitem.l_orderkey
+└─ lineitem.l_suppkey != lineitem.l_suppkey
+
+lineitem ↔ partsupp (Occurrences: 2)
+├─ lineitem.l_partkey = partsupp.ps_partkey
+└─ lineitem.l_suppkey = partsupp.ps_suppkey
+
+nation ↔ region (Occurrences: 2)
+└─ nation.n_regionkey = region.r_regionkey
 
 partsupp ↔ supplier (Occurrences: 1)
-└─ partsupp.ps_suppkey = supplier.s_suppkey 100%
+└─ partsupp.ps_suppkey = supplier.s_suppkey
+
+part ↔ partsupp (Occurrences: 1)
+└─ part.p_partkey = partsupp.ps_partkey
+
+customer ↔ supplier (Occurrences: 1)
+└─ customer.c_nationkey = supplier.s_nationkey
 
 ```
 ## Failures
