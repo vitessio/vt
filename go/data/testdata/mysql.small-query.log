@@ -1,0 +1,30 @@
+/opt/homebrew/bin/mysqld, Version: 5.7.44-log (Homebrew). started with:
+Tcp port: 6709  Unix socket: /Users/manangupta/vitess/vtdataroot/vtroot_6701/vt_0000004915/mysql.sock
+Time                 Id Command    Argument
+2024-11-06T09:57:35.907785Z	   32 Query	SET GLOBAL log_output = 'FILE'
+2024-11-06T09:57:41.056862Z	   32 Query	show databases
+2024-11-06T09:57:42.897963Z	   24 Query	UPDATE _vt.schema_migrations
+SET
+	migration_status='queued',
+	tablet='test_misc-0000004915',
+	retries=retries + 1,
+	tablet_failure=0,
+	message='',
+	stage='',
+	cutover_attempts=0,
+	ready_timestamp=NULL,
+	started_timestamp=NULL,
+	liveness_timestamp=NULL,
+	cancelled_timestamp=NULL,
+	completed_timestamp=NULL,
+	last_cutover_attempt_timestamp=NULL,
+	cleanup_timestamp=NULL
+WHERE
+	migration_status IN ('failed', 'cancelled')
+	AND (
+        tablet_failure=1
+        AND migration_status='failed'
+        AND retries=0
+    )
+LIMIT 1
+2024-11-06T09:57:42.900713Z	   33 Connect	vt_dba@localhost on vt_uks using Socket

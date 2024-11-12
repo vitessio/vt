@@ -92,7 +92,7 @@ func (s *mysqlLogReaderState) next() (Query, bool) {
 		matches := s.reg.FindStringSubmatch(line)
 		if len(matches) != 5 {
 			if s.prevQuery != "" {
-				s.prevQuery += " " + line
+				s.prevQuery += "\n" + line
 			}
 			continue
 		}
