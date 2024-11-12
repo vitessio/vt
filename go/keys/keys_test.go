@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/vitessio/vt/go/data"
-	"github.com/vitessio/vt/go/typ"
 )
 
 func TestKeys(t *testing.T) {
@@ -65,7 +64,7 @@ func TestKeys(t *testing.T) {
 func TestKeysNonAuthoritativeTable(t *testing.T) {
 	q := data.Query{
 		Query: "select id from user where id = 20",
-		Type:  typ.Query,
+		Type:  data.QueryT,
 	}
 	si := &schemaInfo{}
 	ql := &queryList{

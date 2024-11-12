@@ -18,63 +18,143 @@ package data
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"regexp"
+	"sync"
 )
 
 type MySQLLogLoader struct{}
 
-func (MySQLLogLoader) Load(fileName string) (queries []Query, err error) {
+func (MySQLLogLoader) Load(fileName string) ([]Query, error) {
+	next, stop := MySQLLogLoader{}.Loadit(fileName)
+
+	var queries []Query
+	for {
+		query, ok := next()
+		if !ok {
+			break
+		}
+		queries = append(queries, query)
+	}
+
+	return queries, stop()
+}
+
+type mysqlLogReaderState struct {
+	prevQuery  string
+	lineNumber int
+	queryStart int
+	scanner    *bufio.Scanner
+	err        error
+	closed     bool
+	mu         sync.Mutex
+	reg        *regexp.Regexp
+	fd         *os.File
+}
+
+func (s *mysqlLogReaderState) next() (Query, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.closed {
+		return Query{}, false
+	}
+
+	for s.scanner.Scan() {
+		s.lineNumber++
+		line := s.scanner.Text()
+		if len(line) == 0 {
+			continue
+		}
+
+		matches := s.reg.FindStringSubmatch(line)
+		if len(matches) != 5 {
+			if s.prevQuery != "" {
+				s.prevQuery += " " + line
+			}
+			continue
+		}
+
+		// If we have a previous query, return it before processing the new line
+		if s.prevQuery != "" {
+			query := Query{
+				Query: s.prevQuery,
+				Line:  s.queryStart,
+				Type:  QueryT,
+			}
+			s.prevQuery = ""
+
+			// If the new line is a query, store it for next iteration
+			if matches[3] == "Query" {
+				s.prevQuery = matches[4]
+				s.queryStart = s.lineNumber
+			}
+
+			return query, true
+		}
+
+		// Start a new query if this line is a query
+		if matches[3] == "Query" {
+			s.prevQuery = matches[4]
+			s.queryStart = s.lineNumber
+		}
+	}
+	s.closed = true
+
+	// Return the last query if we have one
+	if s.prevQuery != "" {
+		query := Query{
+			Query: s.prevQuery,
+			Line:  s.queryStart,
+			Type:  QueryT,
+		}
+		s.prevQuery = ""
+		return query, true
+	}
+
+	s.err = s.scanner.Err()
+	return Query{}, false
+}
+
+func (s *mysqlLogReaderState) close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.closed {
+		ferr := s.fd.Close()
+		if ferr != nil {
+			s.err = errors.Join(s.err, ferr)
+		}
+		s.closed = true
+	}
+
+	return s.err
+}
+
+func (MySQLLogLoader) Loadit(fileName string) (next func() (Query, bool), stop func() error) {
 	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
 
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
-		return nil, err
+		return errFail(err)
 	}
-	defer fd.Close()
 
-	// Create a new scanner for the file
 	scanner := bufio.NewScanner(fd)
 
-	// Go over each line
-	prevQuery := ""
-	lineNumber := 0
-	queryStart := 0
-	for scanner.Scan() {
-		lineNumber++
-		line := scanner.Text()
-		if len(line) == 0 {
-			continue
-		}
-		// Check if the line matches the pattern
-		matches := reg.FindStringSubmatch(line)
-		if len(matches) != 5 {
-			// In the beginning of the file, we'd have some lines
-			// that don't match the regexp, but are not part of the queries.
-			// To ignore them, we just check if we have already started with a query.
-			if prevQuery != "" {
-				prevQuery += " " + line
-			}
-			continue
-		}
-		if prevQuery != "" {
-			queries = append(queries, Query{
-				Query: prevQuery,
-				Line:  queryStart,
-				Type:  QueryT,
-			})
-			prevQuery = ""
-		}
-		if matches[3] == "Query" {
-			prevQuery = matches[4]
-			queryStart = lineNumber
-		}
+	s := &mysqlLogReaderState{
+		scanner: scanner,
+		reg:     reg,
+		fd:      fd,
 	}
 
-	// Check for any errors that occurred during the scan
-	if err = scanner.Err(); err != nil {
-		return nil, err
-	}
+	return s.next, s.close
+}
 
-	return
+func errFail(err error) (next func() (Query, bool), stop func() error) {
+	return func() (Query, bool) {
+			return Query{}, false
+		}, func() error {
+			return err
+		}
 }

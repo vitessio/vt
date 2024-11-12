@@ -17,15 +17,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/vitessio/vt/go/typ"
 )
 
 func TestParseQueries(t *testing.T) {
 	sql := "select * from t;"
 
 	if q, err := ParseQueries(Query{Query: sql, Line: 1}); err == nil {
-		assert.Equalf(t, typ.Query, q[0].Type, "Expected: %d, got: %d", typ.Query, q[0].Type)
+		assert.Equalf(t, QueryT, q[0].Type, "Expected: %d, got: %d", QueryT, q[0].Type)
 		assert.Equalf(t, q[0].Query, sql, "Expected: %s, got: %s", sql, q[0].Query)
 	} else {
 		t.Fatalf("error is not nil. %v", err)
