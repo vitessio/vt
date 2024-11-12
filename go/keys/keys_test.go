@@ -28,18 +28,38 @@ import (
 )
 
 func TestKeys(t *testing.T) {
-	sb := &strings.Builder{}
-	cfg := Config{
-		FileName: "../../t/tpch_failing_queries.test",
-		Loader:   data.SQLScriptLoader{},
+	cases := []struct {
+		cfg          Config
+		expectedFile string
+	}{
+		{
+			cfg: Config{
+				FileName: "../../t/tpch_failing_queries.test",
+				Loader:   data.SQLScriptLoader{},
+			},
+			expectedFile: "../summarize/testdata/keys-log.json",
+		},
+		{
+			cfg: Config{
+				FileName: "../data/testdata/vtgate.query.log",
+				Loader:   data.VtGateLogLoader{NeedsBindVars: false},
+			},
+			expectedFile: "../summarize/testdata/keys-log-vtgate.json",
+		},
 	}
-	err := run(sb, cfg)
-	require.NoError(t, err)
 
-	out, err := os.ReadFile("../summarize/testdata/keys-log.json")
-	require.NoError(t, err)
+	for _, tcase := range cases {
+		t.Run(tcase.expectedFile, func(t *testing.T) {
+			sb := &strings.Builder{}
+			err := run(sb, tcase.cfg)
+			require.NoError(t, err)
 
-	require.Equal(t, string(out), sb.String())
+			out, err := os.ReadFile(tcase.expectedFile)
+			require.NoError(t, err)
+
+			require.Equal(t, string(out), sb.String())
+		})
+	}
 }
 
 func TestKeysNonAuthoritativeTable(t *testing.T) {

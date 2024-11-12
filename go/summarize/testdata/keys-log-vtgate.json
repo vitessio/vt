@@ -1,0 +1,319 @@
+{
+    "queries": [
+      {
+        "queryStructure": "VEXPLAIN TRACE INSERT INTO `pincode_areas`(`pincode`, `area_name`) VALUES (:vtg1, :vtg2), (:vtg3, :vtg4), (:vtg5, :vtg6), (:vtg7, :vtg8), (:vtg9, :vtg10), (:vtg11, :vtg12), (:vtg13, :vtg14), (:vtg15, :vtg16), (:vtg17, :vtg18), (:vtg19, :vtg20), (:vtg21, :vtg22), (:vtg23, :vtg24), (:vtg25, :vtg26), (:vtg27, :vtg28), (:vtg29, :vtg30)",
+        "usageCount": 1,
+        "lineNumbers": [
+          5
+        ],
+        "tableNames": [
+          "pincode_areas"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE INSERT INTO `customers`(`customer_id`, `customer_name`, `customer_pincode`) VALUES (:vtg1, :vtg2, :vtg3), (:vtg4, :vtg5, :vtg6), (:vtg7, :vtg8, :vtg9), (:vtg10, :vtg11, :vtg12), (:vtg13, :vtg14, :vtg15), (:vtg16, :vtg17, :vtg18), (:vtg19, :vtg20, :vtg21), (:vtg22, :vtg23, :vtg24), (:vtg25, :vtg26, :vtg27), (:vtg28, :vtg29, :vtg30), (:vtg31, :vtg32, :vtg33), (:vtg34, :vtg35, :vtg36), (:vtg37, :vtg38, :vtg39), (:vtg40, :vtg41, :vtg42), (:vtg43, :vtg44, :vtg45), (:vtg46, :vtg47, :vtg48), (:vtg49, :vtg50, :vtg51), (:vtg52, :vtg53, :vtg54), (:vtg55, :vtg56, :vtg57), (:vtg58, :vtg59, :vtg60), (:vtg61, :vtg62, :vtg63), (:vtg64, :vtg65, :vtg66), (:vtg67, :vtg68, :vtg69), (:vtg70, :vtg71, :vtg72), (:vtg73, :vtg74, :vtg75), (:vtg76, :vtg77, :vtg78), (:vtg79, :vtg80, :vtg81), (:vtg82, :vtg83, :vtg84), (:vtg85, :vtg86, :vtg87), (:vtg88, :vtg89, :vtg90)",
+        "usageCount": 1,
+        "lineNumbers": [
+          6
+        ],
+        "tableNames": [
+          "customers"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE INSERT INTO `orders`(`order_id`, `customer_id`, `order_date`, `order_amount`) VALUES (:vtg1, :vtg2, :vtg3, :vtg4), (:vtg5, :vtg6, :vtg7, :vtg8), (:vtg9, :vtg10, :vtg11, :vtg12), (:vtg13, :vtg14, :vtg15, :vtg16), (:vtg17, :vtg18, :vtg19, :vtg20), (:vtg21, :vtg22, :vtg23, :vtg24), (:vtg25, :vtg26, :vtg27, :vtg28), (:vtg29, :vtg30, :vtg31, :vtg32), (:vtg33, :vtg34, :vtg35, :vtg36), (:vtg37, :vtg38, :vtg39, :vtg40), (:vtg41, :vtg42, :vtg43, :vtg44), (:vtg45, :vtg46, :vtg47, :vtg48), (:vtg49, :vtg50, :vtg51, :vtg52), (:vtg53, :vtg54, :vtg55, :vtg56), (:vtg57, :vtg58, :vtg59, :vtg60), (:vtg61, :vtg62, :vtg63, :vtg64), (:vtg65, :vtg66, :vtg67, :vtg68), (:vtg69, :vtg70, :vtg71, :vtg72), (:vtg73, :vtg74, :vtg75, :vtg76), (:vtg77, :vtg78, :vtg79, :vtg80), (:vtg81, :vtg82, :vtg83, :vtg84), (:vtg85, :vtg86, :vtg87, :vtg88), (:vtg89, :vtg90, :vtg91, :vtg92), (:vtg93, :vtg94, :vtg95, :vtg96), (:vtg97, :vtg98, :vtg99, :vtg100), (:vtg101, :vtg102, :vtg103, :vtg104), (:vtg105, :vtg106, :vtg107, :vtg108), (:vtg109, :vtg110, :vtg111, :vtg112), (:vtg113, :vtg114, :vtg115, :vtg116), (:vtg117, :vtg118, :vtg119, :vtg120), (:vtg121, :vtg122, :vtg123, :vtg124), (:vtg125, :vtg126, :vtg127, :vtg128), (:vtg129, :vtg130, :vtg131, :vtg132), (:vtg133, :vtg134, :vtg135, :vtg136), (:vtg137, :vtg138, :vtg139, :vtg140), (:vtg141, :vtg142, :vtg143, :vtg144), (:vtg145, :vtg146, :vtg147, :vtg148), (:vtg149, :vtg150, :vtg151, :vtg152), (:vtg153, :vtg154, :vtg155, :vtg156), (:vtg157, :vtg158, :vtg159, :vtg160), (:vtg161, :vtg162, :vtg163, :vtg164), (:vtg165, :vtg166, :vtg167, :vtg168), (:vtg169, :vtg170, :vtg171, :vtg172), (:vtg173, :vtg174, :vtg175, :vtg176), (:vtg177, :vtg178, :vtg179, :vtg180), (:vtg181, :vtg182, :vtg183, :vtg184), (:vtg185, :vtg186, :vtg187, :vtg188), (:vtg189, :vtg190, :vtg191, :vtg192), (:vtg193, :vtg194, :vtg195, :vtg196), (:vtg197, :vtg198, :vtg199, :vtg200)",
+        "usageCount": 1,
+        "lineNumbers": [
+          7
+        ],
+        "tableNames": [
+          "orders"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT `customer_id`, `customer_pincode` FROM `customers` WHERE `customer_name` = :customer_name",
+        "usageCount": 1,
+        "lineNumbers": [
+          8
+        ],
+        "tableNames": [
+          "customers"
+        ],
+        "filterColumns": [
+          "customers.customer_name ="
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT `customer_id`, `customer_pincode` FROM `customers` WHERE `customer_name` = :customer_name",
+        "usageCount": 1,
+        "lineNumbers": [
+          9
+        ],
+        "tableNames": [
+          "customers"
+        ],
+        "filterColumns": [
+          "customers.customer_name ="
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT `c`.`customer_id`, sum(`o`.`order_amount`) FROM `customers` AS `c` JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` GROUP BY `c`.`customer_id`",
+        "usageCount": 1,
+        "lineNumbers": [
+          10
+        ],
+        "tableNames": [
+          "customers",
+          "orders"
+        ],
+        "groupingColumns": [
+          "customers.customer_id"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT `c`.`customer_id`, sum(`o`.`order_amount`) FROM `customers` AS `c` JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` GROUP BY `c`.`customer_id`",
+        "usageCount": 1,
+        "lineNumbers": [
+          11
+        ],
+        "tableNames": [
+          "customers",
+          "orders"
+        ],
+        "groupingColumns": [
+          "customers.customer_id"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT `c`.`customer_id`, `p`.`area_name` FROM `customers` AS `c` JOIN `pincode_areas` AS `p` ON `c`.`customer_pincode` = `p`.`pincode`",
+        "usageCount": 1,
+        "lineNumbers": [
+          12
+        ],
+        "tableNames": [
+          "customers",
+          "pincode_areas"
+        ],
+        "joinPredicates": [
+          "customers.customer_pincode = pincode_areas.pincode"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT `c`.`customer_id`, `p`.`area_name` FROM `customers` AS `c` JOIN `pincode_areas` AS `p` ON `c`.`customer_pincode` = `p`.`pincode`",
+        "usageCount": 1,
+        "lineNumbers": [
+          13
+        ],
+        "tableNames": [
+          "customers",
+          "pincode_areas"
+        ],
+        "joinPredicates": [
+          "customers.customer_pincode = pincode_areas.pincode"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT DISTINCT `c`.`customer_id`, `c`.`customer_name` FROM `customers` AS `c` JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` WHERE `o`.`order_amount` \u003e (SELECT avg(`order_amount`) FROM `orders`)",
+        "usageCount": 1,
+        "lineNumbers": [
+          14
+        ],
+        "tableNames": [
+          "customers",
+          "orders",
+          "orders"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "filterColumns": [
+          "orders.order_amount gt"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT DISTINCT `c`.`customer_id`, `c`.`customer_name` FROM `customers` AS `c` JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` WHERE `o`.`order_amount` \u003e (SELECT avg(`order_amount`) FROM `orders`)",
+        "usageCount": 1,
+        "lineNumbers": [
+          15
+        ],
+        "tableNames": [
+          "customers",
+          "orders",
+          "orders"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "filterColumns": [
+          "orders.order_amount gt"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT `c`.`customer_id`, `c`.`customer_name` FROM `customers` AS `c` LEFT JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` WHERE `o`.`order_id` IS NULL",
+        "usageCount": 1,
+        "lineNumbers": [
+          16
+        ],
+        "tableNames": [
+          "customers",
+          "orders"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT `c`.`customer_id`, `c`.`customer_name` FROM `customers` AS `c` LEFT JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` WHERE `o`.`order_id` IS NULL",
+        "usageCount": 1,
+        "lineNumbers": [
+          17
+        ],
+        "tableNames": [
+          "customers",
+          "orders"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT `c`.`customer_id`, `c`.`customer_name`, sum(`o`.`order_amount`) AS `total_amount` FROM `customers` AS `c` JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` GROUP BY `c`.`customer_id`, `c`.`customer_name` ORDER BY sum(`o`.`order_amount`) DESC LIMIT :vtg1",
+        "usageCount": 1,
+        "lineNumbers": [
+          18
+        ],
+        "tableNames": [
+          "customers",
+          "orders"
+        ],
+        "groupingColumns": [
+          "customers.customer_id",
+          "customers.customer_name"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT `c`.`customer_id`, `c`.`customer_name`, sum(`o`.`order_amount`) AS `total_amount` FROM `customers` AS `c` JOIN `orders` AS `o` ON `c`.`customer_id` = `o`.`customer_id` GROUP BY `c`.`customer_id`, `c`.`customer_name` ORDER BY sum(`o`.`order_amount`) DESC LIMIT :vtg1",
+        "usageCount": 1,
+        "lineNumbers": [
+          19
+        ],
+        "tableNames": [
+          "customers",
+          "orders"
+        ],
+        "groupingColumns": [
+          "customers.customer_id",
+          "customers.customer_name"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT DISTINCT `c1`.`customer_id`, `c1`.`customer_name` FROM `customers` AS `c1` JOIN `orders` AS `o1` ON `c1`.`customer_id` = `o1`.`customer_id` JOIN `orders` AS `o2` ON `c1`.`customer_id` = `o2`.`customer_id` WHERE DATEDIFF(`o2`.`order_date`, `o1`.`order_date`) = :vtg1",
+        "usageCount": 1,
+        "lineNumbers": [
+          20
+        ],
+        "tableNames": [
+          "customers",
+          "orders",
+          "orders"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT DISTINCT `c1`.`customer_id`, `c1`.`customer_name` FROM `customers` AS `c1` JOIN `orders` AS `o1` ON `c1`.`customer_id` = `o1`.`customer_id` JOIN `orders` AS `o2` ON `c1`.`customer_id` = `o2`.`customer_id` WHERE DATEDIFF(`o2`.`order_date`, `o1`.`order_date`) = :vtg1",
+        "usageCount": 1,
+        "lineNumbers": [
+          21
+        ],
+        "tableNames": [
+          "customers",
+          "orders",
+          "orders"
+        ],
+        "joinPredicates": [
+          "customers.customer_id = orders.customer_id"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT DATE_FORMAT(`order_date`, :vtg1) AS `month`, COUNT(DISTINCT `customer_id`) AS `unique_customers`, count(*) AS `total_orders`, sum(`order_amount`) AS `total_sales` FROM `orders` GROUP BY DATE_FORMAT(`order_date`, :vtg1) ORDER BY DATE_FORMAT(`orders`.`order_date`, :vtg1) ASC",
+        "usageCount": 1,
+        "lineNumbers": [
+          22
+        ],
+        "tableNames": [
+          "orders"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT DATE_FORMAT(`order_date`, :vtg1) AS `month`, COUNT(DISTINCT `customer_id`) AS `unique_customers`, count(*) AS `total_orders`, sum(`order_amount`) AS `total_sales` FROM `orders` GROUP BY DATE_FORMAT(`order_date`, :vtg1) ORDER BY DATE_FORMAT(`orders`.`order_date`, :vtg1) ASC",
+        "usageCount": 1,
+        "lineNumbers": [
+          23
+        ],
+        "tableNames": [
+          "orders"
+        ],
+        "statementType": "EXPLAIN"
+      },
+      {
+        "queryStructure": "SELECT `order_count`, count(*) AS `customer_count` FROM (SELECT `customer_id`, count(*) AS `order_count` FROM `orders` GROUP BY `customer_id`) AS `customer_orders` GROUP BY `order_count` ORDER BY `customer_orders`.`order_count` ASC",
+        "usageCount": 1,
+        "lineNumbers": [
+          24
+        ],
+        "tableNames": [
+          "orders"
+        ],
+        "groupingColumns": [
+          "orders.customer_id"
+        ],
+        "statementType": "SELECT"
+      },
+      {
+        "queryStructure": "VEXPLAIN TRACE SELECT `order_count`, count(*) AS `customer_count` FROM (SELECT `customer_id`, count(*) AS `order_count` FROM `orders` GROUP BY `customer_id`) AS `customer_orders` GROUP BY `order_count` ORDER BY `customer_orders`.`order_count` ASC",
+        "usageCount": 1,
+        "lineNumbers": [
+          25
+        ],
+        "tableNames": [
+          "orders"
+        ],
+        "groupingColumns": [
+          "orders.customer_id"
+        ],
+        "statementType": "EXPLAIN"
+      }
+    ]
+  }

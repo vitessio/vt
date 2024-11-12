@@ -74,6 +74,9 @@ vt trace slow-query.log > trace-log.json
 
 # Analyze MySQL general query log
 vt trace --input-type=mysql-log general-query.log > trace-log.json
+
+# Analyze VTGate query log
+vt trace --input-type=vtgate-log vtgate-querylog.log > trace-log.json
 ```
 
 Both types of trace logs can be analyzed using `vt summarize`:
@@ -97,6 +100,9 @@ Here's a typical workflow:
 
    # Analyze a MySQL general query log
    vt keys --input-type=mysql-log general-query.log > keys-log.json
+   
+   # Analyze VTGate query log
+   vt trace --input-type=vtgate-log vtgate-querylog.log > trace-log.json
    ```
 
 This command generates a `keys-log.json` file that contains a detailed analysis of table and column usage from the queries.
