@@ -39,23 +39,18 @@ type (
 		fd         *os.File
 	}
 
-	statefulLoader interface {
-		next() (Query, bool)
-		close() error
-	}
-
 	errLoader struct {
 		err error
 	}
 )
 
-var _ statefulLoader = (*errLoader)(nil)
+var _ IteratorLoader = (*errLoader)(nil)
 
-func (e *errLoader) close() error {
+func (e *errLoader) Close() error {
 	return e.err
 }
 
-func (e *errLoader) next() (Query, bool) {
+func (e *errLoader) Next() (Query, bool) {
 	return Query{}, false
 }
 
@@ -64,17 +59,17 @@ func (MySQLLogLoader) Load(fileName string) ([]Query, error) {
 
 	var queries []Query
 	for {
-		query, ok := loader.next()
+		query, ok := loader.Next()
 		if !ok {
 			break
 		}
 		queries = append(queries, query)
 	}
 
-	return queries, loader.close()
+	return queries, loader.Close()
 }
 
-func (s *mysqlLogReaderState) next() (Query, bool) {
+func (s *mysqlLogReaderState) Next() (Query, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -138,7 +133,7 @@ func (s *mysqlLogReaderState) next() (Query, bool) {
 	return Query{}, false
 }
 
-func (s *mysqlLogReaderState) close() error {
+func (s *mysqlLogReaderState) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -153,7 +148,7 @@ func (s *mysqlLogReaderState) close() error {
 	return s.err
 }
 
-func (MySQLLogLoader) Loadit(fileName string) statefulLoader {
+func (MySQLLogLoader) Loadit(fileName string) IteratorLoader {
 	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
 
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)

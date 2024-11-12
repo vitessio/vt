@@ -27,6 +27,14 @@ type (
 		Load(url string) ([]Query, error)
 	}
 
+	IteratorLoader interface {
+		// Next returns the next query in the log file. The boolean return value is false if there are no more queries.
+		Next() (Query, bool)
+
+		// Close closes the iterator. If any errors have been accumulated, they are returned here.
+		Close() error
+	}
+
 	Query struct {
 		FirstWord string
 		Query     string
