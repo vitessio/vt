@@ -24,33 +24,54 @@ import (
 	"sync"
 )
 
-type MySQLLogLoader struct{}
+type (
+	MySQLLogLoader struct{}
+
+	mysqlLogReaderState struct {
+		prevQuery  string
+		lineNumber int
+		queryStart int
+		scanner    *bufio.Scanner
+		err        error
+		closed     bool
+		mu         sync.Mutex
+		reg        *regexp.Regexp
+		fd         *os.File
+	}
+
+	statefulLoader interface {
+		next() (Query, bool)
+		close() error
+	}
+
+	errLoader struct {
+		err error
+	}
+)
+
+var _ statefulLoader = (*errLoader)(nil)
+
+func (e *errLoader) close() error {
+	return e.err
+}
+
+func (e *errLoader) next() (Query, bool) {
+	return Query{}, false
+}
 
 func (MySQLLogLoader) Load(fileName string) ([]Query, error) {
-	next, stop := MySQLLogLoader{}.Loadit(fileName)
+	loader := MySQLLogLoader{}.Loadit(fileName)
 
 	var queries []Query
 	for {
-		query, ok := next()
+		query, ok := loader.next()
 		if !ok {
 			break
 		}
 		queries = append(queries, query)
 	}
 
-	return queries, stop()
-}
-
-type mysqlLogReaderState struct {
-	prevQuery  string
-	lineNumber int
-	queryStart int
-	scanner    *bufio.Scanner
-	err        error
-	closed     bool
-	mu         sync.Mutex
-	reg        *regexp.Regexp
-	fd         *os.File
+	return queries, loader.close()
 }
 
 func (s *mysqlLogReaderState) next() (Query, bool) {
@@ -132,29 +153,19 @@ func (s *mysqlLogReaderState) close() error {
 	return s.err
 }
 
-func (MySQLLogLoader) Loadit(fileName string) (next func() (Query, bool), stop func() error) {
+func (MySQLLogLoader) Loadit(fileName string) statefulLoader {
 	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
 
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
-		return errFail(err)
+		return &errLoader{err}
 	}
 
 	scanner := bufio.NewScanner(fd)
 
-	s := &mysqlLogReaderState{
+	return &mysqlLogReaderState{
 		scanner: scanner,
 		reg:     reg,
 		fd:      fd,
 	}
-
-	return s.next, s.close
-}
-
-func errFail(err error) (next func() (Query, bool), stop func() error) {
-	return func() (Query, bool) {
-			return Query{}, false
-		}, func() error {
-			return err
-		}
 }
