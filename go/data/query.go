@@ -20,8 +20,6 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/vitessio/vt/go/typ"
 )
 
 type (
@@ -33,22 +31,22 @@ type (
 		FirstWord string
 		Query     string
 		Line      int
-		Type      typ.CmdType
+		Type      CmdType
 	}
 )
 
 // for a single query, it has some prefix. Prefix mapps to a query type.
 // e.g query_vertical maps to typ.Q_QUERY_VERTICAL
 func (q *Query) getQueryType(qu string) error {
-	tp := typ.FindType(q.FirstWord)
+	tp := FindType(q.FirstWord)
 	if tp > 0 {
 		q.Type = tp
 	} else {
 		// No mysqltest command matched
-		if q.Type != typ.CommentWithCommand {
+		if q.Type != CommentWithCommand {
 			// A query that will sent to vitess
 			q.Query = qu
-			q.Type = typ.Query
+			q.Type = QueryT
 		} else {
 			log.WithFields(log.Fields{"line": q.Line, "command": q.FirstWord, "arguments": q.Query}).Error("invalid command")
 			return fmt.Errorf("invalid command %s", q.FirstWord)

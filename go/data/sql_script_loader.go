@@ -23,8 +23,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/vitessio/vt/go/typ"
 )
 
 type SQLScriptLoader struct{}
@@ -88,7 +86,7 @@ func parseQuery(rs Query) (*Query, error) {
 	realS := rs.Query
 	s := rs.Query
 	q := Query{}
-	q.Type = typ.Unknown
+	q.Type = Unknown
 	q.Line = rs.Line
 	// a valid Query's length should be at least 3.
 	if len(s) < 3 {
@@ -97,20 +95,20 @@ func parseQuery(rs Query) (*Query, error) {
 	// we will skip #comment and line with zero characters here
 	switch {
 	case s[0] == '#':
-		q.Type = typ.Comment
+		q.Type = Comment
 		return &q, nil
 	case s[0:2] == "--":
-		q.Type = typ.CommentWithCommand
+		q.Type = CommentWithCommand
 		if s[2] == ' ' {
 			s = s[3:]
 		} else {
 			s = s[2:]
 		}
 	case s[0] == '\n':
-		q.Type = typ.EmptyLine
+		q.Type = EmptyLine
 	}
 
-	if q.Type == typ.Comment {
+	if q.Type == Comment {
 		return &q, nil
 	}
 
@@ -122,7 +120,7 @@ func parseQuery(rs Query) (*Query, error) {
 	s = s[i:]
 
 	q.Query = s
-	if q.Type == typ.Unknown || q.Type == typ.CommentWithCommand {
+	if q.Type == Unknown || q.Type == CommentWithCommand {
 		if err := q.getQueryType(realS); err != nil {
 			return nil, err
 		}

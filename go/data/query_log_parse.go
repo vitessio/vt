@@ -20,8 +20,6 @@ import (
 	"bufio"
 	"os"
 	"regexp"
-
-	"github.com/vitessio/vt/go/typ"
 )
 
 type MySQLLogLoader struct{}
@@ -63,7 +61,7 @@ func (MySQLLogLoader) Load(fileName string) (queries []Query, err error) {
 			queries = append(queries, Query{
 				Query: prevQuery,
 				Line:  queryStart,
-				Type:  typ.Query,
+				Type:  QueryT,
 			})
 			prevQuery = ""
 		}

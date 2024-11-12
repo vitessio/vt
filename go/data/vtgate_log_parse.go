@@ -28,8 +28,6 @@ import (
 	"vitess.io/vitess/go/sqltypes"
 	querypb "vitess.io/vitess/go/vt/proto/query"
 	"vitess.io/vitess/go/vt/sqlparser"
-
-	"github.com/vitessio/vt/go/typ"
 )
 
 type bindVarsVtGate struct {
@@ -70,7 +68,7 @@ func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
 				queries = append(queries, Query{
 					Query: query,
 					Line:  lineNumber,
-					Type:  typ.Query,
+					Type:  QueryT,
 				})
 				continue
 			}
@@ -93,7 +91,7 @@ func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
 			queries = append(queries, Query{
 				Query: parsedQuery,
 				Line:  lineNumber,
-				Type:  typ.Query,
+				Type:  QueryT,
 			})
 		} else {
 			return nil, fmt.Errorf("line %d: cannot parse log: %s", lineNumber, line)
