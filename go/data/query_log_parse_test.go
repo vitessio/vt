@@ -23,7 +23,54 @@ import (
 )
 
 func TestParseMySQLQueryLog(t *testing.T) {
-	gotQueries, err := MySQLLogLoader{}.Load("./testdata/mysql.query.log")
+	loader := MySQLLogLoader{}.Load("./testdata/mysql.query.log")
+	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
-	require.Len(t, gotQueries, 1516)
+	require.Equal(t, 1517, len(gotQueries), "expected 1517 queries") //nolint:testifylint // too many elements for the output to be readable
+}
+
+func TestSmallSnippet(t *testing.T) {
+	loader := MySQLLogLoader{}.Load("./testdata/mysql.small-query.log")
+	gotQueries, err := makeSlice(loader)
+	require.NoError(t, err)
+	expected := []Query{
+		{
+			Query: "SET GLOBAL log_output = 'FILE'",
+			Line:  4,
+			Type:  QueryT,
+		}, {
+			Query: "show databases",
+			Line:  5,
+			Type:  QueryT,
+		}, {
+			Query: `UPDATE _vt.schema_migrations
+SET
+	migration_status='queued',
+	tablet='test_misc-0000004915',
+	retries=retries + 1,
+	tablet_failure=0,
+	message='',
+	stage='',
+	cutover_attempts=0,
+	ready_timestamp=NULL,
+	started_timestamp=NULL,
+	liveness_timestamp=NULL,
+	cancelled_timestamp=NULL,
+	completed_timestamp=NULL,
+	last_cutover_attempt_timestamp=NULL,
+	cleanup_timestamp=NULL
+WHERE
+	migration_status IN ('failed', 'cancelled')
+	AND (
+        tablet_failure=1
+        AND migration_status='failed'
+        AND retries=0
+    )
+LIMIT 1`,
+			Line: 6,
+			Type: QueryT,
+		},
+	}
+
+	require.Equal(t, expected, gotQueries)
 }

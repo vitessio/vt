@@ -120,11 +120,11 @@ nation ↔ supplier (Occurrences: 6)
 lineitem ↔ supplier (Occurrences: 5)
 └─ lineitem.l_suppkey = supplier.s_suppkey
 
-lineitem ↔ part (Occurrences: 3)
-└─ lineitem.l_partkey = part.p_partkey
-
 customer ↔ nation (Occurrences: 3)
 └─ customer.c_nationkey = nation.n_nationkey
+
+lineitem ↔ part (Occurrences: 3)
+└─ lineitem.l_partkey = part.p_partkey
 
 lineitem ↔ lineitem (Occurrences: 2)
 ├─ lineitem.l_orderkey = lineitem.l_orderkey
@@ -137,14 +137,14 @@ lineitem ↔ partsupp (Occurrences: 2)
 nation ↔ region (Occurrences: 2)
 └─ nation.n_regionkey = region.r_regionkey
 
-partsupp ↔ supplier (Occurrences: 1)
-└─ partsupp.ps_suppkey = supplier.s_suppkey
+customer ↔ supplier (Occurrences: 1)
+└─ customer.c_nationkey = supplier.s_nationkey
 
 part ↔ partsupp (Occurrences: 1)
 └─ part.p_partkey = partsupp.ps_partkey
 
-customer ↔ supplier (Occurrences: 1)
-└─ customer.c_nationkey = supplier.s_nationkey
+partsupp ↔ supplier (Occurrences: 1)
+└─ partsupp.ps_suppkey = supplier.s_suppkey
 
 ```
 ## Failures

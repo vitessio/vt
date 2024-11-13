@@ -34,7 +34,6 @@ import (
 
 	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/tester/state"
-	"github.com/vitessio/vt/go/typ"
 )
 
 type (
@@ -180,27 +179,27 @@ func (t *Tester) prepareVExplain(q string) {
 func (t *Tester) handleQuery(q data.Query) {
 	var err error
 	switch q.Type {
-	case typ.Skip:
+	case data.Skip:
 		err = t.state.SetSkipNext()
-	case typ.SkipIfBelowVersion:
+	case data.SkipIfBelowVersion:
 		t.skipIfBelow(q.Query)
-	case typ.Error:
+	case data.Error:
 		err = t.state.SetErrorExpected()
-	case typ.VExplain:
+	case data.VExplain:
 		t.prepareVExplain(q.Query)
-	case typ.WaitForAuthoritative:
+	case data.WaitForAuthoritative:
 		t.waitAuthoritative(q.Query)
-	case typ.Query:
+	case data.QueryT:
 		if t.vexplain == "" {
 			t.runQuery(q)
 			return
 		}
 		t.runVexplain(q.Query)
-	case typ.VitessOnly:
+	case data.VitessOnly:
 		err = vitessOrMySQLOnly(q.Query, t.state.BeginVitessOnly, t.state.EndVitessOnly)
-	case typ.MysqlOnly:
+	case data.MysqlOnly:
 		err = vitessOrMySQLOnly(q.Query, t.state.BeginMySQLOnly, t.state.EndMySQLOnly)
-	case typ.Reference:
+	case data.Reference:
 		err = t.state.SetReference()
 	default:
 		t.reporter.AddFailure(fmt.Errorf("%s not supported", q.Type.String()))
@@ -224,15 +223,22 @@ func (t *Tester) Run() (err error) {
 			err = errors.Join(err, postErr)
 		}()
 	}
-	queries, err := t.loader.Load(t.name)
+
+	loader := t.loader.Load(t.name)
+	for {
+		query, kontinue := loader.Next()
+		if !kontinue {
+			break
+		}
+		t.handleQuery(query)
+	}
+
+	err = loader.Close()
 	if err != nil {
 		t.reporter.AddFailure(err)
 		return err
 	}
 
-	for _, q := range queries {
-		t.handleQuery(q)
-	}
 	fmt.Printf("%s\n", t.reporter.Report())
 
 	return nil

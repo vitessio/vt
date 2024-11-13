@@ -30,7 +30,6 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/semantics"
 
 	"github.com/vitessio/vt/go/data"
-	"github.com/vitessio/vt/go/typ"
 )
 
 type Config struct {
@@ -50,27 +49,33 @@ func run(out io.Writer, cfg Config) error {
 		queries: make(map[string]*QueryAnalysisResult),
 		failed:  make(map[string]*QueryFailedResult),
 	}
-	queries, err := cfg.Loader.Load(cfg.FileName)
-	if err != nil {
-		return err
-	}
 
+	loader := cfg.Loader.Load(cfg.FileName)
 	skip := false
-	for _, query := range queries {
+	for {
+		query, kontinue := loader.Next()
+		if !kontinue {
+			break
+		}
+
 		switch query.Type {
-		case typ.Skip, typ.Error, typ.VExplain:
+		case data.Skip, data.Error, data.VExplain:
 			skip = true
-		case typ.Unknown:
+		case data.Unknown:
 			return fmt.Errorf("unknown command type: %s", query.Type)
-		case typ.Comment, typ.CommentWithCommand, typ.EmptyLine, typ.WaitForAuthoritative, typ.SkipIfBelowVersion:
+		case data.Comment, data.CommentWithCommand, data.EmptyLine, data.WaitForAuthoritative, data.SkipIfBelowVersion:
 			// no-op for keys
-		case typ.Query:
+		case data.QueryT:
 			if skip {
 				skip = false
 				continue
 			}
 			process(query, si, ql)
 		}
+	}
+
+	if err := loader.Close(); err != nil {
+		return err
 	}
 
 	return ql.writeJSONTo(out)

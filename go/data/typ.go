@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package typ
+package data
 
 import "strings"
 
 type CmdType int
 
 const (
-	Query CmdType = iota
+	QueryT CmdType = iota
 	Error
 	Skip
 	Unknown
@@ -37,7 +37,7 @@ const (
 )
 
 var commandMap = map[string]CmdType{ //nolint:gochecknoglobals // this is instead of a const
-	"query":                 Query,
+	"query":                 QueryT,
 	"error":                 Error,
 	"skip":                  Skip,
 	"skip_if_below_version": SkipIfBelowVersion,

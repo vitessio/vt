@@ -17,112 +17,155 @@ limitations under the License.
 package data
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/vitessio/vt/go/typ"
 )
 
 type SQLScriptLoader struct{}
 
-func readData(url string) ([]byte, error) {
-	if strings.HasPrefix(url, "http") {
-		client := http.Client{}
-		res, err := client.Get(url)
-		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("failed to get data from %s, status code %d", url, res.StatusCode)
-		}
-		defer res.Body.Close()
-		return io.ReadAll(res.Body)
-	}
-	return os.ReadFile(url)
+type sqlLogReaderState struct {
+	logReaderState
 }
 
-func (SQLScriptLoader) Load(url string) ([]Query, error) {
-	data, err := readData(url)
-	if err != nil {
-		return nil, err
+func (s *sqlLogReaderState) Next() (Query, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.closed || s.err != nil {
+		return Query{}, false
 	}
-	seps := bytes.Split(data, []byte("\n"))
-	queries := make([]Query, 0, len(seps))
+
+	var currentQuery Query
 	newStmt := true
-	for i, v := range seps {
-		v := bytes.TrimSpace(v)
-		s := string(v)
-		// we will skip # comment here
+	for s.scanner.Scan() {
+		s.lineNumber++
+		line := s.scanner.Text()
+		line = strings.TrimSpace(line)
+
 		switch {
-		case strings.HasPrefix(s, "#"):
+		case len(line) == 0:
+			continue
+		case strings.HasPrefix(line, "#"):
+			continue
+		case strings.HasPrefix(line, "--"):
 			newStmt = true
-			continue
-		case strings.HasPrefix(s, "--"):
-			queries = append(queries, Query{Query: s, Line: i + 1})
-			newStmt = true
-			continue
-		case len(s) == 0:
-			continue
+			q := Query{Query: line, Line: s.lineNumber}
+			pq, err := parseQuery(q)
+			if err != nil {
+				s.err = err
+				return Query{}, false
+			}
+			if pq == nil {
+				continue
+			}
+			return *pq, true
 		}
 
 		if newStmt {
-			queries = append(queries, Query{Query: s, Line: i + 1})
+			currentQuery = Query{Query: line, Line: s.lineNumber}
 		} else {
-			lastQuery := queries[len(queries)-1]
-			lastQuery = Query{Query: fmt.Sprintf("%s\n%s", lastQuery.Query, s), Line: lastQuery.Line}
-			queries[len(queries)-1] = lastQuery
+			currentQuery.Query = fmt.Sprintf("%s\n%s", currentQuery.Query, line)
 		}
 
-		// if the line has a ; in the end, we will treat new line as the new statement.
-		newStmt = strings.HasSuffix(s, ";")
+		// Treat new line as a new statement if line ends with ';'
+		newStmt = strings.HasSuffix(line, ";")
+		if newStmt {
+			pq, err := parseQuery(currentQuery)
+			if err != nil {
+				s.err = err
+				return Query{}, false
+			}
+			if pq == nil {
+				continue
+			}
+			return *pq, true
+		}
 	}
-
-	return ParseQueries(queries...)
+	if !newStmt {
+		s.err = errors.New("EOF: missing semicolon")
+	}
+	return Query{}, false
 }
 
+func readData(url string) ([]byte, error) {
+	client := http.Client{}
+	res, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get data from %s, status code %d", url, res.StatusCode)
+	}
+	defer res.Body.Close()
+	return io.ReadAll(res.Body)
+}
+
+func (SQLScriptLoader) Load(filename string) IteratorLoader {
+	var scanner *bufio.Scanner
+	var fd *os.File
+
+	if strings.HasPrefix(filename, "http") {
+		data, err := readData(filename)
+		if err != nil {
+			return &errLoader{err: err}
+		}
+		scanner = bufio.NewScanner(bytes.NewReader(data))
+	} else {
+		var err error
+		fd, err = os.OpenFile(filename, os.O_RDONLY, 0)
+		if err != nil {
+			return &errLoader{err: err}
+		}
+		scanner = bufio.NewScanner(fd)
+	}
+
+	return &sqlLogReaderState{
+		logReaderState: logReaderState{
+			scanner: scanner,
+			fd:      fd,
+		},
+	}
+}
+
+// Helper function to parse individual queries
 func parseQuery(rs Query) (*Query, error) {
 	realS := rs.Query
 	s := rs.Query
-	q := Query{}
-	q.Type = typ.Unknown
-	q.Line = rs.Line
-	// a valid Query's length should be at least 3.
+	q := Query{Line: rs.Line, Type: Unknown}
+
 	if len(s) < 3 {
 		return nil, nil
 	}
-	// we will skip #comment and line with zero characters here
+
 	switch {
-	case s[0] == '#':
-		q.Type = typ.Comment
+	case strings.HasPrefix(s, "#"):
+		q.Type = Comment
 		return &q, nil
-	case s[0:2] == "--":
-		q.Type = typ.CommentWithCommand
-		if s[2] == ' ' {
+	case strings.HasPrefix(s, "--"):
+		q.Type = CommentWithCommand
+		if len(s) > 2 && s[2] == ' ' {
 			s = s[3:]
 		} else {
 			s = s[2:]
 		}
 	case s[0] == '\n':
-		q.Type = typ.EmptyLine
-	}
-
-	if q.Type == typ.Comment {
+		q.Type = EmptyLine
 		return &q, nil
 	}
 
 	i := findFirstWord(s)
-
 	if i > 0 {
 		q.FirstWord = s[:i]
 	}
-	s = s[i:]
+	q.Query = s[i:]
 
-	q.Query = s
-	if q.Type == typ.Unknown || q.Type == typ.CommentWithCommand {
+	if q.Type == Unknown || q.Type == CommentWithCommand {
 		if err := q.getQueryType(realS); err != nil {
 			return nil, err
 		}
@@ -131,32 +174,11 @@ func parseQuery(rs Query) (*Query, error) {
 	return &q, nil
 }
 
-// findFirstWord will calculate first word length(the command), terminated
-// by 'space' , '(' or 'delimiter'
-func findFirstWord(s string) (i int) {
-	for {
-		if !(i < len(s) && s[i] != '(' && s[i] != ' ' && s[i] != ';') || s[i] == '\n' {
-			break
-		}
+// findFirstWord calculates the length of the first word in the string
+func findFirstWord(s string) int {
+	i := 0
+	for i < len(s) && s[i] != '(' && s[i] != ' ' && s[i] != ';' && s[i] != '\n' {
 		i++
 	}
-	return
-}
-
-// ParseQueries parses an array of string into an array of Query object.
-// Note: a Query statement may reside in several lines.
-func ParseQueries(qs ...Query) ([]Query, error) {
-	queries := make([]Query, 0, len(qs))
-	for _, rs := range qs {
-		q, err := parseQuery(rs)
-		if err != nil {
-			return nil, err
-		}
-		if q == nil {
-			continue
-		}
-
-		queries = append(queries, *q)
-	}
-	return queries, nil
+	return i
 }
