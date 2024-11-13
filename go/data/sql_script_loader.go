@@ -52,7 +52,6 @@ func (s *sqlLogReaderState) Next() (Query, bool) {
 		case len(line) == 0:
 			continue
 		case strings.HasPrefix(line, "#"):
-			newStmt = true
 			continue
 		case strings.HasPrefix(line, "--"):
 			newStmt = true

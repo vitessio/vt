@@ -527,7 +527,7 @@
         "query": "I am a failing query;",
         "lineNumbers": [
           463,
-          781
+          782
         ],
         "error": "syntax error at position 2 near 'I'"
       }
