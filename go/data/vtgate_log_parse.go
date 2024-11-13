@@ -30,80 +30,108 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
-type bindVarsVtGate struct {
-	Type  string `json:"type,omitempty"`
-	Value any    `json:"value,omitempty"`
-}
+type (
+	bindVarsVtGate struct {
+		Type  string `json:"type,omitempty"`
+		Value any    `json:"value,omitempty"`
+	}
+	VtGateLogLoader struct {
+		NeedsBindVars bool
+	}
 
-type VtGateLogLoader struct {
-	NeedsBindVars bool
-}
+	vtgateLogReaderState struct {
+		logReaderState
+		NeedsBindVars bool
+	}
+)
 
-func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
+func (vll VtGateLogLoader) Loadit(fileName string) IteratorLoader {
 	reg := regexp.MustCompile(`\t"([^"]+)"\t(\{(?:[^{}]|(?:\{[^{}]*\}))*\}|"[^"]+")`)
-
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
-		return nil, err
+		return &errLoader{err: err}
 	}
-	defer fd.Close()
 
 	scanner := bufio.NewScanner(fd)
 
-	lineNumber := 0
-	for scanner.Scan() {
-		lineNumber++
+	return &vtgateLogReaderState{
+		logReaderState: logReaderState{
+			scanner: scanner,
+			reg:     reg,
+			fd:      fd,
+		},
+		NeedsBindVars: vll.NeedsBindVars,
+	}
+}
 
-		line := scanner.Text()
+func (s *vtgateLogReaderState) fail(err error) {
+	s.err = err
+}
+
+func (s *vtgateLogReaderState) Next() (Query, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.closed || s.err != nil {
+		return Query{}, false
+	}
+
+	for s.scanner.Scan() {
+		s.lineNumber++
+		line := s.scanner.Text()
+
 		if len(line) == 0 {
 			continue
 		}
 		line = strings.ReplaceAll(line, "\\n", "")
-
 		// Find the match
-		match := reg.FindStringSubmatch(line)
-		if len(match) > 2 {
-			query := match[1]
-			if !vll.NeedsBindVars {
-				queries = append(queries, Query{
-					Query: query,
-					Line:  lineNumber,
-					Type:  QueryT,
-				})
-				continue
-			}
-
-			// If we care about bind variables (e.g. running 'trace') then we parse the query log
-			// output into bindVarsVtGate, we then transform it into something the Vitess library
-			// can understand (aka: map[string]*querypb.BindVariable), we then parse the query string
-			// and add the bind variables to it.
-			bindVarsRaw := match[2]
-			bvs, err := getBindVariables(bindVarsRaw, lineNumber)
-			if err != nil {
-				return nil, err
-			}
-
-			parsedQuery, err := addBindVarsToQuery(query, bvs)
-			if err != nil {
-				return nil, err
-			}
-
-			queries = append(queries, Query{
-				Query: parsedQuery,
-				Line:  lineNumber,
-				Type:  QueryT,
-			})
-		} else {
-			return nil, fmt.Errorf("line %d: cannot parse log: %s", lineNumber, line)
+		match := s.reg.FindStringSubmatch(line)
+		if len(match) <= 2 {
+			s.fail(fmt.Errorf("line %d: cannot parse log: %s", s.lineNumber, line))
+			return Query{}, false
 		}
+
+		query := match[1]
+		if !s.NeedsBindVars {
+			return Query{
+				Query: query,
+				Line:  s.lineNumber,
+				Type:  QueryT,
+			}, true
+		}
+
+		// If we care about bind variables (e.g. running 'trace') then we parse the query log
+		// output into bindVarsVtGate, we then transform it into something the Vitess library
+		// can understand (aka: map[string]*querypb.BindVariable), we then parse the query string
+		// and add the bind variables to it.
+		bindVarsRaw := match[2]
+		bvs, err := getBindVariables(bindVarsRaw, s.lineNumber)
+		if err != nil {
+			s.fail(err)
+			return Query{}, false
+		}
+
+		parsedQuery, err := addBindVarsToQuery(query, bvs)
+		if err != nil {
+			s.fail(err)
+			return Query{}, false
+		}
+
+		return Query{
+			Query: parsedQuery,
+			Line:  s.lineNumber,
+			Type:  QueryT,
+		}, true
 	}
 
-	// Check for any errors that occurred during the scan
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
+	s.closed = true
 
-	return
+	return Query{}, false
+}
+
+func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
+	loader := vll.Loadit(fileName)
+	return makeSlice(loader)
 }
 
 func addBindVarsToQuery(query string, bvs map[string]*querypb.BindVariable) (string, error) {

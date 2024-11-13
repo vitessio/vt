@@ -41,6 +41,10 @@ type (
 		Line      int
 		Type      CmdType
 	}
+
+	errLoader struct {
+		err error
+	}
 )
 
 // for a single query, it has some prefix. Prefix mapps to a query type.
@@ -61,4 +65,14 @@ func (q *Query) getQueryType(qu string) error {
 		}
 	}
 	return nil
+}
+
+var _ IteratorLoader = (*errLoader)(nil)
+
+func (e *errLoader) Close() error {
+	return e.err
+}
+
+func (e *errLoader) Next() (Query, bool) {
+	return Query{}, false
 }

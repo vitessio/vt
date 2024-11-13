@@ -267,7 +267,13 @@ func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
 	}
 
 	sort.Slice(joins, func(i, j int) bool {
-		return joins[i].Occurrences > joins[j].Occurrences
+		if joins[i].Occurrences != joins[j].Occurrences {
+			return joins[i].Occurrences > joins[j].Occurrences
+		}
+		if joins[i].Tbl1 != joins[j].Tbl1 {
+			return joins[i].Tbl1 < joins[j].Tbl1
+		}
+		return joins[i].Tbl2 < joins[j].Tbl2
 	})
 
 	md.Println("```")

@@ -27,36 +27,30 @@ import (
 type (
 	MySQLLogLoader struct{}
 
-	mysqlLogReaderState struct {
-		prevQuery  string
-		lineNumber int
-		queryStart int
-		scanner    *bufio.Scanner
-		err        error
-		closed     bool
-		mu         sync.Mutex
-		reg        *regexp.Regexp
+	logReaderState struct {
 		fd         *os.File
+		scanner    *bufio.Scanner
+		reg        *regexp.Regexp
+		mu         sync.Mutex
+		lineNumber int
+		closed     bool
+		err        error
 	}
 
-	errLoader struct {
-		err error
+	mysqlLogReaderState struct {
+		logReaderState
+		prevQuery  string
+		queryStart int
 	}
 )
-
-var _ IteratorLoader = (*errLoader)(nil)
-
-func (e *errLoader) Close() error {
-	return e.err
-}
-
-func (e *errLoader) Next() (Query, bool) {
-	return Query{}, false
-}
 
 func (MySQLLogLoader) Load(fileName string) ([]Query, error) {
 	loader := MySQLLogLoader{}.Loadit(fileName)
 
+	return makeSlice(loader)
+}
+
+func makeSlice(loader IteratorLoader) ([]Query, error) {
 	var queries []Query
 	for {
 		query, ok := loader.Next()
@@ -133,7 +127,7 @@ func (s *mysqlLogReaderState) Next() (Query, bool) {
 	return Query{}, false
 }
 
-func (s *mysqlLogReaderState) Close() error {
+func (s *logReaderState) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -148,6 +142,15 @@ func (s *mysqlLogReaderState) Close() error {
 	return s.err
 }
 
+func (s *logReaderState) NextLine() (string, bool) {
+	more := s.scanner.Scan()
+	if !more {
+		return "", false
+	}
+
+	return s.scanner.Text(), true
+}
+
 func (MySQLLogLoader) Loadit(fileName string) IteratorLoader {
 	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
 
@@ -159,8 +162,10 @@ func (MySQLLogLoader) Loadit(fileName string) IteratorLoader {
 	scanner := bufio.NewScanner(fd)
 
 	return &mysqlLogReaderState{
-		scanner: scanner,
-		reg:     reg,
-		fd:      fd,
+		logReaderState: logReaderState{
+			scanner: scanner,
+			reg:     reg,
+			fd:      fd,
+		},
 	}
 }
