@@ -17,7 +17,9 @@ limitations under the License.
 package data
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -27,70 +29,114 @@ import (
 
 type SQLScriptLoader struct{}
 
-func readData(url string) ([]byte, error) {
-	if strings.HasPrefix(url, "http") {
-		client := http.Client{}
-		res, err := client.Get(url)
-		if err != nil {
-			return nil, err
-		}
-		if res.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("failed to get data from %s, status code %d", url, res.StatusCode)
-		}
-		defer res.Body.Close()
-		return io.ReadAll(res.Body)
-	}
-	return os.ReadFile(url)
+type sqlLogReaderState struct {
+	logReaderState
 }
 
-func (SQLScriptLoader) Load(url string) ([]Query, error) {
-	data, err := readData(url)
-	if err != nil {
-		return nil, err
+func (s *sqlLogReaderState) Next() (Query, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.closed || s.err != nil {
+		return Query{}, false
 	}
-	seps := bytes.Split(data, []byte("\n"))
-	queries := make([]Query, 0, len(seps))
+
+	var currentQuery Query
 	newStmt := true
-	for i, v := range seps {
-		v := bytes.TrimSpace(v)
-		s := string(v)
-		// Skip comments and empty lines
+	for s.scanner.Scan() {
+		s.lineNumber++
+		line := s.scanner.Text()
+		line = strings.TrimSpace(line)
+
 		switch {
-		case strings.HasPrefix(s, "#"):
+		case len(line) == 0:
+			continue
+		case strings.HasPrefix(line, "#"):
 			newStmt = true
 			continue
-		case strings.HasPrefix(s, "--"):
-			queries = append(queries, Query{Query: s, Line: i + 1})
+		case strings.HasPrefix(line, "--"):
 			newStmt = true
-			continue
-		case len(s) == 0:
-			continue
+			q := Query{Query: line, Line: s.lineNumber}
+			pq, err := parseQuery(q)
+			if err != nil {
+				s.err = err
+				return Query{}, false
+			}
+			if pq == nil {
+				continue
+			}
+			return *pq, true
 		}
 
 		if newStmt {
-			queries = append(queries, Query{Query: s, Line: i + 1})
+			currentQuery = Query{Query: line, Line: s.lineNumber}
 		} else {
-			lastQuery := queries[len(queries)-1]
-			lastQuery.Query = fmt.Sprintf("%s\n%s", lastQuery.Query, s)
-			queries[len(queries)-1] = lastQuery
+			currentQuery.Query = fmt.Sprintf("%s\n%s", currentQuery.Query, line)
 		}
 
 		// Treat new line as a new statement if line ends with ';'
-		newStmt = strings.HasSuffix(s, ";")
+		newStmt = strings.HasSuffix(line, ";")
+		if newStmt {
+			pq, err := parseQuery(currentQuery)
+			if err != nil {
+				s.err = err
+				return Query{}, false
+			}
+			if pq == nil {
+				continue
+			}
+			return *pq, true
+		}
+	}
+	if !newStmt {
+		s.err = errors.New("EOF: missing semicolon")
+	}
+	return Query{}, false
+}
+
+func readData(url string) ([]byte, error) {
+	client := http.Client{}
+	res, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get data from %s, status code %d", url, res.StatusCode)
+	}
+	defer res.Body.Close()
+	return io.ReadAll(res.Body)
+}
+
+func (SQLScriptLoader) Loadit(filename string) IteratorLoader {
+	var scanner *bufio.Scanner
+	var fd *os.File
+
+	if strings.HasPrefix(filename, "http") {
+		data, err := readData(filename)
+		if err != nil {
+			return &errLoader{err: err}
+		}
+		scanner = bufio.NewScanner(bytes.NewReader(data))
+	} else {
+		var err error
+		fd, err = os.OpenFile(filename, os.O_RDONLY, 0)
+		if err != nil {
+			return &errLoader{err: err}
+		}
+		scanner = bufio.NewScanner(fd)
 	}
 
-	// Process queries directly without calling ParseQueries
-	finalQueries := make([]Query, 0, len(queries))
-	for _, rs := range queries {
-		q, err := parseQuery(rs)
-		if err != nil {
-			return nil, err
-		}
-		if q != nil {
-			finalQueries = append(finalQueries, *q)
-		}
+	return &sqlLogReaderState{
+		logReaderState: logReaderState{
+			scanner: scanner,
+			fd:      fd,
+		},
 	}
-	return finalQueries, nil
+}
+
+func (SQLScriptLoader) Load(url string) ([]Query, error) {
+	loader := SQLScriptLoader{}.Loadit(url)
+	return makeSlice(loader)
 }
 
 // Helper function to parse individual queries

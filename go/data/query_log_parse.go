@@ -131,7 +131,7 @@ func (s *logReaderState) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if !s.closed {
+	if !s.closed && s.fd != nil {
 		ferr := s.fd.Close()
 		if ferr != nil {
 			s.err = errors.Join(s.err, ferr)
