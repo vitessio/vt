@@ -61,7 +61,7 @@ func addInputTypeFlag(cmd *cobra.Command, s *string) {
 func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) {
 	switch inputType {
 	case "sql":
-		return data.SQLScriptLoader{}, nil
+		return data.SlowQueryLogLoader{}, nil
 	case "mysql-log":
 		return data.MySQLLogLoader{}, nil
 	case "vtgate-log":

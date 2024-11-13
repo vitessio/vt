@@ -138,6 +138,10 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 	if found {
 		r.UsageCount++
 		r.LineNumbers = append(r.LineNumbers, q.Line)
+		r.QueryTime += q.QueryTime
+		r.LockTime += q.LockTime
+		r.RowsSent += q.RowsSent
+		r.RowsExamined += q.RowsExamined
 		return
 	}
 
@@ -160,6 +164,11 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 		GroupingColumns: result.GroupingColumns,
 		JoinPredicates:  result.JoinPredicates,
 		FilterColumns:   result.FilterColumns,
+		QueryTime:       q.QueryTime,
+		LockTime:        q.LockTime,
+		RowsSent:        q.RowsSent,
+		RowsExamined:    q.RowsExamined,
+		Timestamp:       q.Timestamp,
 	}
 }
 
@@ -223,6 +232,11 @@ type QueryAnalysisResult struct {
 	JoinPredicates  []operators.JoinPredicate `json:"joinPredicates,omitempty"`
 	FilterColumns   []operators.ColumnUse     `json:"filterColumns,omitempty"`
 	StatementType   string                    `json:"statementType"`
+	QueryTime       float64                   `json:"queryTime,omitempty"`
+	LockTime        float64                   `json:"lockTime,omitempty"`
+	RowsSent        int                       `json:"rowsSent,omitempty"`
+	RowsExamined    int                       `json:"rowsExamined,omitempty"`
+	Timestamp       int64                     `json:"timestamp,omitempty"`
 }
 
 type QueryFailedResult struct {

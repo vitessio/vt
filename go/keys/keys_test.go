@@ -34,7 +34,7 @@ func TestKeys(t *testing.T) {
 		{
 			cfg: Config{
 				FileName: "../../t/tpch_failing_queries.test",
-				Loader:   data.SQLScriptLoader{},
+				Loader:   data.SlowQueryLogLoader{},
 			},
 			expectedFile: "../summarize/testdata/keys-log.json",
 		},
@@ -44,6 +44,13 @@ func TestKeys(t *testing.T) {
 				Loader:   data.VtGateLogLoader{NeedsBindVars: false},
 			},
 			expectedFile: "../summarize/testdata/keys-log-vtgate.json",
+		},
+		{
+			cfg: Config{
+				FileName: "../data/testdata/slow_query_log",
+				Loader:   data.SlowQueryLogLoader{},
+			},
+			expectedFile: "../summarize/testdata/slow-query-log.json",
 		},
 	}
 
