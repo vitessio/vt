@@ -54,7 +54,7 @@ func (SQLScriptLoader) Load(url string) ([]Query, error) {
 	for i, v := range seps {
 		v := bytes.TrimSpace(v)
 		s := string(v)
-		// we will skip # comment here
+		// Skip comments and empty lines
 		switch {
 		case strings.HasPrefix(s, "#"):
 			newStmt = true
@@ -71,55 +71,60 @@ func (SQLScriptLoader) Load(url string) ([]Query, error) {
 			queries = append(queries, Query{Query: s, Line: i + 1})
 		} else {
 			lastQuery := queries[len(queries)-1]
-			lastQuery = Query{Query: fmt.Sprintf("%s\n%s", lastQuery.Query, s), Line: lastQuery.Line}
+			lastQuery.Query = fmt.Sprintf("%s\n%s", lastQuery.Query, s)
 			queries[len(queries)-1] = lastQuery
 		}
 
-		// if the line has a ; in the end, we will treat new line as the new statement.
+		// Treat new line as a new statement if line ends with ';'
 		newStmt = strings.HasSuffix(s, ";")
 	}
 
-	return ParseQueries(queries...)
+	// Process queries directly without calling ParseQueries
+	finalQueries := make([]Query, 0, len(queries))
+	for _, rs := range queries {
+		q, err := parseQuery(rs)
+		if err != nil {
+			return nil, err
+		}
+		if q != nil {
+			finalQueries = append(finalQueries, *q)
+		}
+	}
+	return finalQueries, nil
 }
 
+// Helper function to parse individual queries
 func parseQuery(rs Query) (*Query, error) {
 	realS := rs.Query
 	s := rs.Query
-	q := Query{}
-	q.Type = Unknown
-	q.Line = rs.Line
-	// a valid Query's length should be at least 3.
+	q := Query{Line: rs.Line, Type: Unknown}
+
 	if len(s) < 3 {
 		return nil, nil
 	}
-	// we will skip #comment and line with zero characters here
+
 	switch {
-	case s[0] == '#':
+	case strings.HasPrefix(s, "#"):
 		q.Type = Comment
 		return &q, nil
-	case s[0:2] == "--":
+	case strings.HasPrefix(s, "--"):
 		q.Type = CommentWithCommand
-		if s[2] == ' ' {
+		if len(s) > 2 && s[2] == ' ' {
 			s = s[3:]
 		} else {
 			s = s[2:]
 		}
 	case s[0] == '\n':
 		q.Type = EmptyLine
-	}
-
-	if q.Type == Comment {
 		return &q, nil
 	}
 
 	i := findFirstWord(s)
-
 	if i > 0 {
 		q.FirstWord = s[:i]
 	}
-	s = s[i:]
+	q.Query = s[i:]
 
-	q.Query = s
 	if q.Type == Unknown || q.Type == CommentWithCommand {
 		if err := q.getQueryType(realS); err != nil {
 			return nil, err
@@ -129,32 +134,11 @@ func parseQuery(rs Query) (*Query, error) {
 	return &q, nil
 }
 
-// findFirstWord will calculate first word length(the command), terminated
-// by 'space' , '(' or 'delimiter'
-func findFirstWord(s string) (i int) {
-	for {
-		if !(i < len(s) && s[i] != '(' && s[i] != ' ' && s[i] != ';') || s[i] == '\n' {
-			break
-		}
+// findFirstWord calculates the length of the first word in the string
+func findFirstWord(s string) int {
+	i := 0
+	for i < len(s) && s[i] != '(' && s[i] != ' ' && s[i] != ';' && s[i] != '\n' {
 		i++
 	}
-	return
-}
-
-// ParseQueries parses an array of string into an array of Query object.
-// Note: a Query statement may reside in several lines.
-func ParseQueries(qs ...Query) ([]Query, error) {
-	queries := make([]Query, 0, len(qs))
-	for _, rs := range qs {
-		q, err := parseQuery(rs)
-		if err != nil {
-			return nil, err
-		}
-		if q == nil {
-			continue
-		}
-
-		queries = append(queries, *q)
-	}
-	return queries, nil
+	return i
 }
