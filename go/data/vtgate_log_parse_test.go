@@ -25,12 +25,14 @@ import (
 )
 
 func TestParseVtGateQueryLogRedacted(t *testing.T) {
-	_, err := VtGateLogLoader{NeedsBindVars: true}.Load("./testdata/vtgate.query.log.redacted")
+	loader := VtGateLogLoader{NeedsBindVars: true}.Load("./testdata/vtgate.query.log.redacted")
+	_, err := makeSlice(loader)
 	require.EqualError(t, err, "line 1: query has redacted bind variables, cannot parse them")
 }
 
 func TestParseVtGateQueryLog(t *testing.T) {
-	gotQueries, err := VtGateLogLoader{NeedsBindVars: true}.Load("./testdata/vtgate.query.log")
+	loader := VtGateLogLoader{NeedsBindVars: true}.Load("./testdata/vtgate.query.log")
+	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
 
 	require.Len(t, gotQueries, 25)
@@ -47,7 +49,8 @@ func TestParseVtGateQueryLog(t *testing.T) {
 }
 
 func TestParseVtGateQueryLogNoBindVars(t *testing.T) {
-	gotQueries, err := VtGateLogLoader{NeedsBindVars: false}.Load("./testdata/vtgate.query.log")
+	loader := VtGateLogLoader{NeedsBindVars: false}.Load("./testdata/vtgate.query.log")
+	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
 	require.Len(t, gotQueries, 25)
 

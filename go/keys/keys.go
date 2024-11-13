@@ -49,13 +49,15 @@ func run(out io.Writer, cfg Config) error {
 		queries: make(map[string]*QueryAnalysisResult),
 		failed:  make(map[string]*QueryFailedResult),
 	}
-	queries, err := cfg.Loader.Load(cfg.FileName)
-	if err != nil {
-		return err
-	}
 
+	loader := cfg.Loader.Load(cfg.FileName)
 	skip := false
-	for _, query := range queries {
+	for {
+		query, kontinue := loader.Next()
+		if !kontinue {
+			break
+		}
+
 		switch query.Type {
 		case data.Skip, data.Error, data.VExplain:
 			skip = true
@@ -70,6 +72,10 @@ func run(out io.Writer, cfg Config) error {
 			}
 			process(query, si, ql)
 		}
+	}
+
+	if err := loader.Close(); err != nil {
+		return err
 	}
 
 	return ql.writeJSONTo(out)

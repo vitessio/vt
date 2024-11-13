@@ -24,7 +24,7 @@ import (
 
 type (
 	Loader interface {
-		Load(url string) ([]Query, error)
+		Load(filename string) IteratorLoader
 	}
 
 	IteratorLoader interface {

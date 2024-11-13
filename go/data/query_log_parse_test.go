@@ -23,13 +23,15 @@ import (
 )
 
 func TestParseMySQLQueryLog(t *testing.T) {
-	gotQueries, err := MySQLLogLoader{}.Load("./testdata/mysql.query.log")
+	loader := MySQLLogLoader{}.Load("./testdata/mysql.query.log")
+	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
 	require.Equal(t, 1517, len(gotQueries), "expected 1517 queries") //nolint:testifylint // too many elements for the output to be readable
 }
 
 func TestSmallSnippet(t *testing.T) {
-	gotQueries, err := MySQLLogLoader{}.Load("./testdata/mysql.small-query.log")
+	loader := MySQLLogLoader{}.Load("./testdata/mysql.small-query.log")
+	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
 	expected := []Query{
 		{

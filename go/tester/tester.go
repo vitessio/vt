@@ -223,15 +223,22 @@ func (t *Tester) Run() (err error) {
 			err = errors.Join(err, postErr)
 		}()
 	}
-	queries, err := t.loader.Load(t.name)
+
+	loader := t.loader.Load(t.name)
+	for {
+		query, kontinue := loader.Next()
+		if !kontinue {
+			break
+		}
+		t.handleQuery(query)
+	}
+
+	err = loader.Close()
 	if err != nil {
 		t.reporter.AddFailure(err)
 		return err
 	}
 
-	for _, q := range queries {
-		t.handleQuery(q)
-	}
 	fmt.Printf("%s\n", t.reporter.Report())
 
 	return nil

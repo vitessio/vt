@@ -45,7 +45,7 @@ type (
 	}
 )
 
-func (vll VtGateLogLoader) Loadit(fileName string) IteratorLoader {
+func (vll VtGateLogLoader) Load(fileName string) IteratorLoader {
 	reg := regexp.MustCompile(`\t"([^"]+)"\t(\{(?:[^{}]|(?:\{[^{}]*\}))*\}|"[^"]+")`)
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
@@ -127,11 +127,6 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 	s.closed = true
 
 	return Query{}, false
-}
-
-func (vll VtGateLogLoader) Load(fileName string) (queries []Query, err error) {
-	loader := vll.Loadit(fileName)
-	return makeSlice(loader)
 }
 
 func addBindVarsToQuery(query string, bvs map[string]*querypb.BindVariable) (string, error) {

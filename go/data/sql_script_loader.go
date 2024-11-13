@@ -106,7 +106,7 @@ func readData(url string) ([]byte, error) {
 	return io.ReadAll(res.Body)
 }
 
-func (SQLScriptLoader) Loadit(filename string) IteratorLoader {
+func (SQLScriptLoader) Load(filename string) IteratorLoader {
 	var scanner *bufio.Scanner
 	var fd *os.File
 
@@ -131,11 +131,6 @@ func (SQLScriptLoader) Loadit(filename string) IteratorLoader {
 			fd:      fd,
 		},
 	}
-}
-
-func (SQLScriptLoader) Load(url string) ([]Query, error) {
-	loader := SQLScriptLoader{}.Loadit(url)
-	return makeSlice(loader)
 }
 
 // Helper function to parse individual queries

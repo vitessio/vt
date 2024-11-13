@@ -44,12 +44,6 @@ type (
 	}
 )
 
-func (MySQLLogLoader) Load(fileName string) ([]Query, error) {
-	loader := MySQLLogLoader{}.Loadit(fileName)
-
-	return makeSlice(loader)
-}
-
 func makeSlice(loader IteratorLoader) ([]Query, error) {
 	var queries []Query
 	for {
@@ -151,7 +145,7 @@ func (s *logReaderState) NextLine() (string, bool) {
 	return s.scanner.Text(), true
 }
 
-func (MySQLLogLoader) Loadit(fileName string) IteratorLoader {
+func (MySQLLogLoader) Load(fileName string) IteratorLoader {
 	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
 
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
