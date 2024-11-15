@@ -52,9 +52,17 @@ func (s *slowQueryLogReaderState) Next() (Query, bool) {
 		newStmt: true,
 	}
 
-	for s.scanner.Scan() {
+	for {
+		line, done, err := s.readLine()
+		if err != nil {
+			s.err = fmt.Errorf("error reading file: %w", err)
+			return Query{}, false
+		}
+		if done {
+			break
+		}
 		s.lineNumber++
-		line := strings.TrimSpace(s.scanner.Text())
+		line = strings.TrimSpace(line)
 
 		result, done, err := s.processLine(line, state)
 		if err != nil {
@@ -64,11 +72,6 @@ func (s *slowQueryLogReaderState) Next() (Query, bool) {
 		if done {
 			return result, true
 		}
-	}
-
-	if err := s.scanner.Err(); err != nil {
-		s.err = err
-		return Query{}, false
 	}
 
 	if !state.newStmt && state.currentQuery.Query != "" {
@@ -245,7 +248,7 @@ func readData(url string) ([]byte, error) {
 }
 
 func (SlowQueryLogLoader) Load(filename string) IteratorLoader {
-	var scanner *bufio.Scanner
+	var reader *bufio.Reader
 	var fd *os.File
 
 	if strings.HasPrefix(filename, "http") {
@@ -253,20 +256,20 @@ func (SlowQueryLogLoader) Load(filename string) IteratorLoader {
 		if err != nil {
 			return &errLoader{err: err}
 		}
-		scanner = bufio.NewScanner(bytes.NewReader(data))
+		reader = bufio.NewReader(bytes.NewReader(data))
 	} else {
 		var err error
 		fd, err = os.OpenFile(filename, os.O_RDONLY, 0)
 		if err != nil {
 			return &errLoader{err: err}
 		}
-		scanner = bufio.NewScanner(fd)
+		reader = bufio.NewReader(fd)
 	}
 
 	return &slowQueryLogReaderState{
 		logReaderState: logReaderState{
-			scanner: scanner,
-			fd:      fd,
+			fd:     fd,
+			reader: reader,
 		},
 	}
 }

@@ -52,13 +52,11 @@ func (vll VtGateLogLoader) Load(fileName string) IteratorLoader {
 		return &errLoader{err: err}
 	}
 
-	scanner := bufio.NewScanner(fd)
-
 	return &vtgateLogReaderState{
 		logReaderState: logReaderState{
-			scanner: scanner,
-			reg:     reg,
-			fd:      fd,
+			reader: bufio.NewReader(fd),
+			reg:    reg,
+			fd:     fd,
 		},
 		NeedsBindVars: vll.NeedsBindVars,
 	}
@@ -76,9 +74,16 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 		return Query{}, false
 	}
 
-	for s.scanner.Scan() {
+	for {
+		line, done, err := s.readLine()
+		if err != nil {
+			s.fail(fmt.Errorf("error reading file: %w", err))
+			return Query{}, false
+		}
+		if done {
+			break
+		}
 		s.lineNumber++
-		line := s.scanner.Text()
 
 		if len(line) == 0 {
 			continue

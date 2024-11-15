@@ -19,6 +19,8 @@ package data
 import (
 	"bufio"
 	"errors"
+	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"sync"
@@ -29,7 +31,7 @@ type (
 
 	logReaderState struct {
 		fd         *os.File
-		scanner    *bufio.Scanner
+		reader     *bufio.Reader
 		reg        *regexp.Regexp
 		mu         sync.Mutex
 		lineNumber int
@@ -65,9 +67,18 @@ func (s *mysqlLogReaderState) Next() (Query, bool) {
 		return Query{}, false
 	}
 
-	for s.scanner.Scan() {
+	for {
+		line, done, err := s.readLine()
+		if err != nil {
+			s.err = fmt.Errorf("error reading file: %w", err)
+			return Query{}, false
+		}
+		if done {
+			break
+		}
+
 		s.lineNumber++
-		line := s.scanner.Text()
+
 		if len(line) == 0 {
 			continue
 		}
@@ -82,20 +93,7 @@ func (s *mysqlLogReaderState) Next() (Query, bool) {
 
 		// If we have a previous query, return it before processing the new line
 		if s.prevQuery != "" {
-			query := Query{
-				Query: s.prevQuery,
-				Line:  s.queryStart,
-				Type:  QueryT,
-			}
-			s.prevQuery = ""
-
-			// If the new line is a query, store it for next iteration
-			if matches[3] == "Query" {
-				s.prevQuery = matches[4]
-				s.queryStart = s.lineNumber
-			}
-
-			return query, true
+			return s.processQuery(matches), true
 		}
 
 		// Start a new query if this line is a query
@@ -108,17 +106,60 @@ func (s *mysqlLogReaderState) Next() (Query, bool) {
 
 	// Return the last query if we have one
 	if s.prevQuery != "" {
-		query := Query{
-			Query: s.prevQuery,
-			Line:  s.queryStart,
-			Type:  QueryT,
-		}
-		s.prevQuery = ""
-		return query, true
+		return s.finalizeQuery(), true
 	}
 
-	s.err = s.scanner.Err()
 	return Query{}, false
+}
+
+func (s *logReaderState) readLine() (string, bool, error) {
+	line, isPrefix, err := s.reader.ReadLine()
+	if err == io.EOF {
+		return "", true, nil
+	}
+	if err != nil {
+		return "", false, err
+	}
+
+	// Handle lines longer than the buffer size
+	totalLine := append([]byte{}, line...)
+	for isPrefix {
+		line, isPrefix, err = s.reader.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", false, err
+		}
+		totalLine = append(totalLine, line...)
+	}
+	return string(totalLine), false, nil
+}
+
+func (s *mysqlLogReaderState) finalizeQuery() Query {
+	query := Query{
+		Query: s.prevQuery,
+		Line:  s.queryStart,
+		Type:  QueryT,
+	}
+	s.prevQuery = ""
+	return query
+}
+
+func (s *mysqlLogReaderState) processQuery(matches []string) Query {
+	query := Query{
+		Query: s.prevQuery,
+		Line:  s.queryStart,
+		Type:  QueryT,
+	}
+	s.prevQuery = ""
+
+	// If the new line is a query, store it for next iteration
+	if matches[3] == "Query" {
+		s.prevQuery = matches[4]
+		s.queryStart = s.lineNumber
+	}
+	return query
 }
 
 func (s *logReaderState) Close() error {
@@ -136,15 +177,6 @@ func (s *logReaderState) Close() error {
 	return s.err
 }
 
-func (s *logReaderState) NextLine() (string, bool) {
-	more := s.scanner.Scan()
-	if !more {
-		return "", false
-	}
-
-	return s.scanner.Text(), true
-}
-
 func (MySQLLogLoader) Load(fileName string) IteratorLoader {
 	reg := regexp.MustCompile(`^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\s+(\d+)\s+(\w+)\s+(.*)`)
 
@@ -153,13 +185,11 @@ func (MySQLLogLoader) Load(fileName string) IteratorLoader {
 		return &errLoader{err}
 	}
 
-	scanner := bufio.NewScanner(fd)
-
 	return &mysqlLogReaderState{
 		logReaderState: logReaderState{
-			scanner: scanner,
-			reg:     reg,
-			fd:      fd,
+			reader: bufio.NewReader(fd),
+			reg:    reg,
+			fd:     fd,
 		},
 	}
 }
