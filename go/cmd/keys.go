@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -53,9 +54,11 @@ func keysCmd() *cobra.Command {
 	return cmd
 }
 
+const allowedInputTypes = "'sql', 'mysql-log' or 'vtgate-log'"
+
 func addInputTypeFlag(cmd *cobra.Command, s *string) {
 	*s = "sql"
-	cmd.Flags().StringVar(s, "input-type", "sql", "Specifies the type of input file: 'sql' or 'mysql-log'")
+	cmd.Flags().StringVar(s, "input-type", "sql", fmt.Sprintf("Specifies the type of input file: %s", allowedInputTypes))
 }
 
 func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) {
@@ -67,6 +70,6 @@ func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) 
 	case "vtgate-log":
 		return data.VtGateLogLoader{NeedsBindVars: needsBindVars}, nil
 	default:
-		return nil, errors.New("invalid input type: must be 'sql' or 'mysql-log'")
+		return nil, errors.New(fmt.Sprintf("invalid input type: must be %s", allowedInputTypes))
 	}
 }
