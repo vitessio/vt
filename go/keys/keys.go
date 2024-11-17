@@ -22,7 +22,7 @@ import (
 	"io"
 	"os"
 	"sort"
-
+	"strconv"
 	querypb "vitess.io/vitess/go/vt/proto/query"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
@@ -41,7 +41,22 @@ func Run(cfg Config) error {
 	return run(os.Stdout, cfg)
 }
 
-func run(out io.Writer, cfg Config) error {
+func GetKeysInfo(cfg Config) (*Output, error) {
+	keysInfo, err := getKeysInfo(cfg)
+	if err != nil {
+		return nil, err
+	}
+	var output Output
+	for _, query := range keysInfo.queries {
+		output.Queries = append(output.Queries, *query)
+	}
+	for _, failed := range keysInfo.failed {
+		output.Failed = append(output.Failed, *failed)
+	}
+	return &output, nil
+}
+
+func getKeysInfo(cfg Config) (*queryList, error) {
 	si := &schemaInfo{
 		tables: make(map[string]columns),
 	}
@@ -62,7 +77,7 @@ func run(out io.Writer, cfg Config) error {
 		case data.Skip, data.Error, data.VExplain:
 			skip = true
 		case data.Unknown:
-			return fmt.Errorf("unknown command type: %s", query.Type)
+			return nil, fmt.Errorf("unknown command type: %s", query.Type)
 		case data.Comment, data.CommentWithCommand, data.EmptyLine, data.WaitForAuthoritative, data.SkipIfBelowVersion:
 			// no-op for keys
 		case data.QueryT:
@@ -71,13 +86,22 @@ func run(out io.Writer, cfg Config) error {
 				continue
 			}
 			process(query, si, ql)
+		default:
+			return nil, fmt.Errorf("unknown command type: %s", query.Type)
 		}
 	}
 
 	if err := loader.Close(); err != nil {
+		return nil, err
+	}
+	return ql, nil
+}
+
+func run(out io.Writer, cfg Config) error {
+	ql, err := getKeysInfo(cfg)
+	if err != nil {
 		return err
 	}
-
 	return ql.writeJSONTo(out)
 }
 
@@ -132,11 +156,12 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 		ReservedVars: reservedVars,
 		SemTable:     st,
 	}
+	usageCount := getUsageCount(ast)
 
 	structure := sqlparser.CanonicalString(ast)
 	r, found := ql.queries[structure]
 	if found {
-		r.UsageCount++
+		r.UsageCount += usageCount
 		r.LineNumbers = append(r.LineNumbers, q.Line)
 		return
 	}
@@ -154,13 +179,34 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 	ql.queries[structure] = &QueryAnalysisResult{
 		QueryStructure:  structure,
 		StatementType:   result.StatementType,
-		UsageCount:      1,
+		UsageCount:      usageCount,
 		LineNumbers:     []int{q.Line},
 		TableNames:      tableNames,
 		GroupingColumns: result.GroupingColumns,
 		JoinPredicates:  result.JoinPredicates,
 		FilterColumns:   result.FilterColumns,
 	}
+}
+
+func getUsageCount(ast sqlparser.Statement) int {
+	var comments *sqlparser.ParsedComments
+	switch stmt := ast.(type) {
+	case *sqlparser.Select:
+		comments = stmt.Comments
+	case *sqlparser.Insert:
+		comments = stmt.Comments
+	case *sqlparser.Update:
+		comments = stmt.Comments
+	case *sqlparser.Delete:
+		comments = stmt.Comments
+	}
+	directives := comments.Directives()
+	usageCountStr, _ := directives.GetString("VT_USAGE_COUNT", "1")
+	usageCount, _ := strconv.Atoi(usageCountStr)
+	if usageCount == 0 {
+		usageCount = 1
+	}
+	return usageCount
 }
 
 func (ql *queryList) addFailedQuery(q data.Query, err error) {

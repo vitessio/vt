@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"vitess.io/vitess/go/vt/sqlparser"
 
 	"github.com/stretchr/testify/require"
 
@@ -76,5 +77,38 @@ func TestKeysNonAuthoritativeTable(t *testing.T) {
 	require.Len(t, ql.queries, 1)
 	for _, result := range ql.queries {
 		require.NotEmpty(t, result.FilterColumns)
+	}
+}
+
+func TestGetUsageCount(t *testing.T) {
+	type testCase struct {
+		query      string
+		usageCount int
+	}
+
+	cases := []testCase{
+		{
+			query:      "select /*vt+ VT_USAGE_COUNT=11 */ * from actor where first_name = 'Scarlett'",
+			usageCount: 11,
+		},
+		{
+			query:      "select /*vt+ VT_USAGE_COUNT=11.5 */ * from actor where first_name = 'Scarlett'",
+			usageCount: 1,
+		},
+		{
+			query:      "select /*vt+ VT_USAGE_COUNT=0 */ * from actor where first_name = 'Scarlett'",
+			usageCount: 1,
+		},
+		{
+			query:      "select  * from actor where first_name = 'Scarlett' and last_name = 'Johansson'",
+			usageCount: 1,
+		},
+	}
+
+	for _, tcase := range cases {
+		ast, err := sqlparser.NewTestParser().Parse(tcase.query)
+		require.NoError(t, err)
+		usageCount := getUsageCount(ast)
+		require.Equal(t, tcase.usageCount, usageCount)
 	}
 }

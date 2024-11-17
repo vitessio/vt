@@ -57,6 +57,13 @@ func Run(args []string) {
 	}
 }
 
+func SummarizeKeysFile(fileName string) ([]TableSummary, error) {
+	trace := readTraceFile(fileName)
+	tableSummaries, failuresSummaries := summarizeKeysQueries(trace.AnalysedQueries)
+	_ = failuresSummaries
+	return tableSummaries, nil
+}
+
 func exit(msg string) {
 	fmt.Println(msg)
 	os.Exit(1)
