@@ -148,7 +148,7 @@ partsupp ↔ supplier (Occurrences: 1)
 
 ```
 ## Failures
-|Query|Error|Count|
-|---|---|---|
-|I am a failing query;|syntax error at position 2 near 'I'|2|
+|Error|Count|
+|---|---|
+|syntax error at position 2 near 'I'|2|
 

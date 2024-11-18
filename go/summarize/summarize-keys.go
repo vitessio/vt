@@ -45,6 +45,11 @@ type (
 		Pos  Position
 	}
 
+	Summary struct {
+		tables   []TableSummary
+		failures []FailuresSummary
+	}
+
 	TableSummary struct {
 		Table           string
 		ReadQueryCount  int
@@ -153,11 +158,11 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
 `
 	md.Printf(msg, now.Format(time.DateTime), file.Name)
 
-	tableSummaries, failuresSummaries := summarizeKeysQueries(file.AnalysedQueries)
+	summary := summarizeKeysQueries(file.AnalysedQueries)
 
-	renderTableUsage(tableSummaries, md)
+	renderTableUsage(summary.tables, md)
 	renderTablesJoined(md, file.AnalysedQueries)
-	renderFailures(md, failuresSummaries)
+	renderFailures(md, summary.failures)
 
 	_, err := md.WriteTo(out)
 	if err != nil {
@@ -315,7 +320,7 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSummary) {
+func summarizeKeysQueries(queries *keys.Output) Summary {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
@@ -373,7 +378,7 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 		})
 	}
 
-	return result, failures
+	return Summary{tables: result, failures: failures}
 }
 
 func summarizeColumnUsage(tableSummary *TableSummary, query keys.QueryAnalysisResult) {
