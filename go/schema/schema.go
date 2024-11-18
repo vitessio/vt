@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	"vitess.io/vitess/go/mysql"
 )
 

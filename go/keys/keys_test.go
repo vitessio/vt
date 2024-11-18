@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+
 	"vitess.io/vitess/go/vt/sqlparser"
 
 	"github.com/stretchr/testify/require"

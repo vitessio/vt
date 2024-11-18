@@ -1,10 +1,11 @@
 package reference
 
 import (
-	"github.com/stretchr/testify/require"
-	"github.com/vitessio/vt/go/data"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/vitessio/vt/go/data"
 )
 
 func TestReference(t *testing.T) {

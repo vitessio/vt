@@ -19,12 +19,13 @@ package reference
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/vitessio/vt/go/data"
-	"github.com/vitessio/vt/go/keys"
-	"github.com/vitessio/vt/go/schema"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/schema"
 )
 
 type Config struct {

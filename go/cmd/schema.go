@@ -25,7 +25,6 @@ import (
 var vtParams mysql.ConnParams
 
 func schemaCmd() *cobra.Command {
-
 	cmd := &cobra.Command{
 		Use:     "schema ",
 		Short:   "Loads info from the database including row counts",
