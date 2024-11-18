@@ -66,7 +66,7 @@ type (
 		Timestamp       int64                     `json:"timestamp,omitempty"`
 	}
 	QueryFailedResult struct {
-		Query       string
+		Query       string `json:"query"`
 		LineNumbers []int  `json:"lineNumbers"`
 		Error       string `json:"error"`
 	}

@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/vitessio/vt/go/data"
@@ -52,6 +53,13 @@ func TestKeys(t *testing.T) {
 			},
 			expectedFile: "../summarize/testdata/slow-query-log.json",
 		},
+		{
+			cfg: Config{
+				FileName: "../data/testdata/bigger_slow_query_log.log",
+				Loader:   data.SlowQueryLogLoader{},
+			},
+			expectedFile: "./testdata/bigger_slow_query_log.json",
+		},
 	}
 
 	for _, tcase := range cases {
@@ -63,7 +71,10 @@ func TestKeys(t *testing.T) {
 			out, err := os.ReadFile(tcase.expectedFile)
 			require.NoError(t, err)
 
-			require.Equal(t, string(out), sb.String())
+			assert.Equal(t, string(out), sb.String())
+			if t.Failed() {
+				_ = os.WriteFile(tcase.expectedFile+".correct", []byte(sb.String()), 0o644)
+			}
 		})
 	}
 }
