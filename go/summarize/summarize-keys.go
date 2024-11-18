@@ -34,12 +34,16 @@ import (
 	"github.com/vitessio/vt/go/markdown"
 )
 
+const HotQueryCount = 10
+
 type (
-	Position    int
+	Position int
+
 	ColumnUsage struct {
 		Percentage float64
 		Count      int
 	}
+
 	ColumnInformation struct {
 		Name string
 		Pos  Position
@@ -324,27 +328,12 @@ func summarizeKeysQueries(queries *keys.Output) Summary {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
+	var hotQueries []keys.QueryAnalysisResult
 
 	// First pass: collect all data and count occurrences
 	for _, query := range queries.Queries {
-		for _, table := range query.TableNames {
-			if _, exists := tableSummaries[table]; !exists {
-				tableSummaries[table] = &TableSummary{
-					Table:   table,
-					Columns: make(map[ColumnInformation]ColumnUsage),
-				}
-			}
-
-			switch query.StatementType {
-			case "INSERT", "DELETE", "UPDATE", "REPLACE":
-				tableUsageWriteCounts[table] += query.UsageCount
-			default:
-				tableUsageReadCounts[table] += query.UsageCount
-			}
-
-			summarizeColumnUsage(tableSummaries[table], query)
-			summarizeJoinPredicates(query.JoinPredicates, table, tableSummaries)
-		}
+		gatherTableInfo(query, tableSummaries, tableUsageWriteCounts, tableUsageReadCounts)
+		checkQueryForHotness(&hotQueries, query)
 	}
 
 	// Second pass: calculate percentages
@@ -379,6 +368,42 @@ func summarizeKeysQueries(queries *keys.Output) Summary {
 	}
 
 	return Summary{tables: result, failures: failures}
+}
+
+func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult) {
+	// todo: we should be able to choose different metrics for hotness - e.g. total time spent on query, number of rows examined, etc.
+	switch {
+	case len(*hotQueries) < HotQueryCount:
+		// If we have not yet reached the limit, add the query
+		*hotQueries = append(*hotQueries, query)
+	case query.UsageCount > (*hotQueries)[0].UsageCount:
+		// If the current query has more usage than the least used hot query, replace it
+		(*hotQueries)[0] = query
+		sort.Slice(*hotQueries, func(i, j int) bool {
+			return (*hotQueries)[i].UsageCount > (*hotQueries)[j].UsageCount
+		})
+	}
+}
+
+func gatherTableInfo(query keys.QueryAnalysisResult, tableSummaries map[string]*TableSummary, tableUsageWriteCounts map[string]int, tableUsageReadCounts map[string]int) {
+	for _, table := range query.TableNames {
+		if _, exists := tableSummaries[table]; !exists {
+			tableSummaries[table] = &TableSummary{
+				Table:   table,
+				Columns: make(map[ColumnInformation]ColumnUsage),
+			}
+		}
+
+		switch query.StatementType {
+		case "INSERT", "DELETE", "UPDATE", "REPLACE":
+			tableUsageWriteCounts[table] += query.UsageCount
+		default:
+			tableUsageReadCounts[table] += query.UsageCount
+		}
+
+		summarizeColumnUsage(tableSummaries[table], query)
+		summarizeJoinPredicates(query.JoinPredicates, table, tableSummaries)
+	}
 }
 
 func summarizeColumnUsage(tableSummary *TableSummary, query keys.QueryAnalysisResult) {

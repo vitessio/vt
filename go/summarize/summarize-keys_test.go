@@ -66,10 +66,22 @@ func TestTableSummary(t *testing.T) {
 }
 
 func TestSummarizeKeysFile(t *testing.T) {
-	file := readTraceFile("testdata/keys-log.json")
-	sb := &strings.Builder{}
-	printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
-	expected, err := os.ReadFile("testdata/keys-summary.md")
-	require.NoError(t, err)
-	require.Equal(t, string(expected), sb.String())
+	tests := []struct {
+		inputFile    string
+		expectedFile string
+	}{
+		{"testdata/keys-log.json", "testdata/keys-summary.md"},
+		{"../keys/testdata/bigger_slow_query_log.json", "testdata/bigger_slow_log.md"},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("input: %s, expected: %s", tt.inputFile, tt.expectedFile), func(t *testing.T) {
+			file := readTraceFile(tt.inputFile)
+			sb := &strings.Builder{}
+			printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
+			expected, err := os.ReadFile(tt.expectedFile)
+			require.NoError(t, err)
+			require.Equal(t, string(expected), sb.String())
+		})
+	}
 }
