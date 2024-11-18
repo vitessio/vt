@@ -17,17 +17,19 @@ limitations under the License.
 package reference
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/schema"
 	"io"
 	"os"
 	"strings"
 )
 
 type Config struct {
-	FileName         string
-	ConnectionString string
+	KeysOutputFile string
+	SchemaInfoFile string
 
 	Loader data.Loader
 }
@@ -51,12 +53,29 @@ func Find(cfg Config) (*ReferenceInfo, error) {
 		return float64(ts.NumWrites) / float64(ts.NumWrites+ts.NumReads)
 	}
 	writePercentageThreshold := 1 / 100.0 // 1%
+	tableCountThreshold := 1000
 	for _, ts := range ri.TableSummaries {
-		if ts.JoinCount > thresholdJoins && writePercentage(ts) < writePercentageThreshold {
-			ri.ChosenTables = append(ri.ChosenTables, ts.TableName)
+		tableName := strings.Trim(ts.TableName, "'`\"")
+		numRows := ri.TableRows[tableName]
+		if ts.JoinCount > thresholdJoins && writePercentage(ts) < writePercentageThreshold && numRows < tableCountThreshold {
+			ri.ChosenTables = append(ri.ChosenTables, tableName)
+		} else {
+			fmt.Printf("Table: %s, Reads: %d, Writes: %d, Joins: %d, Rows: %d\n",
+				ts.TableName, ts.NumReads, ts.NumWrites, ts.JoinCount, ri.TableRows[tableName])
 		}
 	}
 	return ri, nil
+}
+
+type TableInfo struct {
+	Name      string
+	NumWrites int
+	NumReads  int
+	JoinCount int
+	Rows      int
+}
+type ReferenceOutput struct {
+	Tables []TableInfo
 }
 
 func run(out io.Writer, cfg Config) error {
@@ -64,9 +83,22 @@ func run(out io.Writer, cfg Config) error {
 	if err != nil {
 		return err
 	}
+	ro := ReferenceOutput{}
 	for _, table := range ri.ChosenTables {
-		fmt.Fprintf(out, "%s:: %+v\n", table, ri.TableSummaries[table])
+		ts := ri.TableSummaries[table]
+		ro.Tables = append(ro.Tables, TableInfo{
+			Name:      table,
+			NumWrites: ts.NumWrites,
+			NumReads:  ts.NumReads,
+			JoinCount: ts.JoinCount,
+			Rows:      ri.TableRows[table],
+		})
 	}
+	b, err := json.MarshalIndent(ro, "", "  ")
+	if err != nil {
+		return err
+	}
+	out.Write(b)
 	return nil
 }
 
@@ -84,14 +116,20 @@ func (ts TableSummary) String() string {
 type ReferenceInfo struct {
 	TableSummaries map[string]*TableSummary
 	ChosenTables   []string
+	TableRows      map[string]int
+}
+
+func NewReferenceInfo() *ReferenceInfo {
+	return &ReferenceInfo{
+		TableSummaries: make(map[string]*TableSummary),
+		TableRows:      make(map[string]int),
+	}
 }
 
 func GetReferenceInfo(cfg Config) (*ReferenceInfo, error) {
-	ri := &ReferenceInfo{
-		TableSummaries: make(map[string]*TableSummary),
-	}
+	ri := NewReferenceInfo()
 	keysConfig := keys.Config{
-		FileName: cfg.FileName,
+		FileName: cfg.KeysOutputFile,
 		Loader:   cfg.Loader,
 	}
 	keysOutput, err := keys.GetKeysInfo(keysConfig)
@@ -99,6 +137,7 @@ func GetReferenceInfo(cfg Config) (*ReferenceInfo, error) {
 		return nil, err
 	}
 	getRit := func(table string) *TableSummary {
+		table = strings.Trim(table, "'`\"")
 		summary, ok := ri.TableSummaries[table]
 		if !ok {
 			summary = &TableSummary{
@@ -124,6 +163,7 @@ func GetReferenceInfo(cfg Config) (*ReferenceInfo, error) {
 		}
 
 		for _, table := range query.TableNames {
+
 			rit := getRit(table)
 			if isRead {
 				rit.NumReads += usageCount
@@ -138,6 +178,20 @@ func GetReferenceInfo(cfg Config) (*ReferenceInfo, error) {
 			rit2 := getRit(pred.RHS.Table)
 			rit1.JoinCount += usageCount
 			rit2.JoinCount += usageCount
+		}
+	}
+
+	si, err := schema.Load(cfg.SchemaInfoFile)
+	if err != nil {
+		return nil, err
+	}
+	for _, table := range ri.TableSummaries {
+		for _, table2 := range si.Tables {
+			t := strings.Trim(table.TableName, "'`\"")
+			t2 := strings.Trim(table2.Name, "'`\"")
+			if t == t2 {
+				ri.TableRows[t] = table2.Rows
+			}
 		}
 	}
 	return ri, nil

@@ -27,12 +27,12 @@ func referenceCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "reference ",
 		Short:   "Suggests potential reference tables based on query logs and database schema",
-		Example: "vt reference file.test <mysql-connection-string>",
+		Example: "vt reference <keys output> <schema info output>",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			cfg := reference.Config{
-				FileName:         args[0],
-				ConnectionString: args[1],
+				KeysOutputFile: args[0],
+				SchemaInfoFile: args[1],
 			}
 
 			loader, err := configureLoader(inputType, false)

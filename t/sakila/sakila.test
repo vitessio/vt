@@ -347,10 +347,10 @@ WHERE category_id = 7;
 INSERT /*vt+ VT_USAGE_COUNT=5 */ INTO language (name, last_update)
 VALUES ('Mandarin', NOW());
 
-DELETE /*vt+ VT_USAGE_COUNT=20 */ FROM language
+DELETE /*vt+ VT_USAGE_COUNT=1 */ FROM language
 WHERE language_id = 5;
 
-UPDATE /*vt+ VT_USAGE_COUNT=14 */ language
+UPDATE /*vt+ VT_USAGE_COUNT=3 */ language
 SET name = 'French'
 WHERE language_id = 2;
 
