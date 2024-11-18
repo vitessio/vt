@@ -37,28 +37,28 @@ func TestKeys(t *testing.T) {
 				FileName: "../../t/tpch_failing_queries.test",
 				Loader:   data.SlowQueryLogLoader{},
 			},
-			expectedFile: "../summarize/testdata/keys-log.json",
+			expectedFile: "../testdata/keys-log.json",
 		},
 		{
 			cfg: Config{
-				FileName: "../data/testdata/vtgate.query.log",
+				FileName: "../testdata/vtgate.query.log",
 				Loader:   data.VtGateLogLoader{NeedsBindVars: false},
 			},
-			expectedFile: "../summarize/testdata/keys-log-vtgate.json",
+			expectedFile: "../testdata/keys-log-vtgate.json",
 		},
 		{
 			cfg: Config{
-				FileName: "../data/testdata/slow_query_log",
+				FileName: "../testdata/slow_query_log",
 				Loader:   data.SlowQueryLogLoader{},
 			},
-			expectedFile: "../summarize/testdata/slow-query-log.json",
+			expectedFile: "../testdata/slow-query-log.json",
 		},
 		{
 			cfg: Config{
-				FileName: "../data/testdata/bigger_slow_query_log.log",
+				FileName: "../testdata/bigger_slow_query_log.log",
 				Loader:   data.SlowQueryLogLoader{},
 			},
-			expectedFile: "./testdata/bigger_slow_query_log.json",
+			expectedFile: "../testdata/bigger_slow_query_log.json",
 		},
 	}
 

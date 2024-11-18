@@ -1,7 +1,7 @@
 # Query Analysis Report
 
 **Date of Analysis**: 2024-01-01 01:02:03  
-**Analyzed File**: `testdata/keys-log.json`
+**Analyzed File**: `../testdata/keys-log.json`
 
 ## Tables
 |Table Name|Reads|Writes|

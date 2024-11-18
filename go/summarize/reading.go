@@ -18,6 +18,8 @@ package summarize
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sort"
@@ -26,11 +28,11 @@ import (
 	"github.com/vitessio/vt/go/keys"
 )
 
-func readTraceFile(fileName string) readingSummary {
+func readTraceFile(fileName string) (readingSummary, error) {
 	// Open the JSON file
 	file, err := os.Open(fileName)
 	if err != nil {
-		exit("Error opening file: " + err.Error())
+		return readingSummary{}, fmt.Errorf("error opening file: %w", err)
 	}
 	defer file.Close()
 
@@ -39,13 +41,12 @@ func readTraceFile(fileName string) readingSummary {
 	// Determine the type based on the first delimiter of the JSON file
 	switch val {
 	case json.Delim('['):
-		return readTracedQueryFile(decoder, fileName)
+		return readTracedQueryFile(decoder, fileName), nil
 	case json.Delim('{'):
-		return readAnalysedQueryFile(decoder, fileName)
+		return readAnalysedQueryFile(decoder, fileName), nil
 	}
 
-	exit("Unknown file format")
-	panic("unreachable")
+	return readingSummary{}, errors.New("unknown file format")
 }
 
 func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {

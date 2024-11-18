@@ -41,8 +41,12 @@ type (
 
 func Run(args []string) {
 	traces := make([]readingSummary, len(args))
+	var err error
 	for i, arg := range args {
-		traces[i] = readTraceFile(arg)
+		traces[i], err = readTraceFile(arg)
+		if err != nil {
+			exit(err.Error())
+		}
 	}
 
 	firstTrace := traces[0]

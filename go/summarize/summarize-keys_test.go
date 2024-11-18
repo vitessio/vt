@@ -70,16 +70,17 @@ func TestSummarizeKeysFile(t *testing.T) {
 		inputFile    string
 		expectedFile string
 	}{
-		{"testdata/keys-log.json", "testdata/keys-summary.md"},
-		{"../keys/testdata/bigger_slow_query_log.json", "testdata/bigger_slow_log.md"},
+		{"keys-log.json", "keys-summary.md"},
+		{"bigger_slow_query_log.json", "bigger_slow_log.md"},
 	}
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("input: %s, expected: %s", tt.inputFile, tt.expectedFile), func(t *testing.T) {
-			file := readTraceFile(tt.inputFile)
+			file, err := readTraceFile("../testdata/" + tt.inputFile)
+			require.NoError(t, err)
 			sb := &strings.Builder{}
 			printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
-			expected, err := os.ReadFile(tt.expectedFile)
+			expected, err := os.ReadFile("../testdata/" + tt.expectedFile)
 			require.NoError(t, err)
 			require.Equal(t, string(expected), sb.String())
 		})

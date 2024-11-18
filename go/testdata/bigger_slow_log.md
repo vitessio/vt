@@ -1,7 +1,7 @@
 # Query Analysis Report
 
 **Date of Analysis**: 2024-01-01 01:02:03  
-**Analyzed File**: `../keys/testdata/bigger_slow_query_log.json`
+**Analyzed File**: `../testdata/bigger_slow_query_log.json`
 
 ## Tables
 |Table Name|Reads|Writes|
