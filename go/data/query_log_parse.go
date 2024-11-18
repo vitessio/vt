@@ -77,8 +77,6 @@ func (s *mysqlLogReaderState) Next() (Query, bool) {
 			break
 		}
 
-		s.lineNumber++
-
 		if len(line) == 0 {
 			continue
 		}
@@ -113,6 +111,7 @@ func (s *mysqlLogReaderState) Next() (Query, bool) {
 }
 
 func (s *logReaderState) readLine() (string, bool, error) {
+	s.lineNumber++
 	line, isPrefix, err := s.reader.ReadLine()
 	if err == io.EOF {
 		return "", true, nil

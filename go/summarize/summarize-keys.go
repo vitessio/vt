@@ -55,7 +55,6 @@ type (
 	}
 
 	FailuresSummary struct {
-		Query string
 		Error string
 		Count int
 	}
@@ -299,10 +298,10 @@ func renderFailures(md *markdown.MarkDown, failures []FailuresSummary) {
 	}
 	md.PrintHeader("Failures", 2)
 
-	headers := []string{"Query", "Error", "Count"}
+	headers := []string{"Error", "Count"}
 	var rows [][]string
 	for _, failure := range failures {
-		rows = append(rows, []string{failure.Query, failure.Error, strconv.Itoa(failure.Count)})
+		rows = append(rows, []string{failure.Error, strconv.Itoa(failure.Count)})
 	}
 	md.PrintTable(headers, rows)
 }
@@ -369,7 +368,6 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 	var failures []FailuresSummary
 	for _, query := range queries.Failed {
 		failures = append(failures, FailuresSummary{
-			Query: query.Query,
 			Error: query.Error,
 			Count: len(query.LineNumbers),
 		})

@@ -61,7 +61,6 @@ func (s *slowQueryLogReaderState) Next() (Query, bool) {
 		if done {
 			break
 		}
-		s.lineNumber++
 		line = strings.TrimSpace(line)
 
 		result, done, err := s.processLine(line, state)

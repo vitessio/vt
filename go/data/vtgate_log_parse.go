@@ -83,7 +83,6 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 		if done {
 			break
 		}
-		s.lineNumber++
 
 		if len(line) == 0 {
 			continue

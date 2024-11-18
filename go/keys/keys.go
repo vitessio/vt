@@ -18,6 +18,7 @@ package keys
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -74,11 +75,10 @@ func run(out io.Writer, cfg Config) error {
 		}
 	}
 
-	if err := loader.Close(); err != nil {
-		return err
-	}
+	closeErr := loader.Close()
+	jsonWriteErr := ql.writeJSONTo(out)
 
-	return ql.writeJSONTo(out)
+	return errors.Join(closeErr, jsonWriteErr)
 }
 
 func process(q data.Query, si *schemaInfo, ql *queryList) {
@@ -240,7 +240,7 @@ type QueryAnalysisResult struct {
 }
 
 type QueryFailedResult struct {
-	Query       string `json:"query"`
+	Query       string
 	LineNumbers []int  `json:"lineNumbers"`
 	Error       string `json:"error"`
 }
