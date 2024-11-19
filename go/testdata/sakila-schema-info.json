@@ -1,0 +1,69 @@
+{
+  "Tables": [
+    {
+      "Name": "actor",
+      "Rows": 200
+    },
+    {
+      "Name": "address",
+      "Rows": 603
+    },
+    {
+      "Name": "category",
+      "Rows": 16
+    },
+    {
+      "Name": "city",
+      "Rows": 600
+    },
+    {
+      "Name": "country",
+      "Rows": 109
+    },
+    {
+      "Name": "customer",
+      "Rows": 599
+    },
+    {
+      "Name": "film",
+      "Rows": 1000
+    },
+    {
+      "Name": "film_actor",
+      "Rows": 5462
+    },
+    {
+      "Name": "film_category",
+      "Rows": 1000
+    },
+    {
+      "Name": "film_text",
+      "Rows": 1000
+    },
+    {
+      "Name": "inventory",
+      "Rows": 4581
+    },
+    {
+      "Name": "language",
+      "Rows": 6
+    },
+    {
+      "Name": "payment",
+      "Rows": 16086
+    },
+    {
+      "Name": "rental",
+      "Rows": 15425
+    },
+    {
+      "Name": "staff",
+      "Rows": 2
+    },
+    {
+      "Name": "store",
+      "Rows": 2
+    }
+  ]
+}
+
