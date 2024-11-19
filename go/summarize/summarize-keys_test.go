@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,10 +67,42 @@ func TestTableSummary(t *testing.T) {
 }
 
 func TestSummarizeKeysFile(t *testing.T) {
-	file := readTraceFile("testdata/keys-log.json")
-	sb := &strings.Builder{}
-	printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
-	expected, err := os.ReadFile("testdata/keys-summary.md")
+	file, err := readTraceFile("../testdata/keys-log.json")
 	require.NoError(t, err)
-	require.Equal(t, string(expected), sb.String())
+	sb := &strings.Builder{}
+	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
+	printKeysSummary(sb, file, now, "")
+	expected, err := os.ReadFile("../testdata/keys-summary.md")
+	require.NoError(t, err)
+	assert.Equal(t, string(expected), sb.String())
+	if t.Failed() {
+		_ = os.WriteFile("../testdata/keys-summary.md.correct", []byte(sb.String()), 0o644)
+	}
+}
+
+func TestSummarizeKeysWithHotnessFile(t *testing.T) {
+	tests := []string{
+		"usage-count",
+		"total-rows-examined",
+		"avg-rows-examined",
+		"avg-time",
+		"total-time",
+	}
+
+	for _, metric := range tests {
+		t.Run(metric, func(t *testing.T) {
+			file, err := readTraceFile("../testdata/bigger_slow_query_log.json")
+			require.NoError(t, err)
+			sb := &strings.Builder{}
+			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
+			printKeysSummary(sb, file, now, metric)
+			expected, err := os.ReadFile(fmt.Sprintf("../testdata/bigger_slow_log_%s.md", metric))
+			require.NoError(t, err)
+			assert.Equal(t, string(expected), sb.String())
+			if t.Failed() {
+				_ = os.Mkdir("../testdata/expected", 0o755)
+				_ = os.WriteFile(fmt.Sprintf("../testdata/expected/bigger_slow_log_%s.md", metric), []byte(sb.String()), 0o644)
+			}
+		})
+	}
 }

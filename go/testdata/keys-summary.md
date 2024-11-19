@@ -1,7 +1,7 @@
 # Query Analysis Report
 
 **Date of Analysis**: 2024-01-01 01:02:03  
-**Analyzed File**: `testdata/keys-log.json`
+**Analyzed File**: `../testdata/keys-log.json`
 
 ## Tables
 |Table Name|Reads|Writes|
@@ -148,7 +148,7 @@ partsupp ↔ supplier (Occurrences: 1)
 
 ```
 ## Failures
-|Query|Error|Count|
-|---|---|---|
-|I am a failing query;|syntax error at position 2 near 'I'|2|
+|Error|Count|
+|---|---|
+|syntax error at position 2 near 'I'|2|
 

@@ -1,0 +1,69 @@
+/bin/mysqld, Version: 8.0.26 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+# Time: 2023-08-01T12:00:01.852235Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000153  Lock_time: 0.000063 Rows_sent: 1  Rows_examined: 1
+use testdb;
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2343274;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+# administrator command: Prepare;
+# Time: 2023-08-01T12:00:01.856654Z
+# User@Host: admin[admin] @ localhost []  Id: 341291
+# Query_time: 0.005047  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+FLUSH SLOW LOGS;
+# Time: 2023-08-01T12:00:01.857984Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000162  Lock_time: 0.000067 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2343272;
+# Time: 2023-08-01T12:00:01.858711Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780506
+# Query_time: 0.000583  Lock_time: 0.000322 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select s1_0.id, s1_0.code, s1_0.token, s1_0.date from stores s1_0 where s1_0.id=11393;
+# Time: 2023-08-01T12:00:01.859281Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000148  Lock_time: 0.000062 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2343265;
+# Time: 2023-08-01T12:00:01.860595Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000159  Lock_time: 0.000065 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2343188;
+# Time: 2023-08-01T12:00:01.861900Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000152  Lock_time: 0.000063 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2343180;
+# Time: 2023-08-01T12:00:01.863201Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000149  Lock_time: 0.000061 Rows_sent: 666  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2343011;
+# Time: 2023-08-01T12:00:01.864517Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000153  Lock_time: 0.000062 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2342469;
+# Time: 2023-08-01T12:00:01.865820Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000151  Lock_time: 0.000062 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2342465;
+# Time: 2023-08-01T12:00:01.867130Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000148  Lock_time: 0.000061 Rows_sent: 1  Rows_examined: 731
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2342439;
+# Time: 2023-08-01T12:00:01.868511Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 780496
+# Query_time: 0.000163  Lock_time: 0.000067 Rows_sent: 1  Rows_examined: 1
+SET timestamp=1690891201;
+select m1_0.id, m1_0.name, m1_0.value, m1_0.date from items m1_0 where m1_0.id=2342389;

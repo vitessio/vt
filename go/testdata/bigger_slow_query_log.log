@@ -1,0 +1,219 @@
+/bin/mysqld, Version: 8.0.26 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+Time                 Id Command    Argument
+# Time: 2023-08-01T12:00:01.000123Z
+# User@Host: user1[user1] @  [192.168.1.101]  Id: 800001
+# Query_time: 0.150623  Lock_time: 0.002000 Rows_sent: 5  Rows_examined: 2000
+use testdb;
+SET timestamp=1690891201;
+SELECT p.name, AVG(r.rating) as avg_rating FROM products p JOIN reviews r ON p.id = r.product_id GROUP BY p.id ORDER BY avg_rating DESC LIMIT 5;
+# Time: 2023-08-01T12:00:02.000456Z
+# User@Host: admin[admin] @ localhost []  Id: 800002
+# Query_time: 0.200012  Lock_time: 0.003000 Rows_sent: 10  Rows_examined: 5000
+SET timestamp=1690891202;
+SELECT u.username, SUM(o.total_amount) as total_spent FROM users u JOIN orders o ON u.id = o.user_id WHERE o.created_at BETWEEN '2023-07-01' AND '2023-07-31' GROUP BY u.id HAVING total_spent > 500;
+# Time: 2023-08-01T12:00:03.000789Z
+# User@Host: user2[user2] @  [192.168.1.102]  Id: 800003
+# Query_time: 0.180234  Lock_time: 0.001500 Rows_sent: 20  Rows_examined: 10000
+SET timestamp=1690891203;
+SELECT c.name, COUNT(o.id) as order_count
+FROM categories c
+JOIN products p ON c.id = p.category_id
+JOIN order_items oi ON p.id = oi.product_id
+JOIN orders o ON oi.order_id = o.id
+GROUP BY c.id;
+# Time: 2023-08-01T12:00:04.001012Z
+# User@Host: user3[user3] @  [192.168.1.103]  Id: 800004
+# Query_time: 0.130456  Lock_time: 0.002300 Rows_sent: 15  Rows_examined: 8000
+SET timestamp=1690891204;
+SELECT p.name, i.stock_level
+FROM products p
+JOIN inventory i ON p.id = i.product_id
+WHERE i.stock_level < 5;
+# Time: 2023-08-01T12:00:05.001345Z
+# User@Host: user4[user4] @  [192.168.1.104]  Id: 800005
+# Query_time: 0.210678  Lock_time: 0.004000 Rows_sent: 25  Rows_examined: 15000
+SET timestamp=1690891205;
+SELECT c.name, SUM(oi.price * oi.quantity) as total_sales
+FROM categories c
+JOIN products p ON c.id = p.category_id
+JOIN order_items oi ON p.id = oi.product_id
+GROUP BY c.id
+ORDER BY total_sales DESC
+LIMIT 3;
+# Time: 2023-08-01T12:00:06.001678Z
+# User@Host: user5[user5] @  [192.168.1.105]  Id: 800006
+# Query_time: 0.140789  Lock_time: 0.001800 Rows_sent: 1  Rows_examined: 4000
+SET timestamp=1690891206;
+SELECT o.id, o.created_at
+FROM orders o
+LEFT JOIN shipments s ON o.id = s.order_id
+WHERE s.shipped_date IS NULL AND o.created_at < DATE_SUB(NOW(), INTERVAL 7 DAY);
+# Time: 2023-08-01T12:00:07.002001Z
+# User@Host: user1[user1] @  [192.168.1.101]  Id: 800001
+# Query_time: 0.160123  Lock_time: 0.002100 Rows_sent: 3  Rows_examined: 2500
+SET timestamp=1690891207;
+SELECT p.payment_method, AVG(o.total_amount) as avg_order_value
+FROM payments p
+JOIN orders o ON p.order_id = o.id
+GROUP BY p.payment_method;
+# Time: 2023-08-01T12:00:08.002334Z
+# User@Host: user2[user2] @  [192.168.1.102]  Id: 800003
+# Query_time: 0.190456  Lock_time: 0.001600 Rows_sent: 50  Rows_examined: 12000
+SET timestamp=1690891208;
+SELECT DATE(o.created_at) as order_date, COUNT(*) as order_count
+FROM orders o
+WHERE o.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+GROUP BY DATE(o.created_at);
+# Time: 2023-08-01T12:00:09.002667Z
+# User@Host: user3[user3] @  [192.168.1.103]  Id: 800004
+# Query_time: 0.220789  Lock_time: 0.003300 Rows_sent: 30  Rows_examined: 18000
+SET timestamp=1690891209;
+SELECT m.sender_id, COUNT(DISTINCT m.receiver_id) as unique_receivers
+FROM messages m
+GROUP BY m.sender_id
+HAVING unique_receivers > 10;
+# Time: 2023-08-01T12:00:10.003000Z
+# User@Host: user4[user4] @  [192.168.1.104]  Id: 800005
+# Query_time: 0.250012  Lock_time: 0.005000 Rows_sent: 2  Rows_examined: 6000
+SET timestamp=1690891210;
+SELECT u.id, u.username
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE o.id IS NULL;
+# Time: 2023-08-01T12:00:11.003333Z
+# User@Host: user5[user5] @  [192.168.1.105]  Id: 800006
+# Query_time: 0.170345  Lock_time: 0.001700 Rows_sent: 100  Rows_examined: 5000
+SET timestamp=1690891211;
+SELECT u.username, SUM(o.total_amount) as total_spent
+FROM users u
+JOIN orders o ON u.id = o.user_id
+WHERE o.created_at BETWEEN '2023-06-01' AND '2023-06-30'
+GROUP BY u.id
+HAVING total_spent > 2000;
+# Time: 2023-08-01T12:00:12.003666Z
+# User@Host: user1[user1] @  [192.168.1.101]  Id: 800001
+# Query_time: 0.210456  Lock_time: 0.002500 Rows_sent: 7  Rows_examined: 3000
+SET timestamp=1690891212;
+SELECT p.name, AVG(r.rating) as avg_rating
+FROM products p
+JOIN reviews r ON p.id = r.product_id
+GROUP BY p.id
+ORDER BY avg_rating DESC
+LIMIT 10;
+# Time: 2023-08-01T12:00:13.003999Z
+# User@Host: user2[user2] @  [192.168.1.102]  Id: 800003
+# Query_time: 0.180789  Lock_time: 0.002200 Rows_sent: 12  Rows_examined: 7000
+SET timestamp=1690891213;
+SELECT p.name, i.stock_level
+FROM products p
+JOIN inventory i ON p.id = i.product_id
+WHERE i.stock_level < 15;
+# Time: 2023-08-01T12:00:14.004332Z
+# User@Host: user3[user3] @  [192.168.1.103]  Id: 800004
+# Query_time: 0.200123  Lock_time: 0.001900 Rows_sent: 1  Rows_examined: 4500
+SET timestamp=1690891214;
+SELECT o.id, o.created_at
+FROM orders o
+LEFT JOIN shipments s ON o.id = s.order_id
+WHERE s.shipped_date IS NULL AND o.created_at < DATE_SUB(NOW(), INTERVAL 14 DAY);
+# Time: 2023-08-01T12:00:15.004665Z
+# User@Host: user4[user4] @  [192.168.1.104]  Id: 800005
+# Query_time: 0.240456  Lock_time: 0.003500 Rows_sent: 5  Rows_examined: 10000
+SET timestamp=1690891215;
+SELECT u.id, u.username
+FROM users u
+LEFT JOIN orders o ON u.id = o.user_id
+WHERE o.id IS NULL;
+# Time: 2023-08-01T12:00:16.004998Z
+# User@Host: user5[user5] @  [192.168.1.105]  Id: 800006
+# Query_time: 0.190789  Lock_time: 0.002600 Rows_sent: 8  Rows_examined: 6000
+SET timestamp=1690891216;
+SELECT c.name, COUNT(o.id) as order_count
+FROM categories c
+JOIN products p ON c.id = p.category_id
+JOIN order_items oi ON p.id = oi.product_id
+JOIN orders o ON oi.order_id = o.id
+GROUP BY c.id;
+# Time: 2023-08-01T12:00:17.005331Z
+# User@Host: user1[user1] @  [192.168.1.101]  Id: 800001
+# Query_time: 0.170123  Lock_time: 0.001800 Rows_sent: 4  Rows_examined: 3500
+SET timestamp=1690891217;
+SELECT p.payment_method, AVG(o.total_amount) as avg_order_value
+FROM payments p
+JOIN orders o ON p.order_id = o.id
+GROUP BY p.payment_method;
+# Time: 2023-08-01T12:00:18.005664Z
+# User@Host: user2[user2] @  [192.168.1.102]  Id: 800003
+# Query_time: 0.160456  Lock_time: 0.001400 Rows_sent: 6  Rows_examined: 3000
+SET timestamp=1690891218;
+SELECT m.sender_id, COUNT(DISTINCT m.receiver_id) as unique_receivers
+FROM messages m
+GROUP BY m.sender_id
+HAVING unique_receivers > 5;
+# Time: 2023-08-01T12:00:19.005997Z
+# User@Host: user3[user3] @  [192.168.1.103]  Id: 800004
+# Query_time: 0.210789  Lock_time: 0.003000 Rows_sent: 9  Rows_examined: 7000
+SET timestamp=1690891219;
+SELECT u.username, SUM(o.total_amount) as total_spent
+FROM users u
+JOIN orders o ON u.id = o.user_id
+WHERE o.created_at BETWEEN '2023-07-01' AND '2023-07-31'
+GROUP BY u.id
+HAVING total_spent > 1500;
+# Time: 2023-08-01T12:00:20.006330Z
+# User@Host: user4[user4] @  [192.168.1.104]  Id: 800005
+# Query_time: 0.180456  Lock_time: 0.002300 Rows_sent: 3  Rows_examined: 4000
+SET timestamp=1690891220;
+SELECT DATE(o.created_at) as order_date, COUNT(*) as order_count
+FROM orders o
+WHERE o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+GROUP BY DATE(o.created_at);
+# Time: 2023-08-01T12:00:21.006663Z
+# User@Host: user5[user5] @  [192.168.1.105]  Id: 800006
+# Query_time: 0.220123  Lock_time: 0.003800 Rows_sent: 2  Rows_examined: 8000
+SET timestamp=1690891221;
+SELECT u.id, u.username
+FROM users u
+JOIN orders o ON u.id = o.user_id
+JOIN reviews r ON u.id = r.user_id
+WHERE o.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+AND r.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH);
+# Time: 2023-08-01T12:00:22.006996Z
+# User@Host: user1[user1] @  [192.168.1.101]  Id: 800001
+# Query_time: 0.190789  Lock_time: 0.002100 Rows_sent: 6  Rows_examined: 5000
+SET timestamp=1690891222;
+SELECT c.name, SUM(oi.price * oi.quantity) as total_sales
+FROM categories c
+JOIN products p ON c.id = p.category_id
+JOIN order_items oi ON p.id = oi.product_id
+GROUP BY c.id
+ORDER BY total_sales DESC
+LIMIT 5;
+# Time: 2023-08-01T12:00:23.007329Z
+# User@Host: user2[user2] @  [192.168.1.102]  Id: 800003
+# Query_time: 0.160456  Lock_time: 0.001500 Rows_sent: 10  Rows_examined: 3500
+SET timestamp=1690891223;
+SELECT p.name, AVG(r.rating) as avg_rating
+FROM products p
+JOIN reviews r ON p.id = r.product_id
+WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)
+GROUP BY p.id
+ORDER BY avg_rating DESC
+LIMIT 5;
+# Time: 2023-08-01T12:00:24.007662Z
+# User@Host: user3[user3] @  [192.168.1.103]  Id: 800004
+# Query_time: 0.200123  Lock_time: 0.002700 Rows_sent: 15  Rows_examined: 6500
+SET timestamp=1690891224;
+SELECT p.name, i.stock_level
+FROM products p
+JOIN inventory i ON p.id = i.product_id
+WHERE i.stock_level BETWEEN 5 AND 15;
+# Time: 2023-08-01T12:00:25.007995Z
+# User@Host: user4[user4] @  [192.168.1.104]  Id: 800005
+# Query_time: 0.230789  Lock_time: 0.003100 Rows_sent: 20  Rows_examined: 9000
+SET timestamp=1690891225;
+SELECT m.sender_id, COUNT(DISTINCT m.receiver_id) as unique_receivers
+FROM messages m
+GROUP BY m.sender_id
+HAVING unique_receivers > 15;

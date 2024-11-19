@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/vitessio/vt/go/data"
@@ -34,16 +35,30 @@ func TestKeys(t *testing.T) {
 		{
 			cfg: Config{
 				FileName: "../../t/tpch_failing_queries.test",
-				Loader:   data.SQLScriptLoader{},
+				Loader:   data.SlowQueryLogLoader{},
 			},
-			expectedFile: "../summarize/testdata/keys-log.json",
+			expectedFile: "../testdata/keys-log.json",
 		},
 		{
 			cfg: Config{
-				FileName: "../data/testdata/vtgate.query.log",
+				FileName: "../testdata/vtgate.query.log",
 				Loader:   data.VtGateLogLoader{NeedsBindVars: false},
 			},
-			expectedFile: "../summarize/testdata/keys-log-vtgate.json",
+			expectedFile: "../testdata/keys-log-vtgate.json",
+		},
+		{
+			cfg: Config{
+				FileName: "../testdata/slow_query_log",
+				Loader:   data.SlowQueryLogLoader{},
+			},
+			expectedFile: "../testdata/slow-query-log.json",
+		},
+		{
+			cfg: Config{
+				FileName: "../testdata/bigger_slow_query_log.log",
+				Loader:   data.SlowQueryLogLoader{},
+			},
+			expectedFile: "../testdata/bigger_slow_query_log.json",
 		},
 	}
 
@@ -56,7 +71,10 @@ func TestKeys(t *testing.T) {
 			out, err := os.ReadFile(tcase.expectedFile)
 			require.NoError(t, err)
 
-			require.Equal(t, string(out), sb.String())
+			assert.Equal(t, string(out), sb.String())
+			if t.Failed() {
+				_ = os.WriteFile(tcase.expectedFile+".correct", []byte(sb.String()), 0o644)
+			}
 		})
 	}
 }

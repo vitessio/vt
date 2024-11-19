@@ -40,6 +40,11 @@ type (
 		Query     string
 		Line      int
 		Type      CmdType
+
+		// These fields are only set if the log file is a slow query log
+		QueryTime, LockTime    float64
+		RowsSent, RowsExamined int
+		Timestamp              int64
 	}
 
 	errLoader struct {

@@ -34,15 +34,25 @@ import (
 	"github.com/vitessio/vt/go/markdown"
 )
 
+const HotQueryCount = 10
+
 type (
-	Position    int
+	Position int
+
 	ColumnUsage struct {
 		Percentage float64
 		Count      int
 	}
+
 	ColumnInformation struct {
 		Name string
 		Pos  Position
+	}
+
+	Summary struct {
+		tables     []TableSummary
+		failures   []FailuresSummary
+		hotQueries []keys.QueryAnalysisResult
 	}
 
 	TableSummary struct {
@@ -55,7 +65,6 @@ type (
 	}
 
 	FailuresSummary struct {
-		Query string
 		Error string
 		Count int
 	}
@@ -143,7 +152,7 @@ func (ts TableSummary) UseCount() int {
 
 // printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
 // and prints this summary information to the output.
-func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
+func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetric string) {
 	md := &markdown.MarkDown{}
 
 	msg := `# Query Analysis Report
@@ -153,16 +162,98 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
 
 `
 	md.Printf(msg, now.Format(time.DateTime), file.Name)
+	metricReader := getMetricForHotness(hotMetric)
+	summary := summarizeKeysQueries(file.AnalysedQueries, metricReader)
 
-	tableSummaries, failuresSummaries := summarizeKeysQueries(file.AnalysedQueries)
-
-	renderTableUsage(tableSummaries, md)
+	renderHotQueries(md, summary.hotQueries, metricReader)
+	renderTableUsage(summary.tables, md)
 	renderTablesJoined(md, file.AnalysedQueries)
-	renderFailures(md, failuresSummaries)
+	renderFailures(md, summary.failures)
 
 	_, err := md.WriteTo(out)
 	if err != nil {
 		panic(err)
+	}
+}
+
+type getMetric = func(q keys.QueryAnalysisResult) float64
+
+func getMetricForHotness(metric string) getMetric {
+	switch metric {
+	case "usage-count":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return float64(q.UsageCount)
+		}
+	case "total-rows-examined":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return float64(q.RowsExamined)
+		}
+	case "avg-rows-examined":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return float64(q.RowsExamined) / float64(q.UsageCount)
+		}
+	case "total-time", "":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return q.QueryTime
+		}
+	case "avg-time":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return q.QueryTime / float64(q.UsageCount)
+		}
+	default:
+		exit(fmt.Sprintf("unknown metric: %s", metric))
+		panic("unreachable")
+	}
+}
+
+func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult, metricReader getMetric) {
+	if len(queries) == 0 {
+		return
+	}
+
+	hasTime := false
+	// Sort the queries in descending order of hotness
+	sort.Slice(queries, func(i, j int) bool {
+		if queries[i].QueryTime != 0 {
+			hasTime = true
+		}
+		return metricReader(queries[i]) > metricReader(queries[j])
+	})
+
+	if !hasTime {
+		return
+	}
+
+	md.PrintHeader("Top Queries", 2)
+
+	// Prepare table headers and rows
+	headers := []string{"Query ID", "Usage Count", "Total Query Time (ms)", "Avg Query Time (ms)", "Total Rows Examined"}
+	var rows [][]string
+
+	for i, query := range queries {
+		queryID := fmt.Sprintf("Q%d", i+1)
+		avgQueryTime := query.QueryTime / float64(query.UsageCount)
+		rows = append(rows, []string{
+			queryID,
+			strconv.Itoa(query.UsageCount),
+			fmt.Sprintf("%.2f", query.QueryTime),
+			fmt.Sprintf("%.2f", avgQueryTime),
+			strconv.Itoa(query.RowsExamined),
+		})
+	}
+
+	// Print the table
+	md.PrintTable(headers, rows)
+
+	// After the table, list the full queries with their IDs
+	md.PrintHeader("Query Details", 3)
+	for i, query := range queries {
+		queryID := fmt.Sprintf("Q%d", i+1)
+		md.PrintHeader(queryID, 4)
+		md.Println("```sql")
+		md.Println(query.QueryStructure)
+		md.Println("```")
+		md.NewLine()
 	}
 }
 
@@ -299,10 +390,10 @@ func renderFailures(md *markdown.MarkDown, failures []FailuresSummary) {
 	}
 	md.PrintHeader("Failures", 2)
 
-	headers := []string{"Query", "Error", "Count"}
+	headers := []string{"Error", "Count"}
 	var rows [][]string
 	for _, failure := range failures {
-		rows = append(rows, []string{failure.Query, failure.Error, strconv.Itoa(failure.Count)})
+		rows = append(rows, []string{failure.Error, strconv.Itoa(failure.Count)})
 	}
 	md.PrintTable(headers, rows)
 }
@@ -316,31 +407,16 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSummary) {
+func summarizeKeysQueries(queries *keys.Output, metricReader getMetric) Summary {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
+	var hotQueries []keys.QueryAnalysisResult
 
 	// First pass: collect all data and count occurrences
 	for _, query := range queries.Queries {
-		for _, table := range query.TableNames {
-			if _, exists := tableSummaries[table]; !exists {
-				tableSummaries[table] = &TableSummary{
-					Table:   table,
-					Columns: make(map[ColumnInformation]ColumnUsage),
-				}
-			}
-
-			switch query.StatementType {
-			case "INSERT", "DELETE", "UPDATE", "REPLACE":
-				tableUsageWriteCounts[table] += query.UsageCount
-			default:
-				tableUsageReadCounts[table] += query.UsageCount
-			}
-
-			summarizeColumnUsage(tableSummaries[table], query)
-			summarizeJoinPredicates(query.JoinPredicates, table, tableSummaries)
-		}
+		gatherTableInfo(query, tableSummaries, tableUsageWriteCounts, tableUsageReadCounts)
+		checkQueryForHotness(&hotQueries, query, metricReader)
 	}
 
 	// Second pass: calculate percentages
@@ -369,13 +445,54 @@ func summarizeKeysQueries(queries *keys.Output) ([]TableSummary, []FailuresSumma
 	var failures []FailuresSummary
 	for _, query := range queries.Failed {
 		failures = append(failures, FailuresSummary{
-			Query: query.Query,
 			Error: query.Error,
 			Count: len(query.LineNumbers),
 		})
 	}
 
-	return result, failures
+	return Summary{tables: result, failures: failures, hotQueries: hotQueries}
+}
+
+func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult, metricReader getMetric) {
+	// todo: we should be able to choose different metrics for hotness - e.g. total time spent on query, number of rows examined, etc.
+	switch {
+	case len(*hotQueries) < HotQueryCount:
+		// If we have not yet reached the limit, add the query
+		*hotQueries = append(*hotQueries, query)
+	case metricReader(query) > metricReader((*hotQueries)[0]):
+		// If the current query has more usage than the least used hot query, replace it
+		(*hotQueries)[0] = query
+	default:
+		// If the current query is not hot enough, just return
+		return
+	}
+
+	// Sort the hot queries by query time so that the least used query is always at the front
+	sort.Slice(*hotQueries,
+		func(i, j int) bool {
+			return metricReader((*hotQueries)[i]) < metricReader((*hotQueries)[j])
+		})
+}
+
+func gatherTableInfo(query keys.QueryAnalysisResult, tableSummaries map[string]*TableSummary, tableUsageWriteCounts map[string]int, tableUsageReadCounts map[string]int) {
+	for _, table := range query.TableNames {
+		if _, exists := tableSummaries[table]; !exists {
+			tableSummaries[table] = &TableSummary{
+				Table:   table,
+				Columns: make(map[ColumnInformation]ColumnUsage),
+			}
+		}
+
+		switch query.StatementType {
+		case "INSERT", "DELETE", "UPDATE", "REPLACE":
+			tableUsageWriteCounts[table] += query.UsageCount
+		default:
+			tableUsageReadCounts[table] += query.UsageCount
+		}
+
+		summarizeColumnUsage(tableSummaries[table], query)
+		summarizeJoinPredicates(query.JoinPredicates, table, tableSummaries)
+	}
 }
 
 func summarizeColumnUsage(tableSummary *TableSummary, query keys.QueryAnalysisResult) {

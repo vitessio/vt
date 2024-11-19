@@ -23,14 +23,20 @@ import (
 )
 
 func summarizeCmd() *cobra.Command {
-	return &cobra.Command{
+	var hotMetric string
+
+	cmd := &cobra.Command{
 		Use:     "summarize old_file.json [new_file.json]",
 		Aliases: []string{"benchstat"},
 		Short:   "Compares and analyses a trace output",
 		Example: "vt summarize old.json new.json",
 		Args:    cobra.RangeArgs(1, 2),
 		Run: func(_ *cobra.Command, args []string) {
-			summarize.Run(args)
+			summarize.Run(args, hotMetric)
 		},
 	}
+
+	cmd.Flags().StringVar(&hotMetric, "hot-metric", "total-time", "Metric to determine hot queries (options: usage-count, total-rows-examined, avg-rows-examined, avg-time, total-time)")
+
+	return cmd
 }

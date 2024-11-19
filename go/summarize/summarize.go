@@ -39,21 +39,30 @@ type (
 	}
 )
 
-func Run(args []string) {
-	traces := make([]readingSummary, len(args))
-	for i, arg := range args {
-		traces[i] = readTraceFile(arg)
+func Run(files []string, hotMetric string) {
+	traces := make([]readingSummary, len(files))
+	var err error
+	for i, arg := range files {
+		traces[i], err = readTraceFile(arg)
+		if err != nil {
+			exit(err.Error())
+		}
+	}
+
+	if hotMetric != "" && traces[0].AnalysedQueries == nil {
+		exit("hotMetric flag is only supported for 'vt keys' output")
 	}
 
 	firstTrace := traces[0]
-	if len(traces) == 1 {
-		if firstTrace.AnalysedQueries == nil {
-			printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
-		} else {
-			printKeysSummary(os.Stdout, firstTrace, time.Now())
-		}
-	} else {
+	if len(traces) != 1 {
 		compareTraces(os.Stdout, terminalWidth(), highlightQuery, firstTrace, traces[1])
+		return
+	}
+
+	if firstTrace.AnalysedQueries == nil {
+		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
+	} else {
+		printKeysSummary(os.Stdout, firstTrace, time.Now(), hotMetric)
 	}
 }
 

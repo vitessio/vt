@@ -1,0 +1,76 @@
+{
+    "queries": [
+      {
+        "queryStructure": "SELECT `m1_0`.`id`, `m1_0`.`name`, `m1_0`.`value`, `m1_0`.`date` FROM `items` AS `m1_0` WHERE `m1_0`.`id` = :_m1_0_id /* INT64 */",
+        "usageCount": 10,
+        "lineNumbers": [
+          9,
+          24,
+          34,
+          39,
+          44,
+          49,
+          54,
+          59,
+          64,
+          69
+        ],
+        "tableNames": [
+          "items"
+        ],
+        "filterColumns": [
+          "items.id ="
+        ],
+        "statementType": "SELECT",
+        "queryTime": 0.001385,
+        "lockTime": 0.00057,
+        "rowsSent": 674,
+        "rowsExamined": 739
+      },
+      {
+        "queryStructure": "FLUSH SLOW LOGS",
+        "usageCount": 1,
+        "lineNumbers": [
+          19
+        ],
+        "statementType": "FLUSH",
+        "queryTime": 0.005047,
+        "timestamp": 1690891201
+      },
+      {
+        "queryStructure": "SELECT `s1_0`.`id`, `s1_0`.`code`, `s1_0`.`token`, `s1_0`.`date` FROM `stores` AS `s1_0` WHERE `s1_0`.`id` = :_s1_0_id /* INT64 */",
+        "usageCount": 1,
+        "lineNumbers": [
+          29
+        ],
+        "tableNames": [
+          "stores"
+        ],
+        "filterColumns": [
+          "stores.id ="
+        ],
+        "statementType": "SELECT",
+        "queryTime": 0.000583,
+        "lockTime": 0.000322,
+        "rowsSent": 1,
+        "rowsExamined": 1,
+        "timestamp": 1690891201
+      }
+    ],
+    "failed": [
+      {
+        "query": "/bin/mysqld, Version: 8.0.26 (Source distribution). started with:\nTcp port: 3306  Unix socket: /tmp/mysql.sock\nTime                 Id Command    Argument\nuse testdb;",
+        "lineNumbers": [
+          1
+        ],
+        "error": "syntax error at position 2"
+      },
+      {
+        "query": "SET timestamp=1690891201;",
+        "lineNumbers": [
+          8
+        ],
+        "error": "syntax error at position 14 near 'timestamp'"
+      }
+    ]
+  }
