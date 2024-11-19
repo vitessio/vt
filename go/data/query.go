@@ -42,6 +42,7 @@ type (
 		Type      CmdType
 
 		// These fields are only set if the log file is a slow query log
+		ConnectionID           int
 		QueryTime, LockTime    float64
 		RowsSent, RowsExamined int
 		Timestamp              int64
