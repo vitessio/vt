@@ -152,7 +152,7 @@ func (ts TableSummary) UseCount() int {
 
 // printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
 // and prints this summary information to the output.
-func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
+func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetric string) {
 	md := &markdown.MarkDown{}
 
 	msg := `# Query Analysis Report
@@ -162,10 +162,10 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
 
 `
 	md.Printf(msg, now.Format(time.DateTime), file.Name)
+	metricReader := getMetricForHotness(hotMetric)
+	summary := summarizeKeysQueries(file.AnalysedQueries, metricReader)
 
-	summary := summarizeKeysQueries(file.AnalysedQueries)
-
-	renderHotQueries(md, summary.hotQueries)
+	renderHotQueries(md, summary.hotQueries, metricReader)
 	renderTableUsage(summary.tables, md)
 	renderTablesJoined(md, file.AnalysedQueries)
 	renderFailures(md, summary.failures)
@@ -176,18 +176,48 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
 	}
 }
 
-func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult) {
+type getMetric = func(q keys.QueryAnalysisResult) float64
+
+func getMetricForHotness(metric string) getMetric {
+	switch metric {
+	case "usage-count":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return float64(q.UsageCount)
+		}
+	case "total-rows-examined":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return float64(q.RowsExamined)
+		}
+	case "avg-rows-examined":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return float64(q.RowsExamined) / float64(q.UsageCount)
+		}
+	case "total-time", "":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return q.QueryTime
+		}
+	case "avg-time":
+		return func(q keys.QueryAnalysisResult) float64 {
+			return q.QueryTime / float64(q.UsageCount)
+		}
+	default:
+		exit(fmt.Sprintf("unknown metric: %s", metric))
+		panic("unreachable")
+	}
+}
+
+func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult, metricReader getMetric) {
 	if len(queries) == 0 {
 		return
 	}
 
 	hasTime := false
-	// Sort the queries in descending order of total query time
+	// Sort the queries in descending order of hotness
 	sort.Slice(queries, func(i, j int) bool {
 		if queries[i].QueryTime != 0 {
 			hasTime = true
 		}
-		return queries[i].QueryTime > queries[j].QueryTime
+		return metricReader(queries[i]) > metricReader(queries[j])
 	})
 
 	if !hasTime {
@@ -377,7 +407,7 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(queries *keys.Output) Summary {
+func summarizeKeysQueries(queries *keys.Output, metricReader getMetric) Summary {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
@@ -386,7 +416,7 @@ func summarizeKeysQueries(queries *keys.Output) Summary {
 	// First pass: collect all data and count occurrences
 	for _, query := range queries.Queries {
 		gatherTableInfo(query, tableSummaries, tableUsageWriteCounts, tableUsageReadCounts)
-		checkQueryForHotness(&hotQueries, query)
+		checkQueryForHotness(&hotQueries, query, metricReader)
 	}
 
 	// Second pass: calculate percentages
@@ -423,13 +453,13 @@ func summarizeKeysQueries(queries *keys.Output) Summary {
 	return Summary{tables: result, failures: failures, hotQueries: hotQueries}
 }
 
-func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult) {
+func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult, metricReader getMetric) {
 	// todo: we should be able to choose different metrics for hotness - e.g. total time spent on query, number of rows examined, etc.
 	switch {
 	case len(*hotQueries) < HotQueryCount:
 		// If we have not yet reached the limit, add the query
 		*hotQueries = append(*hotQueries, query)
-	case query.QueryTime > (*hotQueries)[0].QueryTime:
+	case metricReader(query) > metricReader((*hotQueries)[0]):
 		// If the current query has more usage than the least used hot query, replace it
 		(*hotQueries)[0] = query
 	default:
@@ -440,7 +470,7 @@ func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.Que
 	// Sort the hot queries by query time so that the least used query is always at the front
 	sort.Slice(*hotQueries,
 		func(i, j int) bool {
-			return (*hotQueries)[i].QueryTime < (*hotQueries)[j].QueryTime
+			return metricReader((*hotQueries)[i]) < metricReader((*hotQueries)[j])
 		})
 }
 

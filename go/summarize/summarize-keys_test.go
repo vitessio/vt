@@ -67,25 +67,41 @@ func TestTableSummary(t *testing.T) {
 }
 
 func TestSummarizeKeysFile(t *testing.T) {
-	tests := []struct {
-		inputFile    string
-		expectedFile string
-	}{
-		{"keys-log.json", "keys-summary.md"},
-		{"bigger_slow_query_log.json", "bigger_slow_log.md"},
+	file, err := readTraceFile("../testdata/keys-log.json")
+	require.NoError(t, err)
+	sb := &strings.Builder{}
+	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
+	printKeysSummary(sb, file, now, "")
+	expected, err := os.ReadFile("../testdata/keys-summary.md")
+	require.NoError(t, err)
+	assert.Equal(t, string(expected), sb.String())
+	if t.Failed() {
+		_ = os.WriteFile("../testdata/keys-summary.md.correct", []byte(sb.String()), 0o644)
+	}
+}
+
+func TestSummarizeKeysWithHotnessFile(t *testing.T) {
+	tests := []string{
+		"usage-count",
+		"total-rows-examined",
+		"avg-rows-examined",
+		"avg-time",
+		"total-time",
 	}
 
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("input: %s, expected: %s", tt.inputFile, tt.expectedFile), func(t *testing.T) {
-			file, err := readTraceFile("../testdata/" + tt.inputFile)
+	for _, metric := range tests {
+		t.Run(metric, func(t *testing.T) {
+			file, err := readTraceFile("../testdata/bigger_slow_query_log.json")
 			require.NoError(t, err)
 			sb := &strings.Builder{}
-			printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
-			expected, err := os.ReadFile("../testdata/" + tt.expectedFile)
+			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
+			printKeysSummary(sb, file, now, metric)
+			expected, err := os.ReadFile(fmt.Sprintf("../testdata/bigger_slow_log_%s.md", metric))
 			require.NoError(t, err)
 			assert.Equal(t, string(expected), sb.String())
 			if t.Failed() {
-				_ = os.WriteFile("../testdata/"+tt.expectedFile+".correct", []byte(sb.String()), 0o644)
+				_ = os.Mkdir("../testdata/expected", 0o755)
+				_ = os.WriteFile(fmt.Sprintf("../testdata/expected/bigger_slow_log_%s.md", metric), []byte(sb.String()), 0o644)
 			}
 		})
 	}
