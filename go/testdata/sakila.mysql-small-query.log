@@ -1,4 +1,5 @@
 
+--skip
 select * from actor where first_name = 'Scarlett';
 
 select * from actor where last_name like 'Johansson';
@@ -202,7 +203,6 @@ FROM top_five_genres;
 # Following queries simulate lots of queries joining with lookup-style tables
 
 SELECT
-    /*vt+ VT_USAGE_COUNT=1000 */
     f.title AS film_title,
     CONCAT(a.first_name, ' ', a.last_name) AS actor_name
 FROM
@@ -215,7 +215,6 @@ ORDER BY
     film_title, actor_name;
 
 SELECT
-    /*vt+ VT_USAGE_COUNT=500 */
     f.title AS film_title,
     c.name AS category_name
 FROM
@@ -228,7 +227,6 @@ ORDER BY
     category_name, film_title;
 
 SELECT
-    /*vt+ VT_USAGE_COUNT=500 */
     CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
     ci.city AS city_name,
     co.country AS country_name
@@ -244,7 +242,6 @@ ORDER BY
     country_name, city_name, customer_name;
 
 SELECT
-    /*vt+ VT_USAGE_COUNT=3413 */
     i.inventory_id,
     f.title AS film_title,
     l.name AS language_name
@@ -258,7 +255,6 @@ ORDER BY
     language_name, film_title;
 
 SELECT
-    /*vt+ VT_USAGE_COUNT=7342 */
     s.store_id,
     CONCAT(st.first_name, ' ', st.last_name) AS staff_name,
     ci.city AS store_city,
@@ -279,7 +275,6 @@ ORDER BY
     store_country, store_city, staff_name;
 
 SELECT
-    /*vt+ VT_USAGE_COUNT=1900 */
     l.name AS language_name,
     COUNT(f.film_id) AS film_count
 FROM
@@ -292,85 +287,85 @@ ORDER BY
     film_count DESC, language_name;
 
 INSERT INTO film (title, description, release_year, language_id, rental_duration, rental_rate, length, replacement_cost, rating)
-VALUES ('The Grand Adventure', 'A thrilling journey through unknown lands.', 2024, 1, 5, 3.99, 120, 14.99, 'PG'); /*vt+ VT_USAGE_COUNT=4321 */
+VALUES ('The Grand Adventure', 'A thrilling journey through unknown lands.', 2024, 1, 5, 3.99, 120, 14.99, 'PG');
 
-DELETE /*vt+ VT_USAGE_COUNT=8723 */ FROM customer
+DELETE FROM customer
 WHERE customer_id = 101;
 
-UPDATE /*vt+ VT_USAGE_COUNT=2841 */ rental
+UPDATE rental
 SET return_date = NOW()
 WHERE rental_id = 204 AND return_date IS NULL;
 
-INSERT /*vt+ VT_USAGE_COUNT=6402 */ INTO inventory (film_id, store_id, last_update)
+INSERT INTO inventory (film_id, store_id, last_update)
 VALUES (5, 1, NOW());
 
-DELETE /*vt+ VT_USAGE_COUNT=5298 */ FROM payment
+DELETE FROM payment
 WHERE payment_id = 305;
 
-UPDATE /*vt+ VT_USAGE_COUNT=3789 */ staff
+UPDATE staff
 SET active = FALSE
 WHERE staff_id = 2;
 
-INSERT /*vt+ VT_USAGE_COUNT=9147 */ INTO rental (rental_date, inventory_id, customer_id, staff_id)
+INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id)
 VALUES (NOW(), 101, 305, 1);
 
-DELETE /*vt+ VT_USAGE_COUNT=1 */ FROM address
+DELETE FROM address
 WHERE address_id = 200;
 
-UPDATE /*vt+ VT_USAGE_COUNT=7083 */ store
+UPDATE store
 SET manager_staff_id = 3
 WHERE store_id = 2;
 
-INSERT /*vt+ VT_USAGE_COUNT=3456 */ INTO film_actor (actor_id, film_id, last_update)
+INSERT INTO film_actor (actor_id, film_id, last_update)
 VALUES (10, 15, NOW());
 
-INSERT /*vt+ VT_USAGE_COUNT=12 */ INTO actor (first_name, last_name, last_update)
+INSERT INTO actor (first_name, last_name, last_update)
 VALUES ('John', 'Doe', NOW());
 
-DELETE /*vt+ VT_USAGE_COUNT=8 */ FROM actor
+DELETE FROM actor
 WHERE actor_id = 15;
 
-UPDATE /*vt+ VT_USAGE_COUNT=25 */ actor
+UPDATE actor
 SET last_name = 'Smith'
 WHERE actor_id = 22;
 
-INSERT /*vt+ VT_USAGE_COUNT=18 */ INTO category (name, last_update)
+INSERT INTO category (name, last_update)
 VALUES ('Adventure', NOW());
 
-DELETE /*vt+ VT_USAGE_COUNT=10 */ FROM category
+DELETE FROM category
 WHERE category_id = 4;
 
-UPDATE /*vt+ VT_USAGE_COUNT=30 */ category
+UPDATE category
 SET name = 'Drama'
 WHERE category_id = 7;
 
-INSERT /*vt+ VT_USAGE_COUNT=5 */ INTO language (name, last_update)
+INSERT INTO language (name, last_update)
 VALUES ('Mandarin', NOW());
 
-DELETE /*vt+ VT_USAGE_COUNT=1 */ FROM language
+DELETE FROM language
 WHERE language_id = 5;
 
-UPDATE /*vt+ VT_USAGE_COUNT=3 */ language
+UPDATE language
 SET name = 'French'
 WHERE language_id = 2;
 
-INSERT /*vt+ VT_USAGE_COUNT=22 */ INTO city (city, country_id, last_update)
+INSERT INTO city (city, country_id, last_update)
 VALUES ('Amsterdam', 1, NOW());
 
-DELETE /*vt+ VT_USAGE_COUNT=16 */ FROM city
+DELETE FROM city
 WHERE city_id = 101;
 
-UPDATE /*vt+ VT_USAGE_COUNT=7 */ city
+UPDATE city
 SET city = 'New York'
 WHERE city_id = 50;
 
-INSERT /*vt+ VT_USAGE_COUNT=3 */ INTO country (country, last_update)
+INSERT INTO country (country, last_update)
 VALUES ('Netherlands', NOW());
 
-DELETE /*vt+ VT_USAGE_COUNT=9 */ FROM country
+DELETE FROM country
 WHERE country_id = 25;
 
-UPDATE /*vt+ VT_USAGE_COUNT=35 */ country
+UPDATE country
 SET country = 'Germany'
 WHERE country_id = 12;
 
