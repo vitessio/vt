@@ -50,8 +50,9 @@ type (
 	}
 
 	Summary struct {
-		tables   []TableSummary
-		failures []FailuresSummary
+		tables     []TableSummary
+		failures   []FailuresSummary
+		hotQueries []keys.QueryAnalysisResult
 	}
 
 	TableSummary struct {
@@ -164,6 +165,7 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
 
 	summary := summarizeKeysQueries(file.AnalysedQueries)
 
+	renderHotQueries(md, summary.hotQueries)
 	renderTableUsage(summary.tables, md)
 	renderTablesJoined(md, file.AnalysedQueries)
 	renderFailures(md, summary.failures)
@@ -171,6 +173,57 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time) {
 	_, err := md.WriteTo(out)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult) {
+	if len(queries) == 0 {
+		return
+	}
+
+	hasTime := false
+	// Sort the queries in descending order of total query time
+	sort.Slice(queries, func(i, j int) bool {
+		if queries[i].QueryTime != 0 {
+			hasTime = true
+		}
+		return queries[i].QueryTime > queries[j].QueryTime
+	})
+
+	if !hasTime {
+		return
+	}
+
+	md.PrintHeader("Top Queries", 2)
+
+	// Prepare table headers and rows
+	headers := []string{"Query ID", "Usage Count", "Total Query Time (ms)", "Avg Query Time (ms)", "Total Rows Examined"}
+	var rows [][]string
+
+	for i, query := range queries {
+		queryID := fmt.Sprintf("Q%d", i+1)
+		avgQueryTime := query.QueryTime / float64(query.UsageCount)
+		rows = append(rows, []string{
+			queryID,
+			strconv.Itoa(query.UsageCount),
+			fmt.Sprintf("%.2f", query.QueryTime),
+			fmt.Sprintf("%.2f", avgQueryTime),
+			strconv.Itoa(query.RowsExamined),
+		})
+	}
+
+	// Print the table
+	md.PrintTable(headers, rows)
+
+	// After the table, list the full queries with their IDs
+	md.PrintHeader("Query Details", 3)
+	for i, query := range queries {
+		queryID := fmt.Sprintf("Q%d", i+1)
+		md.PrintHeader(queryID, 4)
+		md.Println("```sql")
+		md.Println(query.QueryStructure)
+		md.Println("```")
+		md.NewLine()
 	}
 }
 
@@ -367,7 +420,7 @@ func summarizeKeysQueries(queries *keys.Output) Summary {
 		})
 	}
 
-	return Summary{tables: result, failures: failures}
+	return Summary{tables: result, failures: failures, hotQueries: hotQueries}
 }
 
 func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult) {
@@ -376,13 +429,19 @@ func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.Que
 	case len(*hotQueries) < HotQueryCount:
 		// If we have not yet reached the limit, add the query
 		*hotQueries = append(*hotQueries, query)
-	case query.UsageCount > (*hotQueries)[0].UsageCount:
+	case query.QueryTime > (*hotQueries)[0].QueryTime:
 		// If the current query has more usage than the least used hot query, replace it
 		(*hotQueries)[0] = query
-		sort.Slice(*hotQueries, func(i, j int) bool {
-			return (*hotQueries)[i].UsageCount > (*hotQueries)[j].UsageCount
-		})
+	default:
+		// If the current query is not hot enough, just return
+		return
 	}
+
+	// Sort the hot queries by query time so that the least used query is always at the front
+	sort.Slice(*hotQueries,
+		func(i, j int) bool {
+			return (*hotQueries)[i].QueryTime < (*hotQueries)[j].QueryTime
+		})
 }
 
 func gatherTableInfo(query keys.QueryAnalysisResult, tableSummaries map[string]*TableSummary, tableUsageWriteCounts map[string]int, tableUsageReadCounts map[string]int) {

@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -82,7 +83,10 @@ func TestSummarizeKeysFile(t *testing.T) {
 			printKeysSummary(sb, file, time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC))
 			expected, err := os.ReadFile("../testdata/" + tt.expectedFile)
 			require.NoError(t, err)
-			require.Equal(t, string(expected), sb.String())
+			assert.Equal(t, string(expected), sb.String())
+			if t.Failed() {
+				_ = os.WriteFile("../testdata/"+tt.expectedFile+".correct", []byte(sb.String()), 0o644)
+			}
 		})
 	}
 }
