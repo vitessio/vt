@@ -45,6 +45,7 @@ type (
 		QueryTime, LockTime    float64
 		RowsSent, RowsExamined int
 		Timestamp              int64
+		UsageCount             int
 	}
 
 	errLoader struct {

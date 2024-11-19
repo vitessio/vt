@@ -1,5 +1,5 @@
 
---skip
+--usage_count 123
 select * from actor where first_name = 'Scarlett';
 
 select * from actor where last_name like 'Johansson';

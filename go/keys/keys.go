@@ -23,6 +23,8 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 
 	querypb "vitess.io/vitess/go/vt/proto/query"
 	"vitess.io/vitess/go/vt/sqlparser"
@@ -87,6 +89,8 @@ func run(out io.Writer, cfg Config) error {
 
 	loader := cfg.Loader.Load(cfg.FileName)
 	skip := false
+	usageCount := 1
+	var err error
 	for {
 		query, kontinue := loader.Next()
 		if !kontinue {
@@ -94,6 +98,11 @@ func run(out io.Writer, cfg Config) error {
 		}
 
 		switch query.Type {
+		case data.UsageCount:
+			usageCount, err = strconv.Atoi(strings.TrimSpace(query.Query))
+			if err != nil {
+				return fmt.Errorf("Usage Count is incorrectly specified: %s", query.Query)
+			}
 		case data.Skip, data.Error, data.VExplain:
 			skip = true
 		case data.Unknown:
@@ -105,7 +114,9 @@ func run(out io.Writer, cfg Config) error {
 				skip = false
 				continue
 			}
+			query.UsageCount = usageCount
 			process(query, si, ql)
+			usageCount = 1
 		}
 	}
 
@@ -158,8 +169,12 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 
 	structure := sqlparser.CanonicalString(ast)
 	r, found := ql.queries[structure]
+	usageCount := q.UsageCount
+	if usageCount == 0 {
+		usageCount = 1
+	}
 	if found {
-		r.UsageCount++
+		r.UsageCount += usageCount
 		r.LineNumbers = append(r.LineNumbers, q.Line)
 		r.QueryTime += q.QueryTime
 		r.LockTime += q.LockTime
@@ -181,7 +196,7 @@ func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q dat
 	ql.queries[structure] = &QueryAnalysisResult{
 		QueryStructure:  structure,
 		StatementType:   result.StatementType,
-		UsageCount:      1,
+		UsageCount:      usageCount,
 		LineNumbers:     []int{q.Line},
 		TableNames:      tableNames,
 		GroupingColumns: result.GroupingColumns,

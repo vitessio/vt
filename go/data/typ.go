@@ -34,6 +34,7 @@ const (
 	VitessOnly
 	MysqlOnly
 	Reference
+	UsageCount
 )
 
 var commandMap = map[string]CmdType{ //nolint:gochecknoglobals // this is instead of a const
@@ -46,6 +47,7 @@ var commandMap = map[string]CmdType{ //nolint:gochecknoglobals // this is instea
 	"vitess_only":           VitessOnly,
 	"mysql_only":            MysqlOnly,
 	"reference":             Reference,
+	"usage_count":           UsageCount,
 }
 
 func (cmd CmdType) String() string {
