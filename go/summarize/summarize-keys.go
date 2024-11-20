@@ -18,7 +18,6 @@ package summarize
 
 import (
 	"fmt"
-	"github.com/vitessio/vt/go/schema"
 	"io"
 	"iter"
 	"maps"
@@ -26,6 +25,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/vitessio/vt/go/schema"
 
 	"vitess.io/vitess/go/slice"
 	"vitess.io/vitess/go/vt/sqlparser"
