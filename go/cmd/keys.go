@@ -55,7 +55,7 @@ func keysCmd() *cobra.Command {
 
 func addInputTypeFlag(cmd *cobra.Command, s *string) {
 	*s = "sql"
-	cmd.Flags().StringVar(s, "input-type", "sql", "Specifies the type of input file: 'sql' or 'mysql-log'")
+	cmd.Flags().StringVar(s, "input-type", "sql", "Specifies the type of input file: 'sql', 'mysql-log' or 'vtgate-log'")
 }
 
 func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) {

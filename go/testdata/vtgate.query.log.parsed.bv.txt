@@ -1,44 +1,44 @@
-create table customers (
+2883466137428011160:create table customers (
 	customer_id int,
 	customer_name varchar(100),
 	customer_pincode int,
 	primary key (customer_id)
 )
-create table pincode_areas (
+2883466137428011160:create table pincode_areas (
 	pincode int,
 	area_name varchar(100)
 )
-create table orders (
+2883466137428011160:create table orders (
 	order_id int,
 	customer_id int,
 	order_date date,
 	order_amount double,
 	primary key (order_id)
 )
-create table name_idx (
+2883466137428011160:create table name_idx (
 	`name` varchar(100),
 	customer_id int,
 	keyspace_id varbinary(16),
 	primary key (`name`, customer_id)
 )
-vexplain trace insert into pincode_areas(pincode, area_name) values (110001, 'Connaught Place'), (110002, 'Lodhi Road'), (110003, 'Civil Lines'), (110004, 'Kashmere Gate'), (110005, 'Chandni Chowk'), (110006, 'Barakhamba Road'), (110007, 'Kamla Nagar'), (110008, 'Karol Bagh'), (110009, 'Paharganj'), (110010, 'Patel Nagar'), (110011, 'South Extension'), (110012, 'Lajpat Nagar'), (110013, 'Sarojini Nagar'), (110014, 'Malviya Nagar'), (110015, 'Saket')
-vexplain trace insert into customers(customer_id, customer_name, customer_pincode) values (1, 'John Doe', 110001), (2, 'Jane Doe', 110002), (3, 'Alice', 110003), (4, 'Bob', 110004), (5, 'Charlie', 110004), (6, 'David', 110006), (7, 'Eve', 110007), (8, 'Frank', 110008), (9, 'Grace', 110009), (10, 'Heidi', 110004), (11, 'Ivy', 110011), (12, 'Alice', 110005), (13, 'Bob', 110003), (14, 'Charlie', 110014), (15, 'David', 110015), (16, 'Frank', 110008), (17, 'Grace', 110009), (18, 'Isaac', 110010), (19, 'Julia', 110011), (20, 'Kevin', 110012), (21, 'Laura', 110013), (22, 'Michael', 110014), (23, 'Nina', 110015), (24, 'Oscar', 110001), (25, 'Patricia', 110002), (26, 'Quincy', 110003), (27, 'Rachel', 110004), (28, 'Samuel', 110005), (29, 'Tina', 110006), (30, 'Ulysses', 110007)
-vexplain trace insert into orders(order_id, customer_id, order_date, order_amount) values (1, 1, '2020-01-01', 1000), (2, 2, '2020-01-02', 2000), (3, 3, '2020-01-03', 3000), (4, 4, '2020-01-04', 4000), (5, 5, '2020-01-05', 5000), (6, 6, '2020-01-06', 6000), (7, 7, '2020-01-07', 7000), (8, 8, '2020-01-08', 8000), (9, 9, '2020-01-09', 9000), (10, 10, '2020-01-10', 10000), (11, 11, '2020-01-11', 11000), (12, 12, '2020-01-12', 12000), (13, 13, '2020-01-13', 13000), (14, 14, '2020-01-14', 14000), (15, 15, '2020-01-15', 15000), (16, 16, '2020-01-16', 16000), (17, 17, '2020-01-17', 17000), (18, 1, '2020-01-18', 18000), (19, 2, '2020-01-19', 19000), (20, 3, '2020-01-20', 20000), (21, 4, '2020-01-21', 21000), (22, 5, '2020-01-22', 22000), (23, 6, '2020-01-23', 23000), (24, 7, '2020-01-24', 24000), (25, 8, '2020-01-25', 25000), (26, 9, '2020-01-26', 26000), (27, 10, '2020-01-27', 27000), (28, 11, '2020-01-28', 28000), (29, 12, '2020-01-29', 29000), (30, 13, '2020-01-30', 30000), (31, 14, '2020-01-31', 31000), (32, 15, '2020-02-01', 32000), (33, 16, '2020-02-02', 33000), (34, 17, '2020-02-03', 34000), (35, 18, '2020-02-04', 35000), (36, 19, '2020-02-05', 36000), (37, 20, '2020-02-06', 37000), (38, 21, '2020-02-07', 38000), (39, 22, '2020-02-08', 39000), (40, 23, '2020-02-09', 40000), (41, 24, '2020-02-10', 41000), (42, 25, '2020-02-11', 42000), (43, 26, '2020-02-12', 43000), (44, 27, '2020-02-13', 44000), (45, 28, '2020-02-14', 45000), (46, 29, '2020-02-15', 46000), (47, 30, '2020-02-16', 47000), (48, 1, '2020-02-17', 48000), (49, 2, '2020-02-18', 49000), (50, 3, '2020-02-19', 50000)
-select customer_id, customer_pincode from customers where customer_name = 'Alice'
-vexplain trace select customer_id, customer_pincode from customers where customer_name = 'Alice'
-select c.customer_id, sum(o.order_amount) from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id
-vexplain trace select c.customer_id, sum(o.order_amount) from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id
-select c.customer_id, p.area_name from customers as c join pincode_areas as p on c.customer_pincode = p.pincode
-vexplain trace select c.customer_id, p.area_name from customers as c join pincode_areas as p on c.customer_pincode = p.pincode
-select distinct c.customer_id, c.customer_name from customers as c join orders as o on c.customer_id = o.customer_id where o.order_amount > (select avg(order_amount) from orders)
-vexplain trace select distinct c.customer_id, c.customer_name from customers as c join orders as o on c.customer_id = o.customer_id where o.order_amount > (select avg(order_amount) from orders)
-select c.customer_id, c.customer_name from customers as c left join orders as o on c.customer_id = o.customer_id where o.order_id is null
-vexplain trace select c.customer_id, c.customer_name from customers as c left join orders as o on c.customer_id = o.customer_id where o.order_id is null
-select c.customer_id, c.customer_name, sum(o.order_amount) as total_amount from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id, c.customer_name order by total_amount desc limit 5
-vexplain trace select c.customer_id, c.customer_name, sum(o.order_amount) as total_amount from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id, c.customer_name order by total_amount desc limit 5
-select distinct c1.customer_id, c1.customer_name from customers as c1 join orders as o1 on c1.customer_id = o1.customer_id join orders as o2 on c1.customer_id = o2.customer_id where DATEDIFF(o2.order_date, o1.order_date) = 1
-vexplain trace select distinct c1.customer_id, c1.customer_name from customers as c1 join orders as o1 on c1.customer_id = o1.customer_id join orders as o2 on c1.customer_id = o2.customer_id where DATEDIFF(o2.order_date, o1.order_date) = 1
-select DATE_FORMAT(order_date, '%Y-%m') as `month`, count(distinct customer_id) as unique_customers, count(*) as total_orders, sum(order_amount) as total_sales from orders group by `month` order by `month` asc
-vexplain trace select DATE_FORMAT(order_date, '%Y-%m') as `month`, count(distinct customer_id) as unique_customers, count(*) as total_orders, sum(order_amount) as total_sales from orders group by `month` order by `month` asc
-select order_count, count(*) as customer_count from (select customer_id, count(*) as order_count from orders group by customer_id) as customer_orders group by order_count order by order_count asc
-vexplain trace select order_count, count(*) as customer_count from (select customer_id, count(*) as order_count from orders group by customer_id) as customer_orders group by order_count order by order_count asc
+2883466137428011160:vexplain trace insert into pincode_areas(pincode, area_name) values (110001, 'Connaught Place'), (110002, 'Lodhi Road'), (110003, 'Civil Lines'), (110004, 'Kashmere Gate'), (110005, 'Chandni Chowk'), (110006, 'Barakhamba Road'), (110007, 'Kamla Nagar'), (110008, 'Karol Bagh'), (110009, 'Paharganj'), (110010, 'Patel Nagar'), (110011, 'South Extension'), (110012, 'Lajpat Nagar'), (110013, 'Sarojini Nagar'), (110014, 'Malviya Nagar'), (110015, 'Saket')
+2883466137428011160:vexplain trace insert into customers(customer_id, customer_name, customer_pincode) values (1, 'John Doe', 110001), (2, 'Jane Doe', 110002), (3, 'Alice', 110003), (4, 'Bob', 110004), (5, 'Charlie', 110004), (6, 'David', 110006), (7, 'Eve', 110007), (8, 'Frank', 110008), (9, 'Grace', 110009), (10, 'Heidi', 110004), (11, 'Ivy', 110011), (12, 'Alice', 110005), (13, 'Bob', 110003), (14, 'Charlie', 110014), (15, 'David', 110015), (16, 'Frank', 110008), (17, 'Grace', 110009), (18, 'Isaac', 110010), (19, 'Julia', 110011), (20, 'Kevin', 110012), (21, 'Laura', 110013), (22, 'Michael', 110014), (23, 'Nina', 110015), (24, 'Oscar', 110001), (25, 'Patricia', 110002), (26, 'Quincy', 110003), (27, 'Rachel', 110004), (28, 'Samuel', 110005), (29, 'Tina', 110006), (30, 'Ulysses', 110007)
+2883466137428011160:vexplain trace insert into orders(order_id, customer_id, order_date, order_amount) values (1, 1, '2020-01-01', 1000), (2, 2, '2020-01-02', 2000), (3, 3, '2020-01-03', 3000), (4, 4, '2020-01-04', 4000), (5, 5, '2020-01-05', 5000), (6, 6, '2020-01-06', 6000), (7, 7, '2020-01-07', 7000), (8, 8, '2020-01-08', 8000), (9, 9, '2020-01-09', 9000), (10, 10, '2020-01-10', 10000), (11, 11, '2020-01-11', 11000), (12, 12, '2020-01-12', 12000), (13, 13, '2020-01-13', 13000), (14, 14, '2020-01-14', 14000), (15, 15, '2020-01-15', 15000), (16, 16, '2020-01-16', 16000), (17, 17, '2020-01-17', 17000), (18, 1, '2020-01-18', 18000), (19, 2, '2020-01-19', 19000), (20, 3, '2020-01-20', 20000), (21, 4, '2020-01-21', 21000), (22, 5, '2020-01-22', 22000), (23, 6, '2020-01-23', 23000), (24, 7, '2020-01-24', 24000), (25, 8, '2020-01-25', 25000), (26, 9, '2020-01-26', 26000), (27, 10, '2020-01-27', 27000), (28, 11, '2020-01-28', 28000), (29, 12, '2020-01-29', 29000), (30, 13, '2020-01-30', 30000), (31, 14, '2020-01-31', 31000), (32, 15, '2020-02-01', 32000), (33, 16, '2020-02-02', 33000), (34, 17, '2020-02-03', 34000), (35, 18, '2020-02-04', 35000), (36, 19, '2020-02-05', 36000), (37, 20, '2020-02-06', 37000), (38, 21, '2020-02-07', 38000), (39, 22, '2020-02-08', 39000), (40, 23, '2020-02-09', 40000), (41, 24, '2020-02-10', 41000), (42, 25, '2020-02-11', 42000), (43, 26, '2020-02-12', 43000), (44, 27, '2020-02-13', 44000), (45, 28, '2020-02-14', 45000), (46, 29, '2020-02-15', 46000), (47, 30, '2020-02-16', 47000), (48, 1, '2020-02-17', 48000), (49, 2, '2020-02-18', 49000), (50, 3, '2020-02-19', 50000)
+2883466137428011160:select customer_id, customer_pincode from customers where customer_name = 'Alice'
+6110208129700697065:vexplain trace select customer_id, customer_pincode from customers where customer_name = 'Alice'
+6110208129700697065:select c.customer_id, sum(o.order_amount) from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id
+6110208129700697065:vexplain trace select c.customer_id, sum(o.order_amount) from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id
+6110208129700697065:select c.customer_id, p.area_name from customers as c join pincode_areas as p on c.customer_pincode = p.pincode
+6110208129700697065:vexplain trace select c.customer_id, p.area_name from customers as c join pincode_areas as p on c.customer_pincode = p.pincode
+6110208129700697065:select distinct c.customer_id, c.customer_name from customers as c join orders as o on c.customer_id = o.customer_id where o.order_amount > (select avg(order_amount) from orders)
+6110208129700697065:vexplain trace select distinct c.customer_id, c.customer_name from customers as c join orders as o on c.customer_id = o.customer_id where o.order_amount > (select avg(order_amount) from orders)
+2883466137428011160:select c.customer_id, c.customer_name from customers as c left join orders as o on c.customer_id = o.customer_id where o.order_id is null
+2883466137428011160:vexplain trace select c.customer_id, c.customer_name from customers as c left join orders as o on c.customer_id = o.customer_id where o.order_id is null
+2883466137428011160:select c.customer_id, c.customer_name, sum(o.order_amount) as total_amount from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id, c.customer_name order by total_amount desc limit 5
+2883466137428011160:vexplain trace select c.customer_id, c.customer_name, sum(o.order_amount) as total_amount from customers as c join orders as o on c.customer_id = o.customer_id group by c.customer_id, c.customer_name order by total_amount desc limit 5
+2883466137428011160:select distinct c1.customer_id, c1.customer_name from customers as c1 join orders as o1 on c1.customer_id = o1.customer_id join orders as o2 on c1.customer_id = o2.customer_id where DATEDIFF(o2.order_date, o1.order_date) = 1
+2883466137428011160:vexplain trace select distinct c1.customer_id, c1.customer_name from customers as c1 join orders as o1 on c1.customer_id = o1.customer_id join orders as o2 on c1.customer_id = o2.customer_id where DATEDIFF(o2.order_date, o1.order_date) = 1
+2883466137428011160:select DATE_FORMAT(order_date, '%Y-%m') as `month`, count(distinct customer_id) as unique_customers, count(*) as total_orders, sum(order_amount) as total_sales from orders group by `month` order by `month` asc
+2883466137428011160:vexplain trace select DATE_FORMAT(order_date, '%Y-%m') as `month`, count(distinct customer_id) as unique_customers, count(*) as total_orders, sum(order_amount) as total_sales from orders group by `month` order by `month` asc
+2883466137428011160:select order_count, count(*) as customer_count from (select customer_id, count(*) as order_count from orders group by customer_id) as customer_orders group by order_count order by order_count asc
+2883466137428011160:vexplain trace select order_count, count(*) as customer_count from (select customer_id, count(*) as order_count from orders group by customer_id) as customer_orders group by order_count order by order_count asc
