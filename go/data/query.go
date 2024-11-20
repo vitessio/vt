@@ -53,6 +53,37 @@ type (
 	}
 )
 
+// ForeachSQLQuery reads a query log file and calls the provided function for each normal SQL query in the log.
+// If the query log contains directives, they will be read and queries will be skipped as necessary.
+func ForeachSQLQuery(loader IteratorLoader, f func(Query) error) error {
+	skip := false
+	for {
+		query, kontinue := loader.Next()
+		if !kontinue {
+			break
+		}
+
+		switch query.Type {
+		case Skip, Error, VExplain:
+			skip = true
+		case Unknown:
+			return fmt.Errorf("unknown command type: %s", query.Type)
+		case Comment, CommentWithCommand, EmptyLine, WaitForAuthoritative, SkipIfBelowVersion:
+			// no-op for keys
+		case SQLQuery:
+			if skip {
+				skip = false
+				continue
+			}
+			if err := f(query); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // for a single query, it has some prefix. Prefix mapps to a query type.
 // e.g query_vertical maps to typ.Q_QUERY_VERTICAL
 func (q *Query) getQueryType(qu string) error {
@@ -64,7 +95,7 @@ func (q *Query) getQueryType(qu string) error {
 		if q.Type != CommentWithCommand {
 			// A query that will sent to vitess
 			q.Query = qu
-			q.Type = QueryT
+			q.Type = SQLQuery
 		} else {
 			log.WithFields(log.Fields{"line": q.Line, "command": q.FirstWord, "arguments": q.Query}).Error("invalid command")
 			return fmt.Errorf("invalid command %s", q.FirstWord)

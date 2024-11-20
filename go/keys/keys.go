@@ -77,8 +77,8 @@ func Run(cfg Config) error {
 }
 
 func run(out io.Writer, cfg Config) error {
-	si := &schemaInfo{
-		tables: make(map[string]columns),
+	si := &SchemaInfo{
+		Tables: make(map[string]Columns),
 	}
 	ql := &queryList{
 		queries: make(map[string]*QueryAnalysisResult),
@@ -86,28 +86,11 @@ func run(out io.Writer, cfg Config) error {
 	}
 
 	loader := cfg.Loader.Load(cfg.FileName)
-	skip := false
-	for {
-		query, kontinue := loader.Next()
-		if !kontinue {
-			break
-		}
 
-		switch query.Type {
-		case data.Skip, data.Error, data.VExplain:
-			skip = true
-		case data.Unknown:
-			return fmt.Errorf("unknown command type: %s", query.Type)
-		case data.Comment, data.CommentWithCommand, data.EmptyLine, data.WaitForAuthoritative, data.SkipIfBelowVersion:
-			// no-op for keys
-		case data.QueryT:
-			if skip {
-				skip = false
-				continue
-			}
-			process(query, si, ql)
-		}
-	}
+	_ = data.ForeachSQLQuery(loader, func(query data.Query) error {
+		process(query, si, ql)
+		return nil
+	})
 
 	closeErr := loader.Close()
 	jsonWriteErr := ql.writeJSONTo(out)
@@ -115,7 +98,7 @@ func run(out io.Writer, cfg Config) error {
 	return errors.Join(closeErr, jsonWriteErr)
 }
 
-func process(q data.Query, si *schemaInfo, ql *queryList) {
+func process(q data.Query, si *SchemaInfo, ql *queryList) {
 	ast, bv, err := sqlparser.NewTestParser().Parse2(q.Query)
 	if err != nil {
 		ql.addFailedQuery(q, err)
@@ -130,7 +113,7 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 	}
 }
 
-func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
+func (ql *queryList) processQuery(si *SchemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
 	// handle panics
 	defer func() {
 		if r := recover(); r != nil {

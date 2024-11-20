@@ -41,12 +41,12 @@ func TestSmallSnippet(t *testing.T) {
 		{
 			Query:        "SET GLOBAL log_output = 'FILE'",
 			Line:         4,
-			Type:         QueryT,
+			Type:         SQLQuery,
 			ConnectionID: 32,
 		}, {
 			Query:        "show databases",
 			Line:         5,
-			Type:         QueryT,
+			Type:         SQLQuery,
 			ConnectionID: 32,
 		}, {
 			Query: `UPDATE _vt.schema_migrations
@@ -74,7 +74,7 @@ WHERE
     )
 LIMIT 1`,
 			Line:         6,
-			Type:         QueryT,
+			Type:         SQLQuery,
 			ConnectionID: 24,
 		},
 	}

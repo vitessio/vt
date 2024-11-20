@@ -1,0 +1,28 @@
+[
+  {
+    "Queries": [
+      "update tblA set apa = 'toto' where foo = :1 and id = :2",
+      "update tblB set monkey = 'pippi' where bar = :1 and id = :3"
+    ],
+    "Count": 0,
+    "Predicates": [
+      "tblA.foo = :1",
+      "tblA.id = :2",
+      "tblB.bar = :1",
+      "tblB.id = :3"
+    ]
+  },
+  {
+    "Queries": [
+      "update tblA set apa = 'toto' where foo = :1 and id = :2",
+      "update tblB set monkey = 'pippi' where bar = :1 and id = :3"
+    ],
+    "Count": 0,
+    "Predicates": [
+      "tblA.foo = :1",
+      "tblA.id = :2",
+      "tblB.bar = :1",
+      "tblB.id = :3"
+    ]
+  }
+]

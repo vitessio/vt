@@ -112,7 +112,7 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 			return Query{
 				Query:        query,
 				Line:         s.lineNumber,
-				Type:         QueryT,
+				Type:         SQLQuery,
 				ConnectionID: connectionID,
 			}, true
 		}
@@ -137,7 +137,7 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 		return Query{
 			Query:        parsedQuery,
 			Line:         s.lineNumber,
-			Type:         QueryT,
+			Type:         SQLQuery,
 			ConnectionID: connectionID,
 		}, true
 	}

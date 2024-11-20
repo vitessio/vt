@@ -147,7 +147,7 @@ func (s *mysqlLogReaderState) finalizeQuery() Query {
 	query := Query{
 		Query:        s.prevQuery,
 		Line:         s.queryStart,
-		Type:         QueryT,
+		Type:         SQLQuery,
 		ConnectionID: s.prevConnectionID,
 	}
 	s.prevQuery = ""
@@ -159,7 +159,7 @@ func (s *mysqlLogReaderState) processQuery(matches []string) Query {
 	query := Query{
 		Query:        s.prevQuery,
 		Line:         s.queryStart,
-		Type:         QueryT,
+		Type:         SQLQuery,
 		ConnectionID: s.prevConnectionID,
 	}
 	s.prevQuery = ""

@@ -15,3 +15,27 @@ limitations under the License.
 */
 
 package transactions
+
+import (
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/vitessio/vt/go/data"
+)
+
+func TestRun(t *testing.T) {
+	sb := &strings.Builder{}
+	run(sb, Config{
+		FileName: "../testdata/small-slow-query-log",
+		Loader:   data.SlowQueryLogLoader{},
+	})
+
+	out, err := os.ReadFile("../testdata/small-slow-query-log.json")
+	require.NoError(t, err)
+
+	assert.Equal(t, string(out), sb.String())
+}

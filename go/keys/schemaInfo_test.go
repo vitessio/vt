@@ -29,7 +29,7 @@ import (
 func TestSchemaInfo(t *testing.T) {
 	parser := sqlparser.NewTestParser()
 
-	si := &schemaInfo{tables: make(map[string]columns)}
+	si := &SchemaInfo{Tables: make(map[string]Columns)}
 
 	ast, err := parser.Parse(`CREATE TABLE IF NOT EXISTS warehouse (
 	w_id INT NOT NULL,
