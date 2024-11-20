@@ -19,6 +19,7 @@ package data
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,6 +27,9 @@ func TestParseMySQLQueryLog(t *testing.T) {
 	loader := MySQLLogLoader{}.Load("../testdata/mysql.query.log")
 	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
+	for _, query := range gotQueries {
+		assert.NotZero(t, query.ConnectionID, query.Query)
+	}
 	require.Equal(t, 1517, len(gotQueries), "expected 1517 queries") //nolint:testifylint // too many elements for the output to be readable
 }
 
@@ -35,13 +39,15 @@ func TestSmallSnippet(t *testing.T) {
 	require.NoError(t, err)
 	expected := []Query{
 		{
-			Query: "SET GLOBAL log_output = 'FILE'",
-			Line:  4,
-			Type:  QueryT,
+			Query:        "SET GLOBAL log_output = 'FILE'",
+			Line:         4,
+			Type:         QueryT,
+			ConnectionID: 32,
 		}, {
-			Query: "show databases",
-			Line:  5,
-			Type:  QueryT,
+			Query:        "show databases",
+			Line:         5,
+			Type:         QueryT,
+			ConnectionID: 32,
 		}, {
 			Query: `UPDATE _vt.schema_migrations
 SET
@@ -67,8 +73,9 @@ WHERE
         AND retries=0
     )
 LIMIT 1`,
-			Line: 6,
-			Type: QueryT,
+			Line:         6,
+			Type:         QueryT,
+			ConnectionID: 24,
 		},
 	}
 

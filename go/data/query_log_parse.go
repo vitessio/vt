@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strconv"
 	"sync"
 )
 
@@ -41,8 +42,9 @@ type (
 
 	mysqlLogReaderState struct {
 		logReaderState
-		prevQuery  string
-		queryStart int
+		prevQuery        string
+		queryStart       int
+		prevConnectionID int
 	}
 )
 
@@ -98,6 +100,12 @@ func (s *mysqlLogReaderState) Next() (Query, bool) {
 		if matches[3] == "Query" {
 			s.prevQuery = matches[4]
 			s.queryStart = s.lineNumber
+			connID, err := strconv.Atoi(matches[2])
+			if err != nil {
+				s.err = fmt.Errorf("invalid connection id at line %d: %w", s.lineNumber, err)
+				return Query{}, false
+			}
+			s.prevConnectionID = connID
 		}
 	}
 	s.closed = true
@@ -137,26 +145,36 @@ func (s *logReaderState) readLine() (string, bool, error) {
 
 func (s *mysqlLogReaderState) finalizeQuery() Query {
 	query := Query{
-		Query: s.prevQuery,
-		Line:  s.queryStart,
-		Type:  QueryT,
+		Query:        s.prevQuery,
+		Line:         s.queryStart,
+		Type:         QueryT,
+		ConnectionID: s.prevConnectionID,
 	}
 	s.prevQuery = ""
+	s.prevConnectionID = 0
 	return query
 }
 
 func (s *mysqlLogReaderState) processQuery(matches []string) Query {
 	query := Query{
-		Query: s.prevQuery,
-		Line:  s.queryStart,
-		Type:  QueryT,
+		Query:        s.prevQuery,
+		Line:         s.queryStart,
+		Type:         QueryT,
+		ConnectionID: s.prevConnectionID,
 	}
 	s.prevQuery = ""
+	s.prevConnectionID = 0
 
 	// If the new line is a query, store it for next iteration
 	if matches[3] == "Query" {
 		s.prevQuery = matches[4]
 		s.queryStart = s.lineNumber
+		connID, err := strconv.Atoi(matches[2])
+		if err != nil {
+			s.err = fmt.Errorf("invalid connection id at line %d: %w", s.lineNumber, err)
+			return Query{}
+		}
+		s.prevConnectionID = connID
 	}
 	return query
 }
