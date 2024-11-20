@@ -39,7 +39,7 @@ type (
 	}
 )
 
-func Run(files []string, hotMetric string) {
+func Run(files []string, hotMetric, schemaInfoPath string) {
 	traces := make([]readingSummary, len(files))
 	var err error
 	for i, arg := range files {
@@ -62,7 +62,7 @@ func Run(files []string, hotMetric string) {
 	if firstTrace.AnalysedQueries == nil {
 		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
 	} else {
-		printKeysSummary(os.Stdout, firstTrace, time.Now(), hotMetric)
+		printKeysSummary(os.Stdout, firstTrace, time.Now(), hotMetric, schemaInfoPath)
 	}
 }
 
