@@ -136,7 +136,13 @@ We welcome contributions in the following areas:
 - Fixing bugs in the test framework
 - Adding features from the MySQL test framework that are missing in this implementation
 
-For more details, see our [CONTRIBUTING.md](./CONTRIBUTING.md).
+After cloning the repo, make sure to run
+
+```bash
+make install-hooks
+```
+
+to install the pre-commit hooks.
 
 ## License
 
