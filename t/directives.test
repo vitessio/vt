@@ -49,3 +49,8 @@ select 2;
 # Since reference tables are copied to all shards, this query will be executed on all shards.
 --reference
 insert into reference_table values (1, 2, 3);
+
+# --usage_count
+# This directive is used to indicate how many times the following query has been deemed to be executed.
+--usage_count 10
+select * from some_table;
