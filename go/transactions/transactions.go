@@ -69,7 +69,7 @@ func (pi predicateInfo) String() string {
 	return fmt.Sprintf("%s.%s %s %d", pi.Table, pi.Col, pi.Op.ToString(), pi.Val)
 }
 
-func (tx TxSignature) MarshalJSON() ([]byte, error) {
+func (tx *TxSignature) MarshalJSON() ([]byte, error) {
 	// Transform Predicates to an array of strings
 	predicateStrings := make([]string, len(tx.Predicates))
 	for i, predicate := range tx.Predicates {
@@ -228,7 +228,6 @@ func getPredicates(e sqlparser.Expr, st *semantics.SemTable, n *normalizer) (pre
 	return
 }
 
-//nolint:gocognit // we are still not clean
 func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for queries := range ch {
@@ -242,78 +241,80 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 
 			switch query := query.(type) {
 			case *sqlparser.Update:
-				// Step 0:
-				// We want to find all the predicates that can impact our vindex choice in the query.
-				// TODO: Implement more types of predicates, right now only comparisons with 1 column and 1 literal are handled.
-				// TODO: This whole step can actually be re-used for DELETE.
-				if query.Where != nil {
-					// Step 1:
-					// Find all predicates in the where clause that use a column and a literal
-					predicates := getPredicates(query.Where.Expr, st, n)
-
-				loop:
-					for i, predicate := range predicates {
-						for _, txPred := range tx.Predicates {
-							if txPred == predicate {
-								continue loop
-							}
-						}
-
-						tx.Predicates = append(tx.Predicates, predicates[i])
-					}
-				}
-
-				// Step 3:
-				// Normalize the AST our own way:
-				// 	- Replace the value in SET by "v"
-				// 	- Replace the literals found in where clause comparisons by the corresponding ID we got earlier
-				normalizedAST := sqlparser.Rewrite(query, func(cursor *sqlparser.Cursor) bool {
-					switch node := cursor.Node().(type) {
-					case *sqlparser.SetExpr:
-						cursor.Replace(&sqlparser.SetExpr{
-							Var:  node.Var,
-							Expr: sqlparser.NewArgument("v"),
-						})
-					case *sqlparser.Where:
-						var newWhere sqlparser.Where
-						wheres := sqlparser.SplitAndExpression(nil, query.Where.Expr)
-						for _, where := range wheres {
-							switch cmp := where.(type) {
-							case *sqlparser.ComparisonExpr:
-								lhs, lhsOK := cmp.Left.(*sqlparser.Literal)
-								rhs, rhsOK := cmp.Right.(*sqlparser.Literal)
-								if !lhsOK && !rhsOK || lhsOK && rhsOK {
-									newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr)
-									continue
-								}
-
-								var newCmp sqlparser.ComparisonExpr
-								newCmp.Operator = cmp.Operator
-								if lhsOK {
-									id := n.normalize(lhs.Val)
-									newCmp.Left = sqlparser.NewArgument(strconv.Itoa(id))
-									newCmp.Right = cmp.Right
-								} else {
-									id := n.normalize(rhs.Val)
-									newCmp.Right = sqlparser.NewArgument(strconv.Itoa(id))
-									newCmp.Left = cmp.Left
-								}
-								newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr, &newCmp)
-							default:
-								newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr, where)
-							}
-						}
-						cursor.Replace(&newWhere)
-					}
-					return true
-				}, nil)
-				tx.Queries = append(tx.Queries, sqlparser.String(normalizedAST))
+				s.consumeUpdate(query, st, n, &tx)
 			default:
 				panic("not supported for now")
 			}
 		}
 		s.addSignature(tx)
 	}
+}
+
+func (tx *TxSignature) addPredicate(predicates []predicateInfo) {
+loop:
+	for i, predicate := range predicates {
+		for _, txPred := range tx.Predicates {
+			if txPred == predicate {
+				continue loop
+			}
+		}
+
+		tx.Predicates = append(tx.Predicates, predicates[i])
+	}
+}
+
+func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n *normalizer, tx *TxSignature) {
+	defer func() {
+		tx.Queries = append(tx.Queries, sqlparser.String(query))
+	}()
+
+	// Normalize the AST our own way:
+	// 	- Replace the value in SET by "v"
+	// 	- Replace the literals found in where clause comparisons by the corresponding ID we got earlier
+	for i, expr := range query.Exprs {
+		query.Exprs[i] = &sqlparser.UpdateExpr{
+			Name: expr.Name,
+			Expr: sqlparser.NewArgument("v"),
+		}
+	}
+
+	if query.Where == nil {
+		return
+	}
+
+	// Find all predicates in the where clause that use a column and a literal
+	// TODO: Implement support for join predicates
+	tx.addPredicate(getPredicates(query.Where.Expr, st, n))
+
+	var newWhere sqlparser.Where
+	wheres := sqlparser.SplitAndExpression(nil, query.Where.Expr)
+	for _, where := range wheres {
+		switch cmp := where.(type) {
+		case *sqlparser.ComparisonExpr:
+			lhs, lhsOK := cmp.Left.(*sqlparser.Literal)
+			rhs, rhsOK := cmp.Right.(*sqlparser.Literal)
+			if !lhsOK && !rhsOK || lhsOK && rhsOK {
+				newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr)
+				continue
+			}
+
+			var newCmp sqlparser.ComparisonExpr
+			newCmp.Operator = cmp.Operator
+			if lhsOK {
+				id := n.normalize(lhs.Val)
+				newCmp.Left = sqlparser.NewArgument(strconv.Itoa(id))
+				newCmp.Right = cmp.Right
+			} else {
+				id := n.normalize(rhs.Val)
+				newCmp.Right = sqlparser.NewArgument(strconv.Itoa(id))
+				newCmp.Left = cmp.Left
+			}
+			newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr, &newCmp)
+		default:
+			newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr, where)
+		}
+	}
+	query.Where = &newWhere
 }
 
 func (s *state) addSignature(tx TxSignature) {

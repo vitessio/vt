@@ -1,8 +1,8 @@
 [
   {
     "Queries": [
-      "update tblA set apa = 'toto' where foo = :0 and id = :1",
-      "update tblB set monkey = 'pippi' where bar = :0 and id = :2"
+      "update tblA set apa = :v where foo = :0 and id = :1",
+      "update tblB set monkey = :v where bar = :0 and id = :2"
     ],
     "Count": 0,
     "Predicates": [
@@ -14,8 +14,8 @@
   },
   {
     "Queries": [
-      "update tblA set apa = 'toto' where foo = :0 and id = :1",
-      "update tblB set monkey = 'pippi' where bar = :0 and id = :2"
+      "update tblA set apa = :v where foo = :0 and id = :1",
+      "update tblB set monkey = :v where bar = :0 and id = :2"
     ],
     "Count": 0,
     "Predicates": [
