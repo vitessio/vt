@@ -18,6 +18,8 @@ package data
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -36,22 +38,62 @@ type (
 	}
 
 	Query struct {
-		FirstWord string
-		Query     string
-		Line      int
-		Type      CmdType
+		FirstWord  string
+		Query      string
+		Line       int
+		Type       CmdType
+		UsageCount int
 
 		// These fields are only set if the log file is a slow query log
 		QueryTime, LockTime    float64
 		RowsSent, RowsExamined int
 		Timestamp              int64
-		UsageCount             int
 	}
 
 	errLoader struct {
 		err error
 	}
 )
+
+// ForeachSQLQuery reads a query log file and calls the provided function for each normal SQL query in the log.
+// If the query log contains directives, they will be read and queries will be skipped as necessary.
+func ForeachSQLQuery(loader IteratorLoader, f func(Query) error) error {
+	skip := false
+	usageCount := 1
+	for {
+		query, kontinue := loader.Next()
+		if !kontinue {
+			break
+		}
+
+		switch query.Type {
+		case UsageCount:
+			var err error
+			usageCount, err = strconv.Atoi(strings.TrimSpace(query.Query))
+			if err != nil {
+				return fmt.Errorf("usage Count is incorrectly specified: %s", query.Query)
+			}
+		case Skip, Error, VExplain:
+			skip = true
+		case Unknown:
+			return fmt.Errorf("unknown command type: %s", query.Type)
+		case Comment, CommentWithCommand, EmptyLine, WaitForAuthoritative, SkipIfBelowVersion:
+			// no-op for keys
+		case QueryT:
+			if skip {
+				skip = false
+				continue
+			}
+			query.UsageCount = usageCount
+			if err := f(query); err != nil {
+				return err
+			}
+			usageCount = 1
+		}
+	}
+
+	return nil
+}
 
 // for a single query, it has some prefix. Prefix mapps to a query type.
 // e.g query_vertical maps to typ.Q_QUERY_VERTICAL

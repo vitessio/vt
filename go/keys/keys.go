@@ -23,9 +23,6 @@ import (
 	"io"
 	"os"
 	"sort"
-	"strconv"
-	"strings"
-
 	querypb "vitess.io/vitess/go/vt/proto/query"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
@@ -88,37 +85,10 @@ func run(out io.Writer, cfg Config) error {
 	}
 
 	loader := cfg.Loader.Load(cfg.FileName)
-	skip := false
-	usageCount := 1
-	var err error
-	for {
-		query, kontinue := loader.Next()
-		if !kontinue {
-			break
-		}
-
-		switch query.Type {
-		case data.UsageCount:
-			usageCount, err = strconv.Atoi(strings.TrimSpace(query.Query))
-			if err != nil {
-				return fmt.Errorf("Usage Count is incorrectly specified: %s", query.Query)
-			}
-		case data.Skip, data.Error, data.VExplain:
-			skip = true
-		case data.Unknown:
-			return fmt.Errorf("unknown command type: %s", query.Type)
-		case data.Comment, data.CommentWithCommand, data.EmptyLine, data.WaitForAuthoritative, data.SkipIfBelowVersion:
-			// no-op for keys
-		case data.QueryT:
-			if skip {
-				skip = false
-				continue
-			}
-			query.UsageCount = usageCount
-			process(query, si, ql)
-			usageCount = 1
-		}
-	}
+	_ = data.ForeachSQLQuery(loader, func(q data.Query) error {
+		process(q, si, ql)
+		return nil
+	})
 
 	closeErr := loader.Close()
 	jsonWriteErr := ql.writeJSONTo(out)
