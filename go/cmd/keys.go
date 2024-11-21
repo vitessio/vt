@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -70,6 +69,6 @@ func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) 
 	case "vtgate-log":
 		return data.VtGateLogLoader{NeedsBindVars: needsBindVars}, nil
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid input type: must be %s", allowedInputTypes))
+		return nil, fmt.Errorf("invalid input type: must be %s", allowedInputTypes)
 	}
 }

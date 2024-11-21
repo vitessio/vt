@@ -18,19 +18,20 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vitessio/vt/go/schema"
 	"vitess.io/vitess/go/mysql"
+
+	"github.com/vitessio/vt/go/schema"
 )
 
-var vtParams mysql.ConnParams
-
 func schemaCmd() *cobra.Command {
+	var vtParams mysql.ConnParams
+
 	cmd := &cobra.Command{
 		Use:     "schema ",
 		Short:   "Loads info from the database including row counts",
 		Example: "vt schema",
 		Args:    cobra.ExactArgs(0),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			cfg := schema.Config{
 				VTParams: vtParams,
 			}
@@ -38,14 +39,12 @@ func schemaCmd() *cobra.Command {
 			return schema.Run(cfg)
 		},
 	}
-	registerFlags(cmd)
-	return cmd
-}
 
-func registerFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&vtParams.Host, "host", "", "127.0.0.1", "Database host")
 	cmd.Flags().IntVarP(&vtParams.Port, "port", "", 3306, "Database port")
 	cmd.Flags().StringVarP(&vtParams.Uname, "user", "", "root", "Database user")
 	cmd.Flags().StringVarP(&vtParams.Pass, "password", "", "", "Database password")
 	cmd.Flags().StringVarP(&vtParams.DbName, "database", "", "", "Database name")
+
+	return cmd
 }
