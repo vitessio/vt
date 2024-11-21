@@ -23,18 +23,23 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"vitess.io/vitess/go/vt/sqlparser"
 
 	"github.com/vitessio/vt/go/data"
 )
 
 func TestRun(t *testing.T) {
 	sb := &strings.Builder{}
-	run(sb, Config{
+	s := &state{
+		parser: sqlparser.NewTestParser(),
+		si:     getFakeSchema(),
+	}
+	s.run(sb, Config{
 		FileName: "../testdata/small-slow-query-log",
 		Loader:   data.SlowQueryLogLoader{},
 	})
 
-	out, err := os.ReadFile("../testdata/small-slow-query-log.json")
+	out, err := os.ReadFile("../testdata/small-slow-query-transactions.json")
 	require.NoError(t, err)
 
 	assert.Equal(t, string(out), sb.String())
