@@ -26,14 +26,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/vitessio/vt/go/schema"
-
 	"vitess.io/vitess/go/slice"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
+	"github.com/vitessio/vt/go/schema"
 )
 
 const HotQueryCount = 10
@@ -168,7 +167,7 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetr
 	md.Printf(msg, now.Format(time.DateTime), file.Name)
 	metricReader := getMetricForHotness(hotMetric)
 
-	var schemaInfo *schema.SchemaInfo
+	var schemaInfo *schema.Info
 	if schemaInfoPath != "" {
 		schemaInfo, err = schema.Load(schemaInfoPath)
 		if err != nil {
@@ -420,7 +419,7 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(queries *keys.Output, metricReader getMetric, schemaInfo *schema.SchemaInfo) Summary {
+func summarizeKeysQueries(queries *keys.Output, metricReader getMetric, schemaInfo *schema.Info) Summary {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)

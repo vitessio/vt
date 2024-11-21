@@ -43,8 +43,8 @@ func run(out io.Writer, cfg Config) error {
 	if err != nil {
 		return err
 	}
-	out.Write(b)
-	return nil
+	_, err = out.Write(b)
+	return err
 }
 
 type TableInfo struct {
@@ -52,11 +52,11 @@ type TableInfo struct {
 	Rows int
 }
 
-type SchemaInfo struct {
+type Info struct {
 	Tables []TableInfo
 }
 
-func Get(cfg Config) (*SchemaInfo, error) {
+func Get(cfg Config) (*Info, error) {
 	vtParams := &mysql.ConnParams{
 		Host:   cfg.VTParams.Host,
 		Port:   cfg.VTParams.Port,
@@ -84,18 +84,18 @@ func Get(cfg Config) (*SchemaInfo, error) {
 			Rows: int(tableRows),
 		})
 	}
-	schemaInfo := &SchemaInfo{
+	schemaInfo := &Info{
 		Tables: tables,
 	}
 	return schemaInfo, nil
 }
 
-func Load(fileName string) (*SchemaInfo, error) {
+func Load(fileName string) (*Info, error) {
 	b, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	var si SchemaInfo
+	var si Info
 	err = json.Unmarshal(b, &si)
 	if err != nil {
 		return nil, err
