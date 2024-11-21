@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -51,10 +53,11 @@ type (
 	}
 
 	predicateInfo struct {
-		Table string
-		Col   string
-		Op    sqlparser.ComparisonExprOperator
-		Val   int
+		Table     string
+		Col       string
+		Op        sqlparser.ComparisonExprOperator
+		Val       int
+		Signature string
 	}
 
 	state struct {
@@ -65,8 +68,12 @@ type (
 	}
 )
 
-func (pi predicateInfo) String() string {
-	return fmt.Sprintf("%s.%s %s %d", pi.Table, pi.Col, pi.Op.ToString(), pi.Val)
+func (pi *predicateInfo) String() string {
+	if pi.Signature != "" {
+		return pi.Signature
+	}
+	pi.Signature = fmt.Sprintf("%s.%s %s %d", pi.Table, pi.Col, pi.Op.ToString(), pi.Val)
+	return pi.Signature
 }
 
 func (tx *TxSignature) MarshalJSON() ([]byte, error) {
@@ -320,6 +327,12 @@ func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n
 func (s *state) addSignature(tx TxSignature) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	slices.Sort(tx.Queries)
+	sort.Slice(tx.Predicates, func(i, j int) bool {
+		return tx.Predicates[i]
+	})
+
 	s.txs = append(s.txs, tx)
 }
 
