@@ -5,6 +5,7 @@ The `vt` binary encapsulates several utility tools for Vitess, providing a compr
 ## Tools Included
 - **`vt test`**: A testing utility using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
 - **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, joins, and column usage.
+- **`vt transactions`**: A tool that analyzes query logs to identify transaction patterns and outputs a JSON report detailing these patterns.
 - **`vt trace`**: A tool that generates execution traces for queries without comparing against MySQL. It helps analyze query behavior and performance in Vitess environments.
 - **`vt summarize`**: A tool used to summarize or compare trace logs or key logs for easier human consumption.
 
@@ -115,6 +116,11 @@ This command generates a `keys-log.json` file that contains a detailed analysis 
 
    This command summarizes the key analysis, providing insight into which tables and columns are used across queries, and how frequently they are involved in filters, groupings, and joins.  
    [Here](https://github.com/vitessio/vt/blob/main/go/summarize/testdata/keys-summary.md) is an example summary report.
+
+## Transaction Analysis with vt transactions
+The `vt transactions` command is designed to analyze query logs and identify patterns of transactional queries. 
+It processes the logs to find sequences of queries that form transactions and outputs a JSON report summarizing these patterns.
+Read more about how to use and how to read the output in the [vt transactions documentation](./go/transactions/README.md).
 
 ## Using `--backup-path` Flag
 
