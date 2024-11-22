@@ -17,6 +17,7 @@ limitations under the License.
 package summarize
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,14 +49,9 @@ func TestGetFileType(t *testing.T) {
 		t.Run(tc.filename, func(t *testing.T) {
 			ft, err := getFileType(tc.filename)
 			if tc.expectedError != "" {
-				require.Error(t, err)
+				require.ErrorContains(t, err, tc.expectedError)
 			}
-			if err != nil {
-				require.Contains(t, err.Error(), tc.expectedError)
-			}
-			if ft != tc.expectedType {
-				t.Errorf("Expected type: %v, got: %v", tc.expectedType, ft)
-			}
+			assert.Equal(t, tc.expectedType, ft)
 		})
 	}
 }
