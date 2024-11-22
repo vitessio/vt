@@ -174,5 +174,9 @@ func (m *txSignatureMap) MarshalJSON() ([]byte, error) {
 		signatures = append(signatures, bucket...)
 	}
 
+	sort.Slice(signatures, func(i, j int) bool {
+		return signatures[i].Count > signatures[j].Count
+	})
+
 	return json.Marshal(signatures)
 }

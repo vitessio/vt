@@ -88,7 +88,14 @@ func (s *state) parse(q string) sqlparser.Statement {
 
 func (s *state) startProducing(loader data.IteratorLoader, defaultAutocommit bool, ch chan<- []sqlparser.Statement) {
 	connections := map[int]*Connection{}
-
+	getConn := func(id int) *Connection {
+		connection, ok := connections[id]
+		if !ok {
+			connection = &Connection{Autocommit: defaultAutocommit}
+			connections[id] = connection
+		}
+		return connection
+	}
 	_ = data.ForeachSQLQuery(loader, func(query data.Query) error {
 		stmt := s.parse(query.Query)
 		if stmt == nil {
@@ -98,21 +105,20 @@ func (s *state) startProducing(loader data.IteratorLoader, defaultAutocommit boo
 		case *sqlparser.Begin:
 		case *sqlparser.Commit:
 			// Commit seen, so we can yield the queries in the transaction
-			connection := connections[query.ConnectionID]
+			connection := getConn(query.ConnectionID)
+			if connection.Transaction == nil {
+				return nil
+			}
 			ch <- connection.Transaction
 			connection.Transaction = nil
 		case *sqlparser.Set:
-			connection := connections[query.ConnectionID]
-			connection.Autocommit = getAutocommitStatus(stmt, connection.Autocommit)
+			conn := getConn(query.ConnectionID)
+			conn.Autocommit = getAutocommitStatus(stmt, defaultAutocommit)
 		default:
 			if !sqlparser.IsDMLStatement(stmt) {
 				return nil
 			}
-			connection, ok := connections[query.ConnectionID]
-			if !ok {
-				connection = &Connection{Autocommit: defaultAutocommit}
-				connections[query.ConnectionID] = connection
-			}
+			connection := getConn(query.ConnectionID)
 			if connection.Autocommit {
 				ch <- []sqlparser.Statement{stmt}
 			} else {
