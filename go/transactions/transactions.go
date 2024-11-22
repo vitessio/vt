@@ -223,20 +223,38 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 	}
 }
 
-func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n *normalizer, tx *TxSignature) {
-	defer func() {
-		tx.Queries = append(tx.Queries, sqlparser.String(query))
-	}()
+func querySignatureForUpd(query *sqlparser.Update) string {
+	buffer := sqlparser.NewTrackedBuffer(nil)
+	builder := buffer.Builder
+	builder.WriteString("update ")
 
-	// Normalize the AST our own way:
-	// 	- Replace the value in SET by "v"
-	// 	- Replace the literals found in where clause comparisons by the corresponding ID we got earlier
-	for i, expr := range query.Exprs {
-		query.Exprs[i] = &sqlparser.UpdateExpr{
-			Name: expr.Name,
-			Expr: sqlparser.NewArgument("v"),
+	for i, tbl := range query.TableExprs {
+		tbl.Format(buffer)
+		if i < len(query.TableExprs)-1 {
+			buffer.WriteString(", ")
 		}
 	}
+
+	if query.Where != nil {
+		query.Where.Format(buffer)
+	}
+
+	builder.WriteString(" set ")
+
+	for i, expr := range query.Exprs {
+		expr.Name.Format(buffer)
+		if i < len(query.Exprs)-1 {
+			buffer.WriteString(", ")
+		}
+	}
+
+	return builder.String()
+}
+
+func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n *normalizer, tx *TxSignature) {
+	defer func() {
+		tx.Queries = append(tx.Queries, querySignatureForUpd(query))
+	}()
 
 	if query.Where == nil {
 		return

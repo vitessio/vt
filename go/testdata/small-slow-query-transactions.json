@@ -1,15 +1,15 @@
 [
   {
-    "Queries": [
-      "update tblA set apa = :v where foo = :0 and id = :1",
-      "update tblB set monkey = :v where bar = :0 and id = :2"
+    "query-signatures": [
+      "update tblA where foo = :0 and id = :1 set apa",
+      "update tblB where bar = :0 and id = :2 set monkey"
     ],
-    "Predicates": [
+    "predicates": [
       "tblA.foo = 0",
-      "tblA.id = 1",
+      "tblA.id = ?",
       "tblB.bar = 0",
-      "tblB.id = 2"
+      "tblB.id = ?"
     ],
-    "Count": 2
+    "count": 2
   }
 ]

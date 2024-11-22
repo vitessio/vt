@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"sort"
+	"strconv"
 
 	"vitess.io/vitess/go/vt/sqlparser"
 )
@@ -46,7 +47,11 @@ type (
 )
 
 func (pi predicateInfo) String() string {
-	return fmt.Sprintf("%s.%s %s %d", pi.Table, pi.Col, pi.Op.ToString(), pi.Val)
+	val := strconv.Itoa(pi.Val)
+	if pi.Val == -1 {
+		val = "?"
+	}
+	return fmt.Sprintf("%s.%s %s %s", pi.Table, pi.Col, pi.Op.ToString(), val)
 }
 
 func (pi predicateInfo) compareTo(b predicateInfo) int {
@@ -69,9 +74,9 @@ func (tx *TxSignature) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(struct {
-		Queries    []string
-		Predicates []string
-		Count      int
+		Queries    []string `json:"query-signatures"`
+		Predicates []string `json:"predicates"`
+		Count      int      `json:"count"`
 	}{
 		Queries:    tx.Queries,
 		Predicates: predicateStrings,
@@ -164,13 +169,49 @@ func (tx *TxSignature) Equals(other *TxSignature) bool {
 	return true
 }
 
+// CleanUp removes values that are only used once and replaces them with -1
+func (tx *TxSignature) CleanUp() *TxSignature {
+	newPredicates := make([]predicateInfo, 0, len(tx.Predicates))
+	usedValues := make(map[int]int)
+
+	// First let's count how many times each value is used
+	for _, pred := range tx.Predicates {
+		usedValues[pred.Val]++
+	}
+
+	// Now we replace values only used once with -1
+	newCount := 0
+	newValues := make(map[int]int)
+	for _, pred := range tx.Predicates {
+		if usedValues[pred.Val] == 1 {
+			pred.Val = -1
+		} else {
+			newVal, found := newValues[pred.Val]
+			if !found {
+				// Assign a new value to this predicate
+				newVal = newCount
+				newCount++
+				newValues[pred.Val] = newVal
+			}
+			pred.Val = newVal
+		}
+		newPredicates = append(newPredicates, pred)
+	}
+
+	return &TxSignature{
+		Queries:    tx.Queries,
+		Predicates: newPredicates,
+		Count:      tx.Count,
+	}
+}
+
 func (m *txSignatureMap) MarshalJSON() ([]byte, error) {
 	// Collect all interesting TxSignatures into a slice
 	var signatures []*TxSignature
 	for _, bucket := range m.data {
 		for _, txSig := range bucket {
 			if txSig.Count > 1 {
-				signatures = append(signatures, txSig)
+				signatures = append(signatures, txSig.CleanUp())
 			}
 		}
 	}
