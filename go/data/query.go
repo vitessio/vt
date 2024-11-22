@@ -18,6 +18,8 @@ package data
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -36,10 +38,11 @@ type (
 	}
 
 	Query struct {
-		FirstWord string
-		Query     string
-		Line      int
-		Type      CmdType
+		FirstWord  string
+		Query      string
+		Line       int
+		Type       CmdType
+		UsageCount int
 
 		// These fields are only set if the log file is a slow query log
 		QueryTime, LockTime    float64
@@ -56,6 +59,7 @@ type (
 // If the query log contains directives, they will be read and queries will be skipped as necessary.
 func ForeachSQLQuery(loader IteratorLoader, f func(Query) error) error {
 	skip := false
+	usageCount := 1
 	for {
 		query, kontinue := loader.Next()
 		if !kontinue {
@@ -63,6 +67,12 @@ func ForeachSQLQuery(loader IteratorLoader, f func(Query) error) error {
 		}
 
 		switch query.Type {
+		case UsageCount:
+			var err error
+			usageCount, err = strconv.Atoi(strings.TrimSpace(query.Query))
+			if err != nil {
+				return fmt.Errorf("usage Count is incorrectly specified: %s", query.Query)
+			}
 		case Skip, Error, VExplain:
 			skip = true
 		case Unknown:
@@ -74,9 +84,11 @@ func ForeachSQLQuery(loader IteratorLoader, f func(Query) error) error {
 				skip = false
 				continue
 			}
+			query.UsageCount = usageCount
 			if err := f(query); err != nil {
 				return err
 			}
+			usageCount = 1
 		}
 	}
 

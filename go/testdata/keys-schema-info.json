@@ -1,0 +1,36 @@
+{
+  "Tables": [
+    {
+      "Name": "region",
+      "Rows": 20
+    },
+    {
+      "Name": "nation",
+      "Rows": 150
+    },
+    {
+      "Name": "supplier",
+      "Rows": 318
+    },
+    {
+      "Name": "part",
+      "Rows": 2761
+    },
+    {
+      "Name": "partsupp",
+      "Rows": 32381
+    },
+    {
+      "Name": "customer",
+      "Rows": 280000
+    },
+    {
+      "Name": "orders",
+      "Rows": 12047555
+    },
+    {
+      "Name": "lineitem",
+      "Rows": 42047555
+    }
+  ]
+}
