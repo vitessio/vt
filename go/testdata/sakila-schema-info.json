@@ -1,4 +1,5 @@
 {
+  "FileType": "dbinfo",
   "Tables": [
     {
       "Name": "actor",
