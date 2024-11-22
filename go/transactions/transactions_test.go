@@ -33,6 +33,7 @@ func TestRun(t *testing.T) {
 	s := &state{
 		parser: sqlparser.NewTestParser(),
 		si:     getFakeSchema(),
+		txs:    newTxSignatureMap(),
 	}
 	s.run(sb, Config{
 		FileName: "../testdata/small-slow-query-log",

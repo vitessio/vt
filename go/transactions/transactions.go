@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -46,58 +44,19 @@ type (
 		Autocommit bool
 	}
 
-	TxSignature struct {
-		Queries    []string
-		Count      int
-		Predicates []predicateInfo
-	}
-
-	predicateInfo struct {
-		Table     string
-		Col       string
-		Op        sqlparser.ComparisonExprOperator
-		Val       int
-		Signature string
-	}
-
 	state struct {
 		parser *sqlparser.Parser
 		si     *keys.SchemaInfo
 		mu     sync.Mutex
-		txs    []TxSignature
+		txs    *txSignatureMap
 	}
 )
-
-func (pi *predicateInfo) String() string {
-	if pi.Signature != "" {
-		return pi.Signature
-	}
-	pi.Signature = fmt.Sprintf("%s.%s %s %d", pi.Table, pi.Col, pi.Op.ToString(), pi.Val)
-	return pi.Signature
-}
-
-func (tx *TxSignature) MarshalJSON() ([]byte, error) {
-	// Transform Predicates to an array of strings
-	predicateStrings := make([]string, len(tx.Predicates))
-	for i, predicate := range tx.Predicates {
-		predicateStrings[i] = predicate.String()
-	}
-
-	return json.Marshal(struct {
-		Queries    []string
-		Count      int
-		Predicates []string
-	}{
-		Queries:    tx.Queries,
-		Count:      tx.Count,
-		Predicates: predicateStrings,
-	})
-}
 
 func Run(cfg Config) {
 	s := &state{
 		parser: sqlparser.NewTestParser(),
 		si:     getFakeSchema(),
+		txs:    newTxSignatureMap(),
 	}
 	s.run(os.Stdout, cfg)
 }
@@ -211,6 +170,7 @@ func (n *normalizer) normalize(s string) int {
 }
 
 func getPredicates(e sqlparser.Expr, st *semantics.SemTable, n *normalizer) (predicates []predicateInfo) {
+	// TODO: Implement support for join predicates
 	for _, predicate := range sqlparser.SplitAndExpression(nil, e) {
 		cmp, ok := predicate.(*sqlparser.ComparisonExpr)
 		if !ok {
@@ -239,7 +199,7 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for queries := range ch {
 		n := &normalizer{m: make(map[string]int)}
-		tx := TxSignature{}
+		tx := &TxSignature{}
 		for _, query := range queries {
 			st, err := semantics.Analyze(query, "ks", s.si)
 			if err != nil {
@@ -248,25 +208,12 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 
 			switch query := query.(type) {
 			case *sqlparser.Update:
-				s.consumeUpdate(query, st, n, &tx)
+				s.consumeUpdate(query, st, n, tx)
 			default:
 				panic("not supported for now")
 			}
 		}
 		s.addSignature(tx)
-	}
-}
-
-func (tx *TxSignature) addPredicate(predicates []predicateInfo) {
-loop:
-	for i, predicate := range predicates {
-		for _, txPred := range tx.Predicates {
-			if txPred == predicate {
-				continue loop
-			}
-		}
-
-		tx.Predicates = append(tx.Predicates, predicates[i])
 	}
 }
 
@@ -290,7 +237,6 @@ func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n
 	}
 
 	// Find all predicates in the where clause that use a column and a literal
-	// TODO: Implement support for join predicates
 	tx.addPredicate(getPredicates(query.Where.Expr, st, n))
 
 	var newWhere sqlparser.Where
@@ -324,16 +270,11 @@ func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n
 	query.Where = &newWhere
 }
 
-func (s *state) addSignature(tx TxSignature) {
+func (s *state) addSignature(tx *TxSignature) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	slices.Sort(tx.Queries)
-	sort.Slice(tx.Predicates, func(i, j int) bool {
-		return tx.Predicates[i]
-	})
-
-	s.txs = append(s.txs, tx)
+	s.txs.Add(tx)
 }
 
 func (s *state) run(out io.Writer, cfg Config) {

@@ -4,25 +4,12 @@
       "update tblA set apa = :v where foo = :0 and id = :1",
       "update tblB set monkey = :v where bar = :0 and id = :2"
     ],
-    "Count": 0,
     "Predicates": [
       "tblA.foo = 0",
       "tblA.id = 1",
       "tblB.bar = 0",
       "tblB.id = 2"
-    ]
-  },
-  {
-    "Queries": [
-      "update tblA set apa = :v where foo = :0 and id = :1",
-      "update tblB set monkey = :v where bar = :0 and id = :2"
     ],
-    "Count": 0,
-    "Predicates": [
-      "tblA.foo = 0",
-      "tblA.id = 1",
-      "tblB.bar = 0",
-      "tblB.id = 2"
-    ]
+    "Count": 2
   }
 ]
