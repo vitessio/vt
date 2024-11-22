@@ -30,6 +30,10 @@ import (
 var _ semantics.SchemaInformation = (*SchemaInfo)(nil)
 
 type (
+	// SchemaInfo is a simple implementation of semantics.SchemaInformation
+	// It will claim that any table that is asked for is present in the schema, with no columns specified and authoratative columns set to false
+	// it has a createTableHandler that can be used to populate the schema if the
+	// query log contains the CREATE TABLE statements
 	SchemaInfo struct {
 		KsName string
 		Tables map[string]Columns

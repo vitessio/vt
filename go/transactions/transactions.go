@@ -55,7 +55,7 @@ type (
 func Run(cfg Config) {
 	s := &state{
 		parser: sqlparser.NewTestParser(),
-		si:     getFakeSchema(),
+		si:     &keys.SchemaInfo{},
 		txs:    newTxSignatureMap(),
 	}
 	s.run(os.Stdout, cfg)
@@ -367,32 +367,4 @@ func (s *state) getAutocommitGuess(cfg Config) bool {
 		return nil
 	})
 	return defaultAutocommit
-}
-
-func getFakeSchema() *keys.SchemaInfo {
-	// WIP: dummy data
-	// TODO: Use real schema information data with the 'vt schema' JSON output
-	si := &keys.SchemaInfo{
-		Tables: map[string]keys.Columns{
-			"tblA": {
-				{Name: sqlparser.NewIdentifierCI("apa")},
-				{Name: sqlparser.NewIdentifierCI("foo")},
-				{Name: sqlparser.NewIdentifierCI("id")},
-			},
-			"tblB": {
-				{Name: sqlparser.NewIdentifierCI("monkey")},
-				{Name: sqlparser.NewIdentifierCI("bar")},
-				{Name: sqlparser.NewIdentifierCI("id")},
-			},
-			"user": {
-				{Name: sqlparser.NewIdentifierCI("id")},
-				{Name: sqlparser.NewIdentifierCI("name")},
-			},
-			"user_extra": {
-				{Name: sqlparser.NewIdentifierCI("user_id")},
-				{Name: sqlparser.NewIdentifierCI("age")},
-			},
-		},
-	}
-	return si
 }

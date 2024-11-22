@@ -26,13 +26,14 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/keys"
 )
 
 func TestRun(t *testing.T) {
 	sb := &strings.Builder{}
 	s := &state{
 		parser: sqlparser.NewTestParser(),
-		si:     getFakeSchema(),
+		si:     &keys.SchemaInfo{},
 		txs:    newTxSignatureMap(),
 	}
 	s.run(sb, Config{
