@@ -217,8 +217,6 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 				s.consumeUpdate(query, st, n, tx)
 			case *sqlparser.Delete:
 				s.consumeDelete(query, st, n, tx)
-			default:
-				panic(fmt.Sprintf("not supported for now: %T", query))
 			}
 		}
 		s.addSignature(tx)

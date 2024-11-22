@@ -63,7 +63,6 @@ func (pi predicateInfo) compareTo(b predicateInfo) int {
 }
 
 func (tx *TxSignature) MarshalJSON() ([]byte, error) {
-	// Transform Predicates to an array of strings
 	predicateStrings := make([]string, len(tx.Predicates))
 	for i, predicate := range tx.Predicates {
 		predicateStrings[i] = predicate.String()
@@ -144,7 +143,6 @@ func (m *txSignatureMap) Add(tx *TxSignature) {
 }
 
 func (tx *TxSignature) Equals(other *TxSignature) bool {
-	// Compare Queries
 	if len(tx.Queries) != len(other.Queries) {
 		return false
 	}
@@ -154,7 +152,6 @@ func (tx *TxSignature) Equals(other *TxSignature) bool {
 		}
 	}
 
-	// Compare Predicates
 	if len(tx.Predicates) != len(other.Predicates) {
 		return false
 	}
@@ -168,10 +165,14 @@ func (tx *TxSignature) Equals(other *TxSignature) bool {
 }
 
 func (m *txSignatureMap) MarshalJSON() ([]byte, error) {
-	// Collect all TxSignatures into a slice
+	// Collect all interesting TxSignatures into a slice
 	var signatures []*TxSignature
 	for _, bucket := range m.data {
-		signatures = append(signatures, bucket...)
+		for _, txSig := range bucket {
+			if txSig.Count > 1 {
+				signatures = append(signatures, txSig)
+			}
+		}
 	}
 
 	sort.Slice(signatures, func(i, j int) bool {
