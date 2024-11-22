@@ -41,7 +41,6 @@ var fileTypeMap = map[string]fileType{
 // getFileType reads the first key-value pair from a JSON file and returns the type of the file
 // Note:
 func getFileType(filename string) (fileType, error) {
-	// read json file
 	file, err := os.Open(filename)
 	if err != nil {
 		return unknownFile, errors.New(fmt.Sprintf("error opening file: %v", err))
@@ -55,14 +54,11 @@ func getFileType(filename string) (fileType, error) {
 		return unknownFile, errors.New(fmt.Sprintf("Error reading token: %v", err))
 	}
 
-	// Ensure the token is the start of an object
 	if delim, ok := token.(json.Delim); !ok || delim != '{' {
 		return unknownFile, errors.New(fmt.Sprintf("Expected start of object '{'"))
 	}
 
-	// Read the key-value pairs
 	for decoder.More() {
-		// Read the key
 		keyToken, err := decoder.Token()
 		if err != nil {
 			return unknownFile, errors.New(fmt.Sprintf("Error reading key token: %v", err))
@@ -73,14 +69,12 @@ func getFileType(filename string) (fileType, error) {
 			return unknownFile, errors.New(fmt.Sprintf("Expected key to be a string: %s", keyToken))
 		}
 
-		// Read the value
 		valueToken, err := decoder.Token()
 		if err != nil {
 			return unknownFile, errors.New(fmt.Sprintf("Error reading value token: %v", err))
 		}
 
-		// Check if the key is "FileType"
-		if key == "FileType" {
+		if key == "fileType" {
 			if fileType, ok := fileTypeMap[valueToken.(string)]; ok {
 				return fileType, nil
 			} else {

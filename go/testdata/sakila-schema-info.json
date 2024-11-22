@@ -1,69 +1,69 @@
 {
-  "FileType": "dbinfo",
-  "Tables": [
+  "fileType": "dbinfo",
+  "tables": [
     {
-      "Name": "actor",
-      "Rows": 200
+      "name": "actor",
+      "rows": 200
     },
     {
-      "Name": "address",
-      "Rows": 603
+      "name": "address",
+      "rows": 603
     },
     {
-      "Name": "category",
-      "Rows": 16
+      "name": "category",
+      "rows": 16
     },
     {
-      "Name": "city",
-      "Rows": 600
+      "name": "city",
+      "rows": 600
     },
     {
-      "Name": "country",
-      "Rows": 109
+      "name": "country",
+      "rows": 109
     },
     {
-      "Name": "customer",
-      "Rows": 599
+      "name": "customer",
+      "rows": 599
     },
     {
-      "Name": "film",
-      "Rows": 1000
+      "name": "film",
+      "rows": 1000
     },
     {
-      "Name": "film_actor",
-      "Rows": 5462
+      "name": "film_actor",
+      "rows": 5462
     },
     {
-      "Name": "film_category",
-      "Rows": 1000
+      "name": "film_category",
+      "rows": 1000
     },
     {
-      "Name": "film_text",
-      "Rows": 1000
+      "name": "film_text",
+      "rows": 1000
     },
     {
-      "Name": "inventory",
-      "Rows": 4581
+      "name": "inventory",
+      "rows": 4581
     },
     {
-      "Name": "language",
-      "Rows": 6
+      "name": "language",
+      "rows": 6
     },
     {
-      "Name": "payment",
-      "Rows": 16086
+      "name": "payment",
+      "rows": 16086
     },
     {
-      "Name": "rental",
-      "Rows": 15425
+      "name": "rental",
+      "rows": 15425
     },
     {
-      "Name": "staff",
-      "Rows": 2
+      "name": "staff",
+      "rows": 2
     },
     {
-      "Name": "store",
-      "Rows": 2
+      "name": "store",
+      "rows": 2
     }
   ]
 }

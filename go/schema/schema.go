@@ -48,12 +48,13 @@ func run(out io.Writer, cfg Config) error {
 }
 
 type TableInfo struct {
-	Name string
-	Rows int
+	Name string `json:"name"`
+	Rows int    `json:"rows"`
 }
 
 type Info struct {
-	Tables []TableInfo
+	FileType string      `json:"fileType"`
+	Tables   []TableInfo `json:"tables"`
 }
 
 func Get(cfg Config) (*Info, error) {
