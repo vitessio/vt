@@ -33,16 +33,13 @@ jobs:
           go mod tidy
           git diff --exit-code || (echo "go.mod or go.sum is not clean! Run 'go mod tidy' and commit the changes." && exit 1)
 
-      - name: Install golangci-lint
+      - name: Install Tools
         run: |
+          go install mvdan.cc/gofumpt@v0.5.0
+          go install github.com/incu6us/goimports-reviser/v3@v3.3.0
+          go install github.com/jstemmer/go-junit-report@latest
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
             sh -s -- -b $(go env GOPATH)/bin v1.54.2
-
-      - name: Install gofumpt
-        run: go install mvdan.cc/gofumpt@v0.5.0
-
-      - name: Install goimports-reviser
-        run: go install github.com/incu6us/goimports-reviser/v3@v3.3.0
 
       - name: Display Go version
         run: go version
@@ -55,11 +52,8 @@ jobs:
           make pretty
           git diff --exit-code || (echo "Code is not formatted correctly! Run 'make pretty' and commit the changes." && exit 1)
 
-      - name: Run golangci-lint
-        run: golangci-lint run ./...
-
-      - name: Install go-junit-report
-        run: go install github.com/jstemmer/go-junit-report@latest
+      - name: Run Linting
+        run: make lint
 
       - name: Run Tests and Convert to JUnit
         run: go test -v ./... | go-junit-report > report.xml
