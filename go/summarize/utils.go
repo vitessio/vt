@@ -32,7 +32,7 @@ const (
 	dbInfoFile
 )
 
-var fileTypeMap = map[string]fileType{
+var fileTypeMap = map[string]fileType{ //nolint:gochecknoglobals // this is instead of a const
 	"trace":  traceFile,
 	"keys":   keysFile,
 	"dbinfo": dbInfoFile,
@@ -43,7 +43,7 @@ var fileTypeMap = map[string]fileType{
 func getFileType(filename string) (fileType, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return unknownFile, errors.New(fmt.Sprintf("error opening file: %v", err))
+		return unknownFile, fmt.Errorf("error opening file: %v", err)
 	}
 	defer file.Close()
 
@@ -51,39 +51,38 @@ func getFileType(filename string) (fileType, error) {
 
 	token, err := decoder.Token()
 	if err != nil {
-		return unknownFile, errors.New(fmt.Sprintf("Error reading token: %v", err))
+		return unknownFile, fmt.Errorf("error reading token: %v", err)
 	}
 
 	if delim, ok := token.(json.Delim); !ok || delim != '{' {
-		return unknownFile, errors.New(fmt.Sprintf("Expected start of object '{'"))
+		return unknownFile, errors.New("expected start of object '{'")
 	}
 
-	for decoder.More() {
-		keyToken, err := decoder.Token()
-		if err != nil {
-			return unknownFile, errors.New(fmt.Sprintf("Error reading key token: %v", err))
-		}
-
-		key, ok := keyToken.(string)
-		if !ok {
-			return unknownFile, errors.New(fmt.Sprintf("Expected key to be a string: %s", keyToken))
-		}
-
-		valueToken, err := decoder.Token()
-		if err != nil {
-			return unknownFile, errors.New(fmt.Sprintf("Error reading value token: %v", err))
-		}
-
-		if key == "fileType" {
-			if fileType, ok := fileTypeMap[valueToken.(string)]; ok {
-				return fileType, nil
-			} else {
-				return unknownFile, errors.New(fmt.Sprintf("Unknown FileType: %s", valueToken))
-			}
-		} else {
-			// Currently we expect the first key to be FileType, for optimization reasons
-			return unknownFile, nil
-		}
+	if !decoder.More() {
+		return unknownFile, nil
 	}
+
+	keyToken, err := decoder.Token()
+	if err != nil {
+		return unknownFile, fmt.Errorf("error reading key token: %v", err)
+	}
+
+	key, ok := keyToken.(string)
+	if !ok {
+		return unknownFile, fmt.Errorf("expected key to be a string: %s", keyToken)
+	}
+
+	valueToken, err := decoder.Token()
+	if err != nil {
+		return unknownFile, fmt.Errorf("error reading value token: %v", err)
+	}
+
+	if key == "fileType" {
+		if fileType, ok := fileTypeMap[valueToken.(string)]; ok {
+			return fileType, nil
+		}
+		return unknownFile, fmt.Errorf("unknown FileType: %s", valueToken)
+	}
+
 	return unknownFile, nil
 }
