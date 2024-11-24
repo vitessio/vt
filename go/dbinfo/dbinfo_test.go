@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSchema(t *testing.T) {
+func TestDBInfoRowCount(t *testing.T) {
 	si, err := Load("../testdata/sakila-schema-info.json")
 	require.NoError(t, err)
 	require.NotNil(t, si)

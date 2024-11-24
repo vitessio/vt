@@ -17,9 +17,7 @@ limitations under the License.
 package dbinfo
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 
@@ -66,29 +64,29 @@ func Get(cfg Config) (*Info, error) {
 		DbName: cfg.VTParams.DbName,
 	}
 
-	vtConn, err := mysql.Connect(context.Background(), vtParams)
+	dbh := NewDBHelper(vtParams)
+	ts, err := dbh.getTableSizes()
 	if err != nil {
 		return nil, err
 	}
-	defer vtConn.Close()
-	queryTableSizes := "SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = '%s' and table_type = 'BASE TABLE'"
-	qr, err := vtConn.ExecuteFetch(fmt.Sprintf(queryTableSizes, cfg.VTParams.DbName), -1, false)
-	if err != nil {
-		return nil, err
-	}
-	var tables []TableInfo
-	for _, row := range qr.Rows {
-		tableName := row[0].ToString()
-		tableRows, _ := row[1].ToInt64()
-		tables = append(tables, TableInfo{
+
+	var tableInfo []TableInfo
+	tableMap := make(map[string]*TableInfo)
+
+	for tableName, tableRows := range ts {
+		tableMap[tableName] = &TableInfo{
 			Name: tableName,
-			Rows: int(tableRows),
-		})
+			Rows: tableRows,
+		}
 	}
-	schemaInfo := &Info{
-		Tables: tables,
+
+	for tableName, _ := range tableMap {
+		tableInfo = append(tableInfo, *tableMap[tableName])
 	}
-	return schemaInfo, nil
+	dbInfo := &Info{
+		Tables: tableInfo,
+	}
+	return dbInfo, nil
 }
 
 func Load(fileName string) (*Info, error) {
