@@ -105,7 +105,7 @@ func Get(cfg Config) (*Info, error) {
 		ti.Columns = columns
 	}
 
-	for tableName, _ := range tableMap {
+	for tableName := range tableMap {
 		tableInfo = append(tableInfo, *tableMap[tableName])
 	}
 
