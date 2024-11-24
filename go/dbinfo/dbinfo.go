@@ -45,9 +45,18 @@ func run(out io.Writer, cfg Config) error {
 	return err
 }
 
+type TableColumn struct {
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	KeyType    string `json:"keyType"`
+	IsNullable bool   `json:"isNullable"`
+	Extra      string `json:"extra"`
+}
+
 type TableInfo struct {
-	Name string `json:"name"`
-	Rows int    `json:"rows"`
+	Name    string         `json:"name"`
+	Rows    int            `json:"rows"`
+	Columns []*TableColumn `json:"columns"`
 }
 
 type Info struct {
@@ -80,9 +89,26 @@ func Get(cfg Config) (*Info, error) {
 		}
 	}
 
+	tc, err := dbh.getColumnInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	for tableName, columns := range tc {
+		ti, ok := tableMap[tableName]
+		if !ok {
+			ti = &TableInfo{
+				Name: tableName,
+			}
+			tableMap[tableName] = ti
+		}
+		ti.Columns = columns
+	}
+
 	for tableName, _ := range tableMap {
 		tableInfo = append(tableInfo, *tableMap[tableName])
 	}
+
 	dbInfo := &Info{
 		Tables: tableInfo,
 	}

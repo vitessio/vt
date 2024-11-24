@@ -19,6 +19,7 @@ package dbinfo
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"vitess.io/vitess/go/mysql"
 )
@@ -59,4 +60,38 @@ func (dbh *DBHelper) getTableSizes() (tableSizes, error) {
 		ts[tableName] = int(tableRows)
 	}
 	return ts, nil
+}
+
+type tableColumns map[string][]*TableColumn
+
+func (dbh *DBHelper) getColumnInfo() (tableColumns, error) {
+	vtConn, cancel, err := dbh.GetConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	queryColumnInfo := "select table_name, column_name, data_type, column_key, is_nullable, extra from information_schema.columns WHERE table_schema = '%s'"
+	query := fmt.Sprintf(queryColumnInfo, dbh.vtParams.DbName)
+	qr, err := vtConn.ExecuteFetch(query, -1, false)
+	if err != nil {
+		return nil, err
+	}
+	tc := make(tableColumns)
+	for _, row := range qr.Rows {
+		tableName := row[0].ToString()
+		columnName := row[1].ToString()
+		dataType := row[2].ToString()
+		columnKey := row[3].ToString()
+		isNullable := row[4].ToString()
+		extra := row[5].ToString()
+		col := &TableColumn{
+			Name:       columnName,
+			Type:       dataType,
+			KeyType:    columnKey,
+			IsNullable: strings.EqualFold(isNullable, "YES"),
+			Extra:      extra,
+		}
+		tc[tableName] = append(tc[tableName], col)
+	}
+	return tc, nil
 }
