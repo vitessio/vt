@@ -18,12 +18,12 @@ for file in $GO_FILES; do
     }
 done
 
-# 2. Run goimports-reviser to verify formatting on changed files (without writing changes)
-echo "Checking goimports-reviser formatting..."
+# Check imports with goimports-reviser
+echo "Checking goimports-reviser imports..."
 for file in $GO_FILES; do
-    goimports-reviser -project-name $(go list -m) -rm-unused -set-alias -format "$file" -diff >/dev/null 2>&1
+    goimports-reviser -project-name $(go list -m) -rm-unused -set-alias "$file" >/dev/null 2>&1
     if [[ $? -ne 0 ]]; then
-        echo "Error: Imports not correctly formatted in $file. Please run 'make pretty'."
+        echo "Error: Imports not correctly organized in $file. Please run 'make pretty'."
         exit 1
     fi
 done

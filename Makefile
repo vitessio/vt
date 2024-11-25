@@ -42,8 +42,8 @@ clean:
 # Pretty: formats the code using gofumpt and goimports-reviser
 pretty: check-tools
 	@echo "Running formatting tools..."
-	@gofumpt -l -w . >/dev/null 2>&1 || true
-	@goimports-reviser -project-name $$(go list -m) -rm-unused -set-alias -format . >/dev/null 2>&1 || true
+	@gofumpt -w . >/dev/null 2>&1
+	@goimports-reviser -recursive -project-name $$(go list -m) -rm-unused -set-alias ./go >/dev/null 2>&1
 
 # Tools installation command
 install-tools:
