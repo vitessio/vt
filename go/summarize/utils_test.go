@@ -43,7 +43,7 @@ func TestGetFileType(t *testing.T) {
 		{
 			filename:      "../testdata/mysql.query.log",
 			expectedType:  unknownFile,
-			expectedError: "Error reading token",
+			expectedError: "error reading token: invalid character '/' looking for beginning of value",
 		},
 	}
 	for _, tc := range testCases {
