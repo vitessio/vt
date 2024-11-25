@@ -32,28 +32,33 @@ clean:
 	rm -f vt
 
 # Pretty: formats the code using gofumpt and goimports-reviser
-pretty: install-tools
+pretty: check-tools
 	@echo "Running formatting tools..."
 	@gofumpt -l -w . >/dev/null 2>&1 || true
 	@goimports-reviser -project-name $$(go list -m) -rm-unused -set-alias -format . >/dev/null 2>&1 || true
 
-# Install tools: Checks if the required tools are installed, installs if missing
+# Tools installation command
 install-tools:
-	@command -v gofumpt >/dev/null 2>&1 || { \
-		echo "Installing gofumpt..."; \
-		go install mvdan.cc/gofumpt@latest >/dev/null 2>&1; \
-	}
-	@command -v goimports-reviser >/dev/null 2>&1 || { \
-		echo "Installing goimports-reviser..."; \
-		go install github.com/incu6us/goimports-reviser@latest >/dev/null 2>&1; \
-	}
-	@command -v golangci-lint >/dev/null 2>&1 || { \
-		echo "Installing golangci-lint..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION); \
-	}
+	@echo "Installing gofumpt..."
+	go install mvdan.cc/gofumpt@latest
+
+	@echo "Installing goimports-reviser..."
+	go install github.com/incu6us/goimports-reviser/v3@latest
+
+	@echo "Installing golangci-lint..."
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin $(GOLANGCI_LINT_VERSION)
+
+	@echo "All tools installed successfully."
+
+# Ensure tools are available
+check-tools:
+	@command -v gofumpt >/dev/null 2>&1 || { echo "gofumpt not found. Run 'make install-tools' to install it." >&2; exit 1; }
+	@command -v goimports-reviser >/dev/null 2>&1 || { echo "goimports-reviser not found. Run 'make install-tools' to install it." >&2; exit 1; }
+	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci_lint not found. Run 'make install-tools' to install it." >&2; exit 1; }
+
 
 # Lint: runs golangci-lint
-lint: install-tools
+lint: check-tools
 	@echo "Running golangci-lint..."
 	@golangci-lint run --config .golangci.yml ./go/...
 
