@@ -1,15 +1,18 @@
-[
-  {
-    "query-signatures": [
-      "update tblA where foo = :0 and id = :1 set apa",
-      "update tblB where bar = :0 and id = :2 set monkey"
-    ],
-    "predicates": [
-      "tblA.foo = 0",
-      "tblA.id = ?",
-      "tblB.bar = 0",
-      "tblB.id = ?"
-    ],
-    "count": 2
-  }
-]
+{
+  "fileType": "transactions",
+  "signatures": [
+    {
+      "query-signatures": [
+        "update tblA where foo = :0 and id = :1 set apa",
+        "update tblB where bar = :0 and id = :2 set monkey"
+      ],
+      "predicates": [
+        "tblA.foo = 0",
+        "tblA.id = ?",
+        "tblB.bar = 0",
+        "tblB.id = ?"
+      ],
+      "count": 2
+    }
+  ]
+}

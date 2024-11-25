@@ -220,5 +220,10 @@ func (m *txSignatureMap) MarshalJSON() ([]byte, error) {
 		return signatures[i].Count > signatures[j].Count
 	})
 
-	return json.Marshal(signatures)
+	result := map[string]any{
+		"fileType":   "transactions",
+		"signatures": signatures,
+	}
+
+	return json.Marshal(result)
 }

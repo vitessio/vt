@@ -45,4 +45,7 @@ func TestRun(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, string(out), sb.String())
+	if t.Failed() {
+		_ = os.WriteFile("../testdata/expected/small-slow-query-transactions.json", []byte(sb.String()), 0o644)
+	}
 }
