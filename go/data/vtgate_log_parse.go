@@ -167,13 +167,22 @@ func getBindVariables(bindVarsRaw string, lineNumber int) (map[string]*querypb.B
 		var val []byte
 		switch {
 		case sqltypes.IsIntegral(bvType) || sqltypes.IsFloat(bvType):
-			val = []byte(strconv.FormatFloat(value.Value.(float64), 'f', -1, 64))
+			f, ok := value.Value.(float64)
+			if ok {
+				val = []byte(strconv.FormatFloat(f, 'f', -1, 64))
+			}
 		case bvType == sqltypes.Tuple:
 			// the query log of vtgate does not list all the values for a tuple
 			// instead it lists the following: "v2": {"type": "TUPLE", "value": "2 items"}
 			return nil, fmt.Errorf("line %d: cannot parse tuple bind variables", lineNumber)
-		default:
-			val = []byte(value.Value.(string))
+		}
+		if val == nil {
+			sval, ok := value.Value.(string)
+			if !ok {
+				return nil, fmt.Errorf("line %d: cannot parse bind variable value", lineNumber)
+			}
+
+			val = []byte(sval)
 		}
 		bvProcessed[key] = &querypb.BindVariable{
 			Type:  bvType,

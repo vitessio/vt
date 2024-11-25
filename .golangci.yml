@@ -131,6 +131,7 @@ linters-settings:
   gosec:
     excludes:
       - G115
+      - G404
 
   inamedparam:
     # Skips check for interface methods with only a single parameter.

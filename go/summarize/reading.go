@@ -58,6 +58,10 @@ func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
 	if err != nil {
 		exit("Error reading json: " + err.Error())
 	}
+	delim, ok := val.(json.Delim)
+	if !ok {
+		exit("Error reading json: expected delimiter")
+	}
 
 	// Reset the file pointer to the beginning
 	_, err = file.Seek(0, io.SeekStart)
@@ -65,7 +69,7 @@ func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
 		exit("Error rewinding file: " + err.Error())
 	}
 	decoder = json.NewDecoder(file)
-	return decoder, val.(json.Delim)
+	return decoder, delim
 }
 
 func readTracedQueryFile(decoder *json.Decoder, fileName string) readingSummary {

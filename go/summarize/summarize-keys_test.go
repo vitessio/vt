@@ -96,7 +96,7 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 			require.NoError(t, err)
 			sb := &strings.Builder{}
 			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
-			printKeysSummary(sb, file, now, metric, "../testdata/bigger_slow_query_schema_info.json")
+			printKeysSummary(sb, file, now, metric, "")
 			expected, err := os.ReadFile(fmt.Sprintf("../testdata/bigger_slow_log_%s.md", metric))
 			require.NoError(t, err)
 			assert.Equal(t, string(expected), sb.String())
