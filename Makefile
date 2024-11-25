@@ -1,12 +1,20 @@
 .PHONY: all build test tidy clean pretty install-tools lint install-hooks
+.DEFAULT_GOAL := test_and_build
 
-GO := go
 REQUIRED_GO_VERSION := 1.23
 GOLANGCI_LINT_VERSION := v1.62.0
 
+# Determine the Go binary directory
+GOBIN_DIR := $(or $(GOBIN), $(shell go env GOBIN))
+ifeq ($(GOBIN_DIR),)
+	GOBIN_DIR := $(shell go env GOPATH)/bin
+endif
+
+test_and_build: test build
+
 # Version check
 check_version:
-	@GO_VERSION=$$($(GO) version | awk '{print $$3}' | sed 's/go//'); \
+	@GO_VERSION=$$(go version | awk '{print $$3}' | sed 's/go//'); \
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d. -f1); \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d. -f2); \
 	if [ "$$MAJOR_VERSION" -eq 1 ] && [ "$$MINOR_VERSION" -lt 23 ]; then \
@@ -19,16 +27,16 @@ check_version:
 default: check_version build
 
 build:
-	$(GO) build -o vt ./go/vt
+	go build -o vt ./go/vt
 
 test:
-	$(GO) test -count=1 ./go/...
+	go test -count=1 ./go/...
 
 tidy:
-	$(GO) mod tidy
+	go mod tidy
 
 clean:
-	$(GO) clean -i ./...
+	go clean -i ./...
 	rm -f vt
 
 # Pretty: formats the code using gofumpt and goimports-reviser
@@ -46,7 +54,8 @@ install-tools:
 	go install github.com/incu6us/goimports-reviser/v3@latest
 
 	@echo "Installing golangci-lint..."
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin $(GOLANGCI_LINT_VERSION)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+		sh -s -- -b $(GOBIN_DIR) $(GOLANGCI_LINT_VERSION)
 
 	@echo "All tools installed successfully."
 
