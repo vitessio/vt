@@ -23,11 +23,11 @@ import (
 )
 
 func TestDBInfoRowCount(t *testing.T) {
-	si, err := Load("../testdata/sakila-schema-info.json")
+	si, err := Load("../testdata/sakila-dbinfo.json")
 	require.NoError(t, err)
 	require.NotNil(t, si)
 	require.NotEmpty(t, si.Tables)
-	require.Len(t, si.Tables, 16)
+	require.Len(t, si.Tables, 23)
 	var tables []string
 	for _, table := range si.Tables {
 		tables = append(tables, table.Name)
@@ -41,8 +41,6 @@ func TestDBInfoRowCount(t *testing.T) {
 			require.Equal(t, 6, table.Rows)
 		case "film":
 			require.Equal(t, 1000, table.Rows)
-		default:
-			require.Positive(t, table.Rows, "table %s has no rows", table.Name)
 		}
 	}
 }

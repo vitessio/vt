@@ -1,5 +1,5 @@
 {
-  "fileType": "",
+  "fileType": "dbinfo",
   "tables": [
     {
       "name": "inventory",

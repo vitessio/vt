@@ -48,9 +48,9 @@ func run(out io.Writer, cfg Config) error {
 type TableColumn struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
-	KeyType    string `json:"keyType"`
+	KeyType    string `json:"keyType,omitempty"`
 	IsNullable bool   `json:"isNullable"`
-	Extra      string `json:"extra"`
+	Extra      string `json:"extra,omitempty"`
 }
 
 type TableInfo struct {
@@ -110,7 +110,8 @@ func Get(cfg Config) (*Info, error) {
 	}
 
 	dbInfo := &Info{
-		Tables: tableInfo,
+		FileType: "dbinfo",
+		Tables:   tableInfo,
 	}
 	return dbInfo, nil
 }
