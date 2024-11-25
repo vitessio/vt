@@ -177,7 +177,7 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetr
 	summary := summarizeKeysQueries(file.AnalysedQueries, metricReader, schemaInfo)
 
 	renderHotQueries(md, summary.hotQueries, metricReader)
-	renderTableUsage(summary.tables, md)
+	renderTableUsage(summary.tables, md, schemaInfo != nil)
 	renderTablesJoined(md, file.AnalysedQueries)
 	renderFailures(md, summary.failures)
 
@@ -268,7 +268,7 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 	}
 }
 
-func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
+func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown, includeRowCount bool) {
 	if len(tableSummaries) == 0 {
 		return
 	}
@@ -278,7 +278,7 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
 	})
 
 	md.PrintHeader("Tables", 2)
-	renderTableOverview(md, tableSummaries)
+	renderTableOverview(md, tableSummaries, includeRowCount)
 
 	md.PrintHeader("Column Usage", 3)
 	for _, summary := range tableSummaries {
@@ -286,16 +286,23 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
 	}
 }
 
-func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary) {
-	headers := []string{"Table Name", "Reads", "Writes", "Number of Rows"}
+func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary, includeRowCount bool) {
+	headers := []string{"Table Name", "Reads", "Writes"}
+	if includeRowCount {
+		headers = append(headers, "Number of Rows")
+	}
 	var rows [][]string
 	for _, summary := range tableSummaries {
-		rows = append(rows, []string{
+		thisRow := []string{
 			summary.Table,
 			strconv.Itoa(summary.ReadQueryCount),
 			strconv.Itoa(summary.WriteQueryCount),
-			strconv.Itoa(summary.RowCount),
-		})
+		}
+		if includeRowCount {
+			thisRow = append(thisRow, strconv.Itoa(summary.RowCount))
+		}
+
+		rows = append(rows, thisRow)
 	}
 	md.PrintTable(headers, rows)
 }

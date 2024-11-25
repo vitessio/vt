@@ -78,7 +78,11 @@ func getFileType(filename string) (fileType, error) {
 	}
 
 	if key == "fileType" {
-		if fileType, ok := fileTypeMap[valueToken.(string)]; ok {
+		s, ok := valueToken.(string)
+		if !ok {
+			return unknownFile, fmt.Errorf("expected value to be a string: %s", valueToken)
+		}
+		if fileType, ok := fileTypeMap[s]; ok {
 			return fileType, nil
 		}
 		return unknownFile, fmt.Errorf("unknown FileType: %s", valueToken)
