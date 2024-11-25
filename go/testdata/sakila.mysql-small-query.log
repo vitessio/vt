@@ -1,0 +1,371 @@
+
+--usage_count 123
+select * from actor where first_name = 'Scarlett';
+
+select * from actor where last_name like 'Johansson';
+
+select count(distinct last_name) from actor;
+
+select last_name from actor group by last_name having count(*) = 1;
+
+select last_name from actor group by last_name having count(*) > 1;
+
+select film.film_id, film.title, store.store_id, inventory.inventory_id
+from inventory join store on inventory.store_id = store.store_id join film on inventory.film_id = film.film_id
+where film.title = 'Academy Dinosaur' and store.store_id = 1;
+
+select inventory.inventory_id
+from inventory join store on inventory.store_id = store.store_id
+     join film on inventory.film_id = film.film_id
+     join rental on inventory.inventory_id = rental.inventory_id
+where film.title = 'Academy Dinosaur'
+      and store.store_id = 1
+      and not exists (select * from rental
+                      where rental.inventory_id = inventory.inventory_id
+                      and rental.return_date is null);
+
+insert into rental (rental_date, inventory_id, customer_id, staff_id)
+values (NOW(), 1, 1, 1);
+
+select rental_duration from film where film_id = 1;
+
+select rental_id from rental order by rental_id desc limit 1;
+
+select rental_date,
+       rental_date + interval
+                   (select rental_duration from film where film_id = 1) day
+                   as due_date
+from rental
+where rental_id = (select rental_id from rental order by rental_id desc limit 1);
+
+select avg(length) from film;
+
+SELECT first_name, last_name
+FROM actor;
+
+SELECT UPPER(CONCAT(first_name, ' ', last_name)) AS 'Actor Name'
+FROM actor;
+
+SELECT first_name, last_name, actor_id
+FROM actor
+WHERE first_name = "Joe";
+
+SELECT * FROM actor
+WHERE last_name LIKE '%GEN%';
+
+SELECT last_name, first_name
+FROM actor
+WHERE last_name LIKE '%LI%'
+ORDER BY last_name, first_name;
+
+SELECT country_id, country
+FROM country
+WHERE country IN ('Afghanistan', 'Bangladesh', 'China');
+
+
+SELECT last_name, COUNT(*) AS 'count'
+FROM actor
+GROUP BY last_name;
+
+SELECT last_name, COUNT(*) AS 'count'
+FROM actor
+GROUP BY last_name
+HAVING COUNT(*) > 1;
+
+UPDATE actor
+SET first_name ='HARPO'
+WHERE (first_name ='GROUCHO' AND last_name = 'WILLIAMS');
+
+UPDATE actor
+SET first_name =
+CASE WHEN first_name = 'HARPO'
+THEN 'GROUCHO'
+ELSE 'MUCHO GROUCHO'
+END
+WHERE actor_id = 172;
+
+SELECT s.first_name, s.last_name, a.address
+FROM staff s
+INNER JOIN address a
+ON (s.address_id = a.address_id);
+
+SELECT s.first_name, s.last_name, SUM(p.amount)
+FROM staff s
+INNER JOIN payment p
+ON (s.staff_id = p.staff_id)
+WHERE MONTH(p.payment_date) = 08 AND YEAR(p.payment_date) = 2005
+GROUP BY s.staff_id;
+
+SELECT f.title, COUNT(a.actor_id) AS 'Number of Actors'
+FROM film f
+INNER JOIN film_actor a
+ON (f.film_id = a.film_id)
+GROUP BY f.title
+ORDER BY 'Number of Actors' DESC;
+
+SELECT title, COUNT(inventory_id) AS 'Number of copies'
+FROM film
+INNER JOIN inventory
+ON (film.film_id = inventory.film_id)
+WHERE title = 'Hunchback Impossible'
+GROUP BY title;
+
+SELECT c.last_name, c.first_name, SUM(p.amount) AS 'Total Amount Paid'
+FROM customer c
+INNER JOIN payment p
+ON (c.customer_id = p.customer_id)
+GROUP BY c.last_name
+ORDER BY c.last_name;
+
+SELECT title
+FROM film
+WHERE title LIKE 'K%'
+OR title LIKE 'Q%'
+AND language_id IN
+(SELECT language_id
+FROM language
+WHERE name = 'English');
+
+SELECT first_name, last_name
+FROM actor
+WHERE actor_id IN
+(SELECT actor_id
+FROM film_actor
+WHERE film_id IN
+(SELECT film_id
+FROM film
+WHERE title = 'Alone Trip'));
+
+SELECT c.first_name, c.last_name, c.email
+FROM customer c
+JOIN address a ON (c.address_id = a.address_id)
+JOIN city ci ON (a.city_id = ci.city_id)
+JOIN country ctr ON (ci.country_id = ctr.country_id)
+WHERE ctr.country = 'canada';
+
+SELECT title, c.name
+FROM film f
+JOIN film_category fc
+ON (f.film_id = fc.film_id)
+JOIN category c
+ON (c.category_id = fc.category_id)
+WHERE name = 'family';
+
+SELECT s.store_id, SUM(amount) AS 'Revenue'
+FROM payment p
+JOIN rental r
+ON (p.rental_id = r.rental_id)
+JOIN inventory i
+ON (i.inventory_id = r.inventory_id)
+JOIN store s
+ON (s.store_id = i.store_id)
+GROUP BY s.store_id;
+
+SELECT store_id, city, country
+FROM store s
+JOIN address a
+ON (s.address_id = a.address_id)
+JOIN city cit
+ON (cit.city_id = a.city_id)
+JOIN country ctr
+ON(cit.country_id = ctr.country_id);
+
+SELECT SUM(amount) AS 'Total Sales', c.name AS 'Genre'
+FROM payment p
+JOIN rental r
+ON (p.rental_id = r.rental_id)
+JOIN inventory i
+ON (r.inventory_id = i.inventory_id)
+JOIN film_category fc
+ON (i.film_id = fc.film_id)
+JOIN category c
+ON (fc.category_id = c.category_id)
+GROUP BY c.name
+ORDER BY SUM(amount) DESC;
+
+SELECT SUM(amount) AS 'Total Sales', c.name AS 'Genre'
+FROM payment p
+JOIN rental r
+ON (p.rental_id = r.rental_id)
+JOIN inventory i
+ON (r.inventory_id = i.inventory_id)
+JOIN film_category fc
+ON (i.film_id = fc.film_id)
+JOIN category c
+ON (fc.category_id = c.category_id)
+GROUP BY c.name
+ORDER BY SUM(amount) DESC
+LIMIT 5;
+
+SELECT *
+FROM top_five_genres;
+
+# Following queries simulate lots of queries joining with lookup-style tables
+
+SELECT
+    f.title AS film_title,
+    CONCAT(a.first_name, ' ', a.last_name) AS actor_name
+FROM
+    film f
+INNER JOIN
+    film_actor fa ON f.film_id = fa.film_id
+INNER JOIN
+    actor a ON fa.actor_id = a.actor_id
+ORDER BY
+    film_title, actor_name;
+
+SELECT
+    f.title AS film_title,
+    c.name AS category_name
+FROM
+    film f
+INNER JOIN
+    film_category fc ON f.film_id = fc.film_id
+INNER JOIN
+    category c ON fc.category_id = c.category_id
+ORDER BY
+    category_name, film_title;
+
+SELECT
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    ci.city AS city_name,
+    co.country AS country_name
+FROM
+    customer c
+INNER JOIN
+    address a ON c.address_id = a.address_id
+INNER JOIN
+    city ci ON a.city_id = ci.city_id
+INNER JOIN
+    country co ON ci.country_id = co.country_id
+ORDER BY
+    country_name, city_name, customer_name;
+
+SELECT
+    i.inventory_id,
+    f.title AS film_title,
+    l.name AS language_name
+FROM
+    inventory i
+INNER JOIN
+    film f ON i.film_id = f.film_id
+INNER JOIN
+    language l ON f.language_id = l.language_id
+ORDER BY
+    language_name, film_title;
+
+SELECT
+    s.store_id,
+    CONCAT(st.first_name, ' ', st.last_name) AS staff_name,
+    ci.city AS store_city,
+    co.country AS store_country
+FROM
+    store s
+INNER JOIN
+    staff st ON s.manager_staff_id = st.staff_id
+INNER JOIN
+    address a ON s.address_id = a.address_id
+INNER JOIN
+    city ci ON a.city_id = ci.city_id
+INNER JOIN
+    country co ON ci.country_id = co.country_id
+WHERE
+    st.active = TRUE
+ORDER BY
+    store_country, store_city, staff_name;
+
+SELECT
+    l.name AS language_name,
+    COUNT(f.film_id) AS film_count
+FROM
+    film f
+INNER JOIN
+    language l ON f.language_id = l.language_id
+GROUP BY
+    l.language_id, l.name
+ORDER BY
+    film_count DESC, language_name;
+
+INSERT INTO film (title, description, release_year, language_id, rental_duration, rental_rate, length, replacement_cost, rating)
+VALUES ('The Grand Adventure', 'A thrilling journey through unknown lands.', 2024, 1, 5, 3.99, 120, 14.99, 'PG');
+
+DELETE FROM customer
+WHERE customer_id = 101;
+
+UPDATE rental
+SET return_date = NOW()
+WHERE rental_id = 204 AND return_date IS NULL;
+
+INSERT INTO inventory (film_id, store_id, last_update)
+VALUES (5, 1, NOW());
+
+DELETE FROM payment
+WHERE payment_id = 305;
+
+UPDATE staff
+SET active = FALSE
+WHERE staff_id = 2;
+
+INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id)
+VALUES (NOW(), 101, 305, 1);
+
+DELETE FROM address
+WHERE address_id = 200;
+
+UPDATE store
+SET manager_staff_id = 3
+WHERE store_id = 2;
+
+INSERT INTO film_actor (actor_id, film_id, last_update)
+VALUES (10, 15, NOW());
+
+INSERT INTO actor (first_name, last_name, last_update)
+VALUES ('John', 'Doe', NOW());
+
+DELETE FROM actor
+WHERE actor_id = 15;
+
+UPDATE actor
+SET last_name = 'Smith'
+WHERE actor_id = 22;
+
+INSERT INTO category (name, last_update)
+VALUES ('Adventure', NOW());
+
+DELETE FROM category
+WHERE category_id = 4;
+
+UPDATE category
+SET name = 'Drama'
+WHERE category_id = 7;
+
+INSERT INTO language (name, last_update)
+VALUES ('Mandarin', NOW());
+
+DELETE FROM language
+WHERE language_id = 5;
+
+UPDATE language
+SET name = 'French'
+WHERE language_id = 2;
+
+INSERT INTO city (city, country_id, last_update)
+VALUES ('Amsterdam', 1, NOW());
+
+DELETE FROM city
+WHERE city_id = 101;
+
+UPDATE city
+SET city = 'New York'
+WHERE city_id = 50;
+
+INSERT INTO country (country, last_update)
+VALUES ('Netherlands', NOW());
+
+DELETE FROM country
+WHERE country_id = 25;
+
+UPDATE country
+SET country = 'Germany'
+WHERE country_id = 12;
+

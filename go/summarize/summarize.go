@@ -40,9 +40,24 @@ type (
 )
 
 func Run(files []string, hotMetric string) {
-	traces := make([]readingSummary, len(files))
+	var traceFiles []string
+	var dbInfoPath string
+	// todo: add file types for other json types. Right now just checks for dbinfo files, else defaults
+	for _, file := range files {
+		typ, _ := getFileType(file)
+		switch typ {
+		case dbInfoFile:
+			fmt.Printf("dbinfo file: %s\n", file)
+			dbInfoPath = file
+		default:
+			fmt.Printf("trace file: %s\n", file)
+			traceFiles = append(traceFiles, file)
+		}
+	}
+
+	traces := make([]readingSummary, len(traceFiles))
 	var err error
-	for i, arg := range files {
+	for i, arg := range traceFiles {
 		traces[i], err = readTraceFile(arg)
 		if err != nil {
 			exit(err.Error())
@@ -62,7 +77,7 @@ func Run(files []string, hotMetric string) {
 	if firstTrace.AnalysedQueries == nil {
 		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
 	} else {
-		printKeysSummary(os.Stdout, firstTrace, time.Now(), hotMetric)
+		printKeysSummary(os.Stdout, firstTrace, time.Now(), hotMetric, dbInfoPath)
 	}
 }
 

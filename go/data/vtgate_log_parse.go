@@ -211,8 +211,14 @@ func getBindVariables(bindVarsRaw string, lineNumber int) (map[string]*querypb.B
 			// the query log of vtgate does not list all the values for a tuple
 			// instead it lists the following: "v2": {"type": "TUPLE", "value": "2 items"}
 			return nil, fmt.Errorf("line %d: cannot parse tuple bind variables", lineNumber)
-		default:
-			val = []byte(value.Value.(string))
+		}
+		if val == nil {
+			sval, ok := value.Value.(string)
+			if !ok {
+				return nil, fmt.Errorf("line %d: cannot parse bind variable value", lineNumber)
+			}
+
+			val = []byte(sval)
 		}
 		bvProcessed[key] = &querypb.BindVariable{
 			Type:  bvType,

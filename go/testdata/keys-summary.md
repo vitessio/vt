@@ -4,16 +4,16 @@
 **Analyzed File**: `../testdata/keys-log.json`
 
 ## Tables
-|Table Name|Reads|Writes|
-|---|---|---|
-|lineitem|17|1|
-|orders|11|1|
-|nation|10|1|
-|supplier|8|1|
-|customer|7|1|
-|part|5|1|
-|partsupp|4|1|
-|region|2|1|
+|Table Name|Reads|Writes|Number of Rows|
+|---|---|---|---|
+|lineitem|17|1|42047555|
+|orders|11|1|12047555|
+|nation|10|1|150|
+|supplier|8|1|318|
+|customer|7|1|280000|
+|part|5|1|2761|
+|partsupp|4|1|32381|
+|region|2|1|20|
 
 ### Column Usage
 #### Table: `lineitem` (17 reads and 1 writes)

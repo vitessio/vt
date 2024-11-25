@@ -7,39 +7,58 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: './go.mod'
 
-      - run: go version
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Go mod tidy
+      - name: Install Dependencies
+        run: go mod download
+
+      - name: Verify go.mod and go.sum
         run: |
           go mod tidy
           git diff --exit-code || (echo "go.mod or go.sum is not clean! Run 'go mod tidy' and commit the changes." && exit 1)
 
-      - name: Go Vet
-        run: go vet ./go/...
+      - name: Install Tools
+        run: |
+          make install-tools
+
+      - name: Display Go version
+        run: go version
 
       - name: Build
         run: make build
 
-      - name: Check formatting
+      - name: Check Formatting
         run: |
           make pretty
           git diff --exit-code || (echo "Code is not formatted correctly! Run 'make pretty' and commit the changes." && exit 1)
+
+      - name: Run Linting
+        run: make lint
 
       - name: Install go-junit-report
         run: go install github.com/jstemmer/go-junit-report@latest
 
       - name: Run Tests and Convert to JUnit
-        run: go test -v ./go/... | go-junit-report > report.xml
+        run: go test -v ./... | go-junit-report > report.xml
 
       - name: Test Summary
-        if: true
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
+        uses: test-summary/action@v2.4
         with:
           paths: "report.xml"
           show: "fail"

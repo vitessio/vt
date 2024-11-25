@@ -32,6 +32,7 @@ import (
 
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
+	"github.com/vitessio/vt/go/schema"
 )
 
 const HotQueryCount = 10
@@ -62,6 +63,7 @@ type (
 		Columns         map[ColumnInformation]ColumnUsage
 		JoinPredicates  []operators.JoinPredicate
 		Failed          bool
+		RowCount        int
 	}
 
 	FailuresSummary struct {
@@ -152,7 +154,8 @@ func (ts TableSummary) UseCount() int {
 
 // printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
 // and prints this summary information to the output.
-func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetric string) {
+func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetric, schemaInfoPath string) {
+	var err error
 	md := &markdown.MarkDown{}
 
 	msg := `# Query Analysis Report
@@ -163,14 +166,22 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetr
 `
 	md.Printf(msg, now.Format(time.DateTime), file.Name)
 	metricReader := getMetricForHotness(hotMetric)
-	summary := summarizeKeysQueries(file.AnalysedQueries, metricReader)
+
+	var schemaInfo *schema.Info
+	if schemaInfoPath != "" {
+		schemaInfo, err = schema.Load(schemaInfoPath)
+		if err != nil {
+			panic(err)
+		}
+	}
+	summary := summarizeKeysQueries(file.AnalysedQueries, metricReader, schemaInfo)
 
 	renderHotQueries(md, summary.hotQueries, metricReader)
-	renderTableUsage(summary.tables, md)
+	renderTableUsage(summary.tables, md, schemaInfo != nil)
 	renderTablesJoined(md, file.AnalysedQueries)
 	renderFailures(md, summary.failures)
 
-	_, err := md.WriteTo(out)
+	_, err = md.WriteTo(out)
 	if err != nil {
 		panic(err)
 	}
@@ -257,7 +268,7 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 	}
 }
 
-func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
+func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown, includeRowCount bool) {
 	if len(tableSummaries) == 0 {
 		return
 	}
@@ -267,7 +278,7 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
 	})
 
 	md.PrintHeader("Tables", 2)
-	renderTableOverview(md, tableSummaries)
+	renderTableOverview(md, tableSummaries, includeRowCount)
 
 	md.PrintHeader("Column Usage", 3)
 	for _, summary := range tableSummaries {
@@ -275,15 +286,23 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown) {
 	}
 }
 
-func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary) {
+func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary, includeRowCount bool) {
 	headers := []string{"Table Name", "Reads", "Writes"}
+	if includeRowCount {
+		headers = append(headers, "Number of Rows")
+	}
 	var rows [][]string
 	for _, summary := range tableSummaries {
-		rows = append(rows, []string{
+		thisRow := []string{
 			summary.Table,
 			strconv.Itoa(summary.ReadQueryCount),
 			strconv.Itoa(summary.WriteQueryCount),
-		})
+		}
+		if includeRowCount {
+			thisRow = append(thisRow, strconv.Itoa(summary.RowCount))
+		}
+
+		rows = append(rows, thisRow)
 	}
 	md.PrintTable(headers, rows)
 }
@@ -407,7 +426,7 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(queries *keys.Output, metricReader getMetric) Summary {
+func summarizeKeysQueries(queries *keys.Output, metricReader getMetric, schemaInfo *schema.Info) Summary {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
@@ -419,11 +438,23 @@ func summarizeKeysQueries(queries *keys.Output, metricReader getMetric) Summary 
 		checkQueryForHotness(&hotQueries, query, metricReader)
 	}
 
+	tableRows := make(map[string]int)
+	if schemaInfo != nil {
+		for _, ti := range schemaInfo.Tables {
+			tableRows[ti.Name] = ti.Rows
+		}
+	}
+
 	// Second pass: calculate percentages
 	for _, summary := range tableSummaries {
 		summary.ReadQueryCount = tableUsageReadCounts[summary.Table]
 		summary.WriteQueryCount = tableUsageWriteCounts[summary.Table]
 		count := summary.ReadQueryCount + summary.WriteQueryCount
+		if schemaInfo != nil {
+			if rowCount, ok := tableRows[summary.Table]; ok {
+				summary.RowCount = rowCount
+			}
+		}
 		countF := float64(count)
 		for colName, usage := range summary.Columns {
 			usage.Percentage = (float64(usage.Count) / countF) * 100

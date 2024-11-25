@@ -141,8 +141,12 @@ func (ql *queryList) processQuery(si *SchemaInfo, ast sqlparser.Statement, q dat
 
 	structure := sqlparser.CanonicalString(ast)
 	r, found := ql.queries[structure]
+	usageCount := q.UsageCount
+	if usageCount == 0 {
+		usageCount = 1
+	}
 	if found {
-		r.UsageCount++
+		r.UsageCount += usageCount
 		r.LineNumbers = append(r.LineNumbers, q.Line)
 		r.QueryTime += q.QueryTime
 		r.LockTime += q.LockTime
@@ -164,7 +168,7 @@ func (ql *queryList) processQuery(si *SchemaInfo, ast sqlparser.Statement, q dat
 	ql.queries[structure] = &QueryAnalysisResult{
 		QueryStructure:  structure,
 		StatementType:   result.StatementType,
-		UsageCount:      1,
+		UsageCount:      usageCount,
 		LineNumbers:     []int{q.Line},
 		TableNames:      tableNames,
 		GroupingColumns: result.GroupingColumns,
