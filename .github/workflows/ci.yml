@@ -51,6 +51,9 @@ jobs:
       - name: Run Linting
         run: make lint
 
+      - name: Install go-junit-report
+        run: go install github.com/jstemmer/go-junit-report@latest
+
       - name: Run Tests and Convert to JUnit
         run: go test -v ./... | go-junit-report > report.xml
 
