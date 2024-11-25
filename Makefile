@@ -2,7 +2,7 @@
 
 GO := go
 REQUIRED_GO_VERSION := 1.23
-GOLANGCI_LINT_VERSION := v1.55.2
+GOLANGCI_LINT_VERSION := v1.62.0
 
 # Version check
 check_version:

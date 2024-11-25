@@ -35,11 +35,7 @@ jobs:
 
       - name: Install Tools
         run: |
-          go install mvdan.cc/gofumpt@v0.5.0
-          go install github.com/incu6us/goimports-reviser/v3@v3.3.0
-          go install github.com/jstemmer/go-junit-report@latest
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-            sh -s -- -b $(go env GOPATH)/bin v1.54.2
+          make install-tools
 
       - name: Display Go version
         run: go version
