@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"regexp"
 	"strconv"
@@ -42,11 +43,14 @@ type (
 	vtgateLogReaderState struct {
 		logReaderState
 		NeedsBindVars bool
+		uuidReg       *regexp.Regexp
 	}
 )
 
 func (vll VtGateLogLoader) Load(fileName string) IteratorLoader {
-	reg := regexp.MustCompile(`\t"([^"]+)"\t(\{(?:[^{}]|(?:\{[^{}]*\}))*\}|"[^"]+")`)
+	reg := regexp.MustCompile(`\t"([^"]+)"\t(\{(?:[^{}]|\{[^{}]*})*}|"[^"]+")`)
+	uuidReg := regexp.MustCompile(`\t"([0-9a-fA-F\-]{36})"\t`)
+
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
 		return &errLoader{err: err}
@@ -59,6 +63,7 @@ func (vll VtGateLogLoader) Load(fileName string) IteratorLoader {
 			fd:     fd,
 		},
 		NeedsBindVars: vll.NeedsBindVars,
+		uuidReg:       uuidReg,
 	}
 }
 
@@ -88,7 +93,7 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 			continue
 		}
 		line = strings.ReplaceAll(line, "\\n", "")
-		// Find the match
+
 		match := s.reg.FindStringSubmatch(line)
 		if len(match) <= 2 {
 			s.fail(fmt.Errorf("line %d: cannot parse log: %s", s.lineNumber, line))
@@ -96,17 +101,25 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 		}
 
 		query := match[1]
+
+		connectionID := s.extractSessionUUIDAsConnectionID(line)
+		if connectionID == -1 {
+			// something went wrong while extracting the connection ID
+			return Query{}, false
+		}
+
 		if !s.NeedsBindVars {
 			return Query{
-				Query: query,
-				Line:  s.lineNumber,
-				Type:  QueryT,
+				Query:        query,
+				Line:         s.lineNumber,
+				Type:         SQLQuery,
+				ConnectionID: connectionID,
 			}, true
 		}
 
-		// If we care about bind variables (e.g. running 'trace') then we parse the query log
-		// output into bindVarsVtGate, we then transform it into something the Vitess library
-		// can understand (aka: map[string]*querypb.BindVariable), we then parse the query string
+		// If we care about bind variables (e.g., running 'trace'), then we parse the query log
+		// output into bindVarsVtGate, transform it into something the Vitess library
+		// can understand (map[string]*querypb.BindVariable), parse the query string,
 		// and add the bind variables to it.
 		bindVarsRaw := match[2]
 		bvs, err := getBindVariables(bindVarsRaw, s.lineNumber)
@@ -122,15 +135,31 @@ func (s *vtgateLogReaderState) Next() (Query, bool) {
 		}
 
 		return Query{
-			Query: parsedQuery,
-			Line:  s.lineNumber,
-			Type:  QueryT,
+			Query:        parsedQuery,
+			Line:         s.lineNumber,
+			Type:         SQLQuery,
+			ConnectionID: connectionID,
 		}, true
 	}
 
 	s.closed = true
 
 	return Query{}, false
+}
+
+func (s *vtgateLogReaderState) extractSessionUUIDAsConnectionID(line string) int {
+	uuidMatch := s.uuidReg.FindStringSubmatch(line)
+	if len(uuidMatch) < 2 {
+		s.fail(fmt.Errorf("line %d: cannot extract session UUID: %s", s.lineNumber, line))
+		return -1
+	}
+	sessionUUID := uuidMatch[1]
+
+	// Hash the session UUID using FNV-1a
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(sessionUUID))
+	connectionID := int(h.Sum64())
+	return connectionID
 }
 
 func addBindVarsToQuery(query string, bvs map[string]*querypb.BindVariable) (string, error) {
@@ -166,11 +195,18 @@ func getBindVariables(bindVarsRaw string, lineNumber int) (map[string]*querypb.B
 
 		var val []byte
 		switch {
-		case sqltypes.IsIntegral(bvType) || sqltypes.IsFloat(bvType):
-			f, ok := value.Value.(float64)
-			if ok {
-				val = []byte(strconv.FormatFloat(f, 'f', -1, 64))
+		case sqltypes.IsIntegral(bvType):
+			intVal, ok := value.Value.(float64)
+			if !ok {
+				return nil, fmt.Errorf("line %d: cannot parse integral bind variable", lineNumber)
 			}
+			val = strconv.AppendInt(nil, int64(intVal), 10)
+		case sqltypes.IsFloat(bvType):
+			floatVal, ok := value.Value.(float64)
+			if !ok {
+				return nil, fmt.Errorf("line %d: cannot parse float bind variable", lineNumber)
+			}
+			val = strconv.AppendFloat(nil, floatVal, 'f', -1, 64)
 		case bvType == sqltypes.Tuple:
 			// the query log of vtgate does not list all the values for a tuple
 			// instead it lists the following: "v2": {"type": "TUPLE", "value": "2 items"}
@@ -189,5 +225,5 @@ func getBindVariables(bindVarsRaw string, lineNumber int) (map[string]*querypb.B
 			Value: val,
 		}
 	}
-	return bvProcessed, err
+	return bvProcessed, nil
 }

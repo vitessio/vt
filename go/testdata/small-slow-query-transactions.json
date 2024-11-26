@@ -1,0 +1,52 @@
+{
+  "fileType": "transactions",
+  "signatures": [
+    {
+      "count": 2,
+      "query-signatures": [
+        {
+          "op": "update",
+          "affected_table": "tblA",
+          "updated_columns": [
+            "apa"
+          ],
+          "predicates": [
+            {
+              "table": "tblA",
+              "col": "foo",
+              "op": 0,
+              "val": 0
+            },
+            {
+              "table": "tblA",
+              "col": "id",
+              "op": 0,
+              "val": -1
+            }
+          ]
+        },
+        {
+          "op": "update",
+          "affected_table": "tblB",
+          "updated_columns": [
+            "monkey"
+          ],
+          "predicates": [
+            {
+              "table": "tblB",
+              "col": "bar",
+              "op": 0,
+              "val": 0
+            },
+            {
+              "table": "tblB",
+              "col": "id",
+              "op": 0,
+              "val": -1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

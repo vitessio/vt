@@ -77,8 +77,8 @@ func Run(cfg Config) error {
 }
 
 func run(out io.Writer, cfg Config) error {
-	si := &schemaInfo{
-		tables: make(map[string]columns),
+	si := &SchemaInfo{
+		Tables: make(map[string]Columns),
 	}
 	ql := &queryList{
 		queries: make(map[string]*QueryAnalysisResult),
@@ -86,8 +86,9 @@ func run(out io.Writer, cfg Config) error {
 	}
 
 	loader := cfg.Loader.Load(cfg.FileName)
-	_ = data.ForeachSQLQuery(loader, func(q data.Query) error {
-		process(q, si, ql)
+
+	_ = data.ForeachSQLQuery(loader, func(query data.Query) error {
+		process(query, si, ql)
 		return nil
 	})
 
@@ -97,7 +98,7 @@ func run(out io.Writer, cfg Config) error {
 	return errors.Join(closeErr, jsonWriteErr)
 }
 
-func process(q data.Query, si *schemaInfo, ql *queryList) {
+func process(q data.Query, si *SchemaInfo, ql *queryList) {
 	ast, bv, err := sqlparser.NewTestParser().Parse2(q.Query)
 	if err != nil {
 		ql.addFailedQuery(q, err)
@@ -112,7 +113,7 @@ func process(q data.Query, si *schemaInfo, ql *queryList) {
 	}
 }
 
-func (ql *queryList) processQuery(si *schemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
+func (ql *queryList) processQuery(si *SchemaInfo, ast sqlparser.Statement, q data.Query, bv sqlparser.BindVars) {
 	// handle panics
 	defer func() {
 		if r := recover(); r != nil {

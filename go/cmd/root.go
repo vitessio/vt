@@ -38,6 +38,7 @@ func Execute() {
 	root.AddCommand(tracerCmd())
 	root.AddCommand(keysCmd())
 	root.AddCommand(schemaCmd())
+	root.AddCommand(transactionsCmd())
 
 	err := root.Execute()
 	if err != nil {

@@ -17,6 +17,7 @@ limitations under the License.
 package data
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -42,7 +43,7 @@ func TestParseVtGateQueryLog(t *testing.T) {
 
 	var got []string
 	for _, query := range gotQueries {
-		got = append(got, query.Query)
+		got = append(got, format(query))
 	}
 
 	require.Equal(t, string(expect), strings.Join(got, "\n"))
@@ -59,8 +60,12 @@ func TestParseVtGateQueryLogNoBindVars(t *testing.T) {
 
 	var got []string
 	for _, query := range gotQueries {
-		got = append(got, query.Query)
+		got = append(got, format(query))
 	}
 
 	require.Equal(t, string(expect), strings.Join(got, "\n"))
+}
+
+func format(query Query) string {
+	return fmt.Sprintf("%d:%s", query.ConnectionID, query.Query)
 }

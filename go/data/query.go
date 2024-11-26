@@ -45,6 +45,7 @@ type (
 		UsageCount int
 
 		// These fields are only set if the log file is a slow query log
+		ConnectionID           int
 		QueryTime, LockTime    float64
 		RowsSent, RowsExamined int
 		Timestamp              int64
@@ -79,7 +80,7 @@ func ForeachSQLQuery(loader IteratorLoader, f func(Query) error) error {
 			return fmt.Errorf("unknown command type: %s", query.Type)
 		case Comment, CommentWithCommand, EmptyLine, WaitForAuthoritative, SkipIfBelowVersion:
 			// no-op for keys
-		case QueryT:
+		case SQLQuery:
 			if skip {
 				skip = false
 				continue
@@ -106,7 +107,7 @@ func (q *Query) getQueryType(qu string) error {
 		if q.Type != CommentWithCommand {
 			// A query that will sent to vitess
 			q.Query = qu
-			q.Type = QueryT
+			q.Type = SQLQuery
 		} else {
 			log.WithFields(log.Fields{"line": q.Line, "command": q.FirstWord, "arguments": q.Query}).Error("invalid command")
 			return fmt.Errorf("invalid command %s", q.FirstWord)

@@ -21,7 +21,7 @@ import "strings"
 type CmdType int
 
 const (
-	QueryT CmdType = iota
+	SQLQuery CmdType = iota
 	Error
 	Skip
 	Unknown
@@ -38,7 +38,7 @@ const (
 )
 
 var commandMap = map[string]CmdType{ //nolint:gochecknoglobals // this is instead of a const
-	"query":                 QueryT,
+	"query":                 SQLQuery,
 	"error":                 Error,
 	"skip":                  Skip,
 	"skip_if_below_version": SkipIfBelowVersion,

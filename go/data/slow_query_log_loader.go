@@ -129,7 +129,7 @@ func (s *slowQueryLogReaderState) processLine(line string, state *lineProcessorS
 }
 
 func (s *slowQueryLogReaderState) processCommentLine(line string, state *lineProcessorState) (bool, error) {
-	if strings.HasPrefix(line, "# Query_time:") {
+	if strings.HasPrefix(line, "# Query_time:") || strings.HasPrefix(line, "# User@Host:") {
 		if err := parseQueryMetrics(line, &state.currentQuery); err != nil {
 			return false, err
 		}
@@ -190,17 +190,16 @@ func parseQueryMetrics(line string, q *Query) error {
 	for i < len(fields) {
 		field := fields[i]
 		if !strings.HasSuffix(field, ":") {
-			return fmt.Errorf("unexpected field format '%s'", field)
+			i++
+			continue
 		}
 
-		// Remove the trailing colon to get the key
 		key := strings.TrimSuffix(field, ":")
 		if i+1 >= len(fields) {
 			return fmt.Errorf("missing value for key '%s'", key)
 		}
 		value := fields[i+1]
 
-		// Assign to Query struct based on key
 		switch key {
 		case "Query_time":
 			fval, err := strconv.ParseFloat(value, 64)
@@ -214,6 +213,12 @@ func parseQueryMetrics(line string, q *Query) error {
 				return fmt.Errorf("invalid Lock_time value '%s'", value)
 			}
 			q.LockTime = fval
+		case "Id":
+			ival, err := strconv.Atoi(value)
+			if err != nil {
+				return fmt.Errorf("invalid connection id value '%s'", value)
+			}
+			q.ConnectionID = ival
 		case "Rows_sent":
 			ival, err := strconv.Atoi(value)
 			if err != nil {
@@ -227,7 +232,7 @@ func parseQueryMetrics(line string, q *Query) error {
 			}
 			q.RowsExamined = ival
 		}
-		i += 2 // Move to the next key-value pair
+		i += 2
 	}
 
 	return nil
@@ -285,6 +290,7 @@ func parseQuery(rs Query) (*Query, error) {
 		RowsSent:     rs.RowsSent,
 		RowsExamined: rs.RowsExamined,
 		Timestamp:    rs.Timestamp,
+		ConnectionID: rs.ConnectionID,
 	}
 
 	if len(s) < 3 {

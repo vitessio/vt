@@ -1,0 +1,42 @@
+/bin/mysqld, Version: 8.0.26 (Source distribution). started with:
+Tcp port: 3306  Unix socket: /tmp/mysql.sock
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+begin;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+update tblA set apa = 'toto' where foo = 12 and id = 43;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+update tblB set monkey = 'pippi' where bar = 12 and id = 44;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+commit;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+begin;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+update tblA set apa = 'toto' where foo = 43 and id = 5;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+update tblB set monkey = 'pippi' where bar = 43 and id = 16;
+# Time: 2023-08-01T12:00:01.852861Z
+# User@Host: user[user] @  [XXX.XXX.XXX.XXX]  Id: 779060
+# Query_time: 0.000043  Lock_time: 0.000000 Rows_sent: 0  Rows_examined: 0
+SET timestamp=1690891201;
+commit;

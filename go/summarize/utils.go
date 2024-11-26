@@ -30,12 +30,14 @@ const (
 	traceFile
 	keysFile
 	dbInfoFile
+	transactionFile
 )
 
 var fileTypeMap = map[string]fileType{ //nolint:gochecknoglobals // this is instead of a const
-	"trace":  traceFile,
-	"keys":   keysFile,
-	"dbinfo": dbInfoFile,
+	"trace":        traceFile,
+	"keys":         keysFile,
+	"dbinfo":       dbInfoFile,
+	"transactions": transactionFile,
 }
 
 // getFileType reads the first key-value pair from a JSON file and returns the type of the file
