@@ -72,7 +72,9 @@ func (t *TracerFactory) NewQueryRunner(reporter Reporter, handleCreateTable Crea
 }
 
 func (t *TracerFactory) Close() {
-	_, err := t.traceFile.Write([]byte("]"))
+	_, err := t.traceFile.Write([]byte(`	]
+}
+`))
 	exitIf(err, "failed to write closing bracket")
 	err = t.traceFile.Close()
 	exitIf(err, "failed to close trace file")
@@ -128,7 +130,8 @@ func (t *Tracer) trace(query data.Query) error {
 
 	// Extract the trace result and format it with indentation for pretty printing
 	var prettyTrace bytes.Buffer
-	if err = json.Indent(&prettyTrace, []byte(rs.Rows[0][0].ToString()), "", "  "); err != nil {
+
+	if err = json.Compact(&prettyTrace, []byte(rs.Rows[0][0].ToString())); err != nil {
 		return err
 	}
 

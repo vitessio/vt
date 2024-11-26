@@ -143,7 +143,9 @@ func getQueryRunnerFactory(cfg Config) QueryRunnerFactory {
 	writer, err := os.Create(cfg.TraceFile)
 	exitIf(err, "creating trace file")
 
-	_, err = writer.Write([]byte("["))
+	_, err = writer.Write([]byte(`{
+  "fileType": "trace",
+  "queries": [`))
 	exitIf(err, "writing to trace file")
 	return NewTracerFactory(writer, inner)
 }
