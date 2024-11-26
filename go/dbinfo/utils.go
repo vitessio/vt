@@ -43,13 +43,15 @@ func (dbh *DBHelper) GetConnection() (*mysql.Conn, func(), error) {
 type tableSizes map[string]int
 
 func (dbh *DBHelper) getTableSizes() (tableSizes, error) {
+	dbName := dbh.vtParams.DbName
 	vtConn, cancel, err := dbh.GetConnection()
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	queryTableSizes := "SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = '%s' and table_type = 'BASE TABLE'"
-	qr, err := vtConn.ExecuteFetch(fmt.Sprintf(queryTableSizes, dbh.vtParams.DbName), -1, false)
+	queryTableSizes := "select table_name, table_rows from information_schema.tables where table_schema = '%s' and table_type = 'BASE TABLE'"
+	query := fmt.Sprintf(queryTableSizes, dbName)
+	qr, err := vtConn.ExecuteFetch(query, -1, false)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +72,7 @@ func (dbh *DBHelper) getColumnInfo() (tableColumns, error) {
 		return nil, err
 	}
 	defer cancel()
-	queryColumnInfo := "select table_name, column_name, data_type, column_key, is_nullable, extra from information_schema.columns WHERE table_schema = '%s'"
+	queryColumnInfo := "select table_name, column_name, data_type, column_key, is_nullable, extra from information_schema.columns where table_schema = '%s'"
 	query := fmt.Sprintf(queryColumnInfo, dbh.vtParams.DbName)
 	qr, err := vtConn.ExecuteFetch(query, -1, false)
 	if err != nil {
@@ -80,10 +82,10 @@ func (dbh *DBHelper) getColumnInfo() (tableColumns, error) {
 	for _, row := range qr.Rows {
 		tableName := row[0].ToString()
 		columnName := row[1].ToString()
-		dataType := row[2].ToString()
-		columnKey := row[3].ToString()
+		dataType := strings.ToLower(row[2].ToString())
+		columnKey := strings.ToLower(row[3].ToString())
 		isNullable := row[4].ToString()
-		extra := row[5].ToString()
+		extra := strings.ToLower(row[5].ToString())
 		col := &TableColumn{
 			Name:       columnName,
 			Type:       dataType,
