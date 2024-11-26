@@ -154,17 +154,9 @@ func (ts TableSummary) UseCount() int {
 
 // printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
 // and prints this summary information to the output.
-func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetric, schemaInfoPath string) {
+func printKeysSummary(out io.Writer, fileName string, analysedQueries *keys.Output, now time.Time, hotMetric, schemaInfoPath string) {
 	var err error
-	md := &markdown.MarkDown{}
 
-	msg := `# Query Analysis Report
-
-**Date of Analysis**: %s  
-**Analyzed File**: ` + "`%s`" + `
-
-`
-	md.Printf(msg, now.Format(time.DateTime), file.Name)
 	metricReader := getMetricForHotness(hotMetric)
 
 	var schemaInfo *schema.Info
@@ -174,11 +166,20 @@ func printKeysSummary(out io.Writer, file readingSummary, now time.Time, hotMetr
 			panic(err)
 		}
 	}
-	summary := summarizeKeysQueries(file.AnalysedQueries, metricReader, schemaInfo)
+	summary := &Summary{}
+	summarizeKeysQueries(summary, analysedQueries, metricReader, schemaInfo)
 
+	md := &markdown.MarkDown{}
+	msg := `# Query Analysis Report
+
+**Date of Analysis**: %s  
+**Analyzed File**: ` + "`%s`" + `
+
+`
+	md.Printf(msg, now.Format(time.DateTime), fileName)
 	renderHotQueries(md, summary.hotQueries, metricReader)
 	renderTableUsage(summary.tables, md, schemaInfo != nil)
-	renderTablesJoined(md, file.AnalysedQueries)
+	renderTablesJoined(md, analysedQueries)
 	renderFailures(md, summary.failures)
 
 	_, err = md.WriteTo(out)
@@ -426,16 +427,15 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(queries *keys.Output, metricReader getMetric, schemaInfo *schema.Info) Summary {
+func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader getMetric, schemaInfo *schema.Info) {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
-	var hotQueries []keys.QueryAnalysisResult
 
 	// First pass: collect all data and count occurrences
 	for _, query := range queries.Queries {
 		gatherTableInfo(query, tableSummaries, tableUsageWriteCounts, tableUsageReadCounts)
-		checkQueryForHotness(&hotQueries, query, metricReader)
+		checkQueryForHotness(&summary.hotQueries, query, metricReader)
 	}
 
 	tableRows := make(map[string]int)
@@ -446,19 +446,19 @@ func summarizeKeysQueries(queries *keys.Output, metricReader getMetric, schemaIn
 	}
 
 	// Second pass: calculate percentages
-	for _, summary := range tableSummaries {
-		summary.ReadQueryCount = tableUsageReadCounts[summary.Table]
-		summary.WriteQueryCount = tableUsageWriteCounts[summary.Table]
-		count := summary.ReadQueryCount + summary.WriteQueryCount
+	for _, tblSummary := range tableSummaries {
+		tblSummary.ReadQueryCount = tableUsageReadCounts[tblSummary.Table]
+		tblSummary.WriteQueryCount = tableUsageWriteCounts[tblSummary.Table]
+		count := tblSummary.ReadQueryCount + tblSummary.WriteQueryCount
 		if schemaInfo != nil {
-			if rowCount, ok := tableRows[summary.Table]; ok {
-				summary.RowCount = rowCount
+			if rowCount, ok := tableRows[tblSummary.Table]; ok {
+				tblSummary.RowCount = rowCount
 			}
 		}
 		countF := float64(count)
-		for colName, usage := range summary.Columns {
+		for colName, usage := range tblSummary.Columns {
 			usage.Percentage = (float64(usage.Count) / countF) * 100
-			summary.Columns[colName] = usage
+			tblSummary.Columns[colName] = usage
 		}
 	}
 
@@ -467,10 +467,10 @@ func summarizeKeysQueries(queries *keys.Output, metricReader getMetric, schemaIn
 	for _, summary := range tableSummaries {
 		result = append(result, *summary)
 	}
-
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Table < result[j].Table
 	})
+	summary.tables = result
 
 	// Collect failed queries
 	var failures []FailuresSummary
@@ -480,8 +480,7 @@ func summarizeKeysQueries(queries *keys.Output, metricReader getMetric, schemaIn
 			Count: len(query.LineNumbers),
 		})
 	}
-
-	return Summary{tables: result, failures: failures, hotQueries: hotQueries}
+	summary.failures = failures
 }
 
 func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult, metricReader getMetric) {
