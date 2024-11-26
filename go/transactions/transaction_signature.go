@@ -17,9 +17,9 @@ limitations under the License.
 package transactions
 
 import (
-	"cmp"
 	"encoding/json"
 	"fmt"
+	"hash"
 	"hash/fnv"
 	"sort"
 	"strconv"
@@ -29,9 +29,15 @@ import (
 
 type (
 	TxSignature struct {
-		Queries    []string        `json:"queries"`
-		Predicates []predicateInfo `json:"predicates"`
-		Count      int             `json:"count"`
+		Count   int       `json:"count"`
+		Queries []TxQuery `json:"qqueries"`
+	}
+
+	TxQuery struct {
+		Op             string          `json:"op"`
+		AffectedTable  string          `json:"affected_table"`
+		UpdatedColumns []string        `json:"updated_columns,omitempty"`
+		Predicates     []predicateInfo `json:"predicates,omitempty"`
 	}
 
 	txSignatureMap struct {
@@ -39,10 +45,10 @@ type (
 	}
 
 	predicateInfo struct {
-		Table string
-		Col   string
-		Op    sqlparser.ComparisonExprOperator
-		Val   int
+		Table string                           `json:"table"`
+		Col   string                           `json:"col"`
+		Op    sqlparser.ComparisonExprOperator `json:"op"`
+		Val   int                              `json:"val"`
 	}
 )
 
@@ -54,33 +60,13 @@ func (pi predicateInfo) String() string {
 	return fmt.Sprintf("%s.%s %s %s", pi.Table, pi.Col, pi.Op.ToString(), val)
 }
 
-func (pi predicateInfo) compareTo(b predicateInfo) int {
-	if pi.Table != b.Table {
-		return cmp.Compare(pi.Table, b.Table)
-	}
-	if pi.Col != b.Col {
-		return cmp.Compare(pi.Col, b.Col)
-	}
-	if pi.Op != b.Op {
-		return cmp.Compare(pi.Op, b.Op)
-	}
-	return cmp.Compare(pi.Val, b.Val)
-}
-
 func (tx *TxSignature) MarshalJSON() ([]byte, error) {
-	predicateStrings := make([]string, len(tx.Predicates))
-	for i, predicate := range tx.Predicates {
-		predicateStrings[i] = predicate.String()
-	}
-
 	return json.Marshal(struct {
-		Queries    []string `json:"query-signatures"`
-		Predicates []string `json:"predicates"`
-		Count      int      `json:"count"`
+		Count   int       `json:"count"`
+		Queries []TxQuery `json:"query-signatures"`
 	}{
-		Queries:    tx.Queries,
-		Predicates: predicateStrings,
-		Count:      tx.Count,
+		Count:   tx.Count,
+		Queries: tx.Queries,
 	})
 }
 
@@ -88,33 +74,53 @@ func (tx *TxSignature) Hash64() uint64 {
 	hasher := fnv.New64a()
 
 	for _, query := range tx.Queries {
-		_, _ = hasher.Write([]byte(query))
-		_, _ = hasher.Write([]byte{0})
-	}
-
-	for _, pred := range tx.Predicates {
-		_, _ = hasher.Write([]byte(pred.String()))
-		_, _ = hasher.Write([]byte{0})
+		query.addToHash(hasher)
 	}
 
 	return hasher.Sum64()
 }
 
-func (tx *TxSignature) addPredicate(predicates []predicateInfo) {
-	for _, predicate := range predicates {
-		index := sort.Search(len(tx.Predicates), func(i int) bool {
-			return tx.Predicates[i].compareTo(predicate) >= 0
-		})
+func (tx TxQuery) addToHash(hash hash.Hash64) {
+	_, _ = hash.Write([]byte(tx.Op))
+	_, _ = hash.Write([]byte{0})
+	_, _ = hash.Write([]byte(tx.AffectedTable))
+	_, _ = hash.Write([]byte{0})
 
-		if index < len(tx.Predicates) && tx.Predicates[index].compareTo(predicate) == 0 {
-			continue // Predicate already exists; skip it
-		}
-
-		// Insert the predicate at the correct position
-		tx.Predicates = append(tx.Predicates, predicate)     // Expand the slice by one
-		copy(tx.Predicates[index+1:], tx.Predicates[index:]) // Shift elements to the right
-		tx.Predicates[index] = predicate                     // Place the new predicate
+	for _, col := range tx.UpdatedColumns {
+		_, _ = hash.Write([]byte(col))
+		_, _ = hash.Write([]byte{0})
 	}
+
+	for _, pred := range tx.Predicates {
+		_, _ = hash.Write([]byte(pred.String()))
+		_, _ = hash.Write([]byte{0})
+	}
+}
+
+func (tx TxQuery) Equals(other TxQuery) bool {
+	if tx.Op != other.Op {
+		return false
+	}
+	if tx.AffectedTable != other.AffectedTable {
+		return false
+	}
+	if len(tx.UpdatedColumns) != len(other.UpdatedColumns) {
+		return false
+	}
+	for i := range tx.UpdatedColumns {
+		if tx.UpdatedColumns[i] != other.UpdatedColumns[i] {
+			return false
+		}
+	}
+	if len(tx.Predicates) != len(other.Predicates) {
+		return false
+	}
+	for i := range tx.Predicates {
+		if tx.Predicates[i] != other.Predicates[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func newTxSignatureMap() *txSignatureMap {
@@ -152,16 +158,7 @@ func (tx *TxSignature) Equals(other *TxSignature) bool {
 		return false
 	}
 	for i := range tx.Queries {
-		if tx.Queries[i] != other.Queries[i] {
-			return false
-		}
-	}
-
-	if len(tx.Predicates) != len(other.Predicates) {
-		return false
-	}
-	for i := range tx.Predicates {
-		if tx.Predicates[i] != other.Predicates[i] {
+		if !tx.Queries[i].Equals(other.Queries[i]) {
 			return false
 		}
 	}
@@ -171,37 +168,47 @@ func (tx *TxSignature) Equals(other *TxSignature) bool {
 
 // CleanUp removes values that are only used once and replaces them with -1
 func (tx *TxSignature) CleanUp() *TxSignature {
-	newPredicates := make([]predicateInfo, 0, len(tx.Predicates))
 	usedValues := make(map[int]int)
 
 	// First let's count how many times each value is used
-	for _, pred := range tx.Predicates {
-		usedValues[pred.Val]++
+	for _, query := range tx.Queries {
+		for _, predicate := range query.Predicates {
+			usedValues[predicate.Val]++
+		}
 	}
 
 	// Now we replace values only used once with -1
 	newCount := 0
 	newValues := make(map[int]int)
-	for _, pred := range tx.Predicates {
-		if usedValues[pred.Val] == 1 {
-			pred.Val = -1
-		} else {
-			newVal, found := newValues[pred.Val]
-			if !found {
-				// Assign a new value to this predicate
-				newVal = newCount
-				newCount++
-				newValues[pred.Val] = newVal
+	newQueries := make([]TxQuery, 0, len(tx.Queries))
+	for _, query := range tx.Queries {
+		newPredicates := make([]predicateInfo, 0, len(query.Predicates))
+		for _, predicate := range query.Predicates {
+			if usedValues[predicate.Val] == 1 {
+				predicate.Val = -1
+			} else {
+				newVal, found := newValues[predicate.Val]
+				if !found {
+					// Assign a new value to this predicate
+					newVal = newCount
+					newCount++
+					newValues[predicate.Val] = newVal
+				}
+				predicate.Val = newVal
 			}
-			pred.Val = newVal
+			newPredicates = append(newPredicates, predicate)
 		}
-		newPredicates = append(newPredicates, pred)
+		newQueries = append(newQueries, TxQuery{
+			Op:             query.Op,
+			AffectedTable:  query.AffectedTable,
+			UpdatedColumns: query.UpdatedColumns,
+			Predicates:     newPredicates,
+		})
 	}
 
 	return &TxSignature{
-		Queries:    tx.Queries,
-		Predicates: newPredicates,
-		Count:      tx.Count,
+		Queries: newQueries,
+		Count:   tx.Count,
 	}
 }
 

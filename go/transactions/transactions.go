@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -223,92 +222,46 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 	}
 }
 
-func querySignatureForUpd(query *sqlparser.Update) string {
-	buffer := sqlparser.NewTrackedBuffer(nil)
-	builder := buffer.Builder
-	builder.WriteString("update ")
-
-	for i, tbl := range query.TableExprs {
-		tbl.Format(buffer)
-		if i < len(query.TableExprs)-1 {
-			buffer.WriteString(", ")
-		}
-	}
-
-	if query.Where != nil {
-		query.Where.Format(buffer)
-	}
-
-	builder.WriteString(" set ")
-
-	for i, expr := range query.Exprs {
-		expr.Name.Format(buffer)
-		if i < len(query.Exprs)-1 {
-			buffer.WriteString(", ")
-		}
-	}
-
-	return builder.String()
-}
-
 func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n *normalizer, tx *TxSignature) {
-	defer func() {
-		tx.Queries = append(tx.Queries, querySignatureForUpd(query))
-	}()
-
-	if query.Where == nil {
-		return
+	// Find all predicates in the where clause that use a column and a literal
+	var predicates []predicateInfo
+	if query.Where != nil {
+		predicates = getPredicates(query.Where.Expr, st, n)
 	}
 
-	// Find all predicates in the where clause that use a column and a literal
-	tx.addPredicate(getPredicates(query.Where.Expr, st, n))
-	query.Where = normalizeWhere(query.Where, n)
+	updatedColumns := make([]string, 0, len(query.Exprs))
+	for _, expr := range query.Exprs {
+		updatedColumns = append(updatedColumns, sqlparser.String(expr.Name.Name))
+	}
+
+	if len(query.TableExprs) != 1 {
+		// TODO: Implement support for multi-table updates
+		panic("multi-table updates not supported")
+	}
+
+	tx.Queries = append(tx.Queries, TxQuery{
+		Op:             "update",
+		AffectedTable:  sqlparser.String(query.TableExprs[0]),
+		UpdatedColumns: updatedColumns,
+		Predicates:     predicates,
+	})
 }
 
 func (s *state) consumeDelete(del *sqlparser.Delete, st *semantics.SemTable, n *normalizer, tx *TxSignature) {
-	defer func() {
-		tx.Queries = append(tx.Queries, sqlparser.String(del))
-	}()
-
-	if del.Where == nil {
-		return
+	var predicates []predicateInfo
+	if del.Where != nil {
+		predicates = getPredicates(del.Where.Expr, st, n)
+	}
+	if len(del.TableExprs) != 1 {
+		// TODO: Implement support for multi-table deletes
+		panic("multi-table updates not supported")
 	}
 
-	// Find all predicates in the where clause that use a column and a literal
-	tx.addPredicate(getPredicates(del.Where.Expr, st, n))
-	del.Where = normalizeWhere(del.Where, n)
-}
-
-func normalizeWhere(where *sqlparser.Where, n *normalizer) (newWhere *sqlparser.Where) {
-	newWhere = new(sqlparser.Where)
-	predicates := sqlparser.SplitAndExpression(nil, where.Expr)
-	for _, predicate := range predicates {
-		switch cmp := predicate.(type) {
-		case *sqlparser.ComparisonExpr:
-			lhs, lhsOK := cmp.Left.(*sqlparser.Literal)
-			rhs, rhsOK := cmp.Right.(*sqlparser.Literal)
-			if !lhsOK && !rhsOK || lhsOK && rhsOK {
-				newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr)
-				continue
-			}
-
-			var newCmp sqlparser.ComparisonExpr
-			newCmp.Operator = cmp.Operator
-			if lhsOK {
-				id := n.normalize(lhs.Val)
-				newCmp.Left = sqlparser.NewArgument(strconv.Itoa(id))
-				newCmp.Right = cmp.Right
-			} else {
-				id := n.normalize(rhs.Val)
-				newCmp.Right = sqlparser.NewArgument(strconv.Itoa(id))
-				newCmp.Left = cmp.Left
-			}
-			newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr, &newCmp)
-		default:
-			newWhere.Expr = sqlparser.AndExpressions(newWhere.Expr, predicate)
-		}
-	}
-	return
+	tx.Queries = append(tx.Queries, TxQuery{
+		Op:            "delete",
+		AffectedTable: sqlparser.String(del.TableExprs[0]),
+		Predicates:    predicates,
+	})
 }
 
 func (s *state) addSignature(tx *TxSignature) {
@@ -324,10 +277,13 @@ func (s *state) run(out io.Writer, cfg Config) {
 	loader := cfg.Loader.Load(cfg.FileName)
 	ch := make(chan []sqlparser.Statement, 1000)
 
+	noOfConsumers := 1
 	var wg sync.WaitGroup
-	wg.Add(1)
+	for range noOfConsumers {
+		wg.Add(1)
+		go s.consume(ch, &wg)
+	}
 
-	go s.consume(ch, &wg)
 	go func() {
 		s.startProducing(loader, defaultAutocommit, ch)
 		close(ch)
