@@ -49,3 +49,53 @@ func TestRun(t *testing.T) {
 		_ = os.WriteFile("../testdata/expected/small-slow-query-transactions.json", []byte(sb.String()), 0o644)
 	}
 }
+
+func TestAutocommitSettings(t *testing.T) {
+	tests := []struct {
+		query  string
+		expect bool
+	}{
+		{
+			query:  "set autocommit=1",
+			expect: true,
+		}, {
+			query:  "set autocommit=0",
+			expect: false,
+		}, {
+			query:  "set autocommit=on",
+			expect: true,
+		}, {
+			query:  "set autocommit=off",
+			expect: false,
+		}, {
+			query:  "set session autocommit=on",
+			expect: true,
+		}, {
+			query:  "set session autocommit=off",
+			expect: false,
+		}, {
+			query:  "set @@session.autocommit=1",
+			expect: true,
+		}, {
+			query:  "set @@session.autocommit=0",
+			expect: false,
+		}, {
+			query:  "set global autocommit = 1",
+			expect: true,
+		}, {
+			query:  "set global autocommit = 0",
+			expect: false,
+		},
+	}
+
+	parser := sqlparser.NewTestParser()
+	for _, test := range tests {
+		t.Run(test.query, func(t *testing.T) {
+			stmt, err := parser.Parse(test.query)
+			require.NoError(t, err)
+			set, ok := stmt.(*sqlparser.Set)
+			require.True(t, ok)
+			assert.Equal(t, test.expect, getAutocommitStatus(set, false))
+		})
+	}
+}
