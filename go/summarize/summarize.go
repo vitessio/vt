@@ -42,7 +42,7 @@ type (
 func Run(files []string, hotMetric string) {
 	var traceFiles []string
 	var dbInfoPath string
-	var transactionsFile string
+
 	// todo: add file types for other json types. Right now just checks for dbinfo files, else defaults
 	for _, file := range files {
 		typ, _ := getFileType(file)
@@ -52,13 +52,11 @@ func Run(files []string, hotMetric string) {
 			dbInfoPath = file
 		case transactionFile:
 			fmt.Printf("transaction file: %s\n", file)
-			transactionsFile = file
 		default:
 			fmt.Printf("trace file: %s\n", file)
 			traceFiles = append(traceFiles, file)
 		}
 	}
-	_ = transactionsFile
 
 	traces := make([]readingSummary, len(traceFiles))
 	var err error
