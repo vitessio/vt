@@ -37,13 +37,23 @@ type (
 		TracedQueries   []TracedQuery // Set when analyzing a 'vt tester --trace' output
 		AnalysedQueries *keys.Output  // Set when analyzing a 'vt keys' output
 	}
+
+	fileInfo struct {
+		filename string
+		fileType
+	}
 )
 
 func Run(files []string, hotMetric string) {
-	var traceFiles []string
 	var dbInfoPath string
+	var filesToRead []fileInfo
+	var hasTrace bool
 
+	// if we have tracefiles, handle them
+	// otherwise, create a summary and feed it to all json inputs
+	// move rendering to this spot
 	// todo: add file types for other json types. Right now just checks for dbinfo files, else defaults
+
 	for _, file := range files {
 		typ, _ := getFileType(file)
 		switch typ {
@@ -52,35 +62,52 @@ func Run(files []string, hotMetric string) {
 			dbInfoPath = file
 		case transactionFile:
 			fmt.Printf("transaction file: %s\n", file)
+		case traceFile:
+			filesToRead = append(filesToRead, fileInfo{filename: file, fileType: traceFile})
+			hasTrace = true
+		case keysFile:
+			filesToRead = append(filesToRead, fileInfo{filename: file, fileType: keysFile})
 		default:
-			fmt.Printf("trace file: %s\n", file)
-			traceFiles = append(traceFiles, file)
+			panic("Unknown file type")
 		}
 	}
+	checkTraceConditions(hasTrace, filesToRead, hotMetric)
 
-	traces := make([]readingSummary, len(traceFiles))
+	rs := make([]readingSummary, len(filesToRead))
 	var err error
-	for i, arg := range traceFiles {
-		traces[i], err = readTraceFile(arg)
+	for i, f := range filesToRead {
+		rs[i], err = readTraceFile(f)
 		if err != nil {
 			exit(err.Error())
 		}
 	}
 
-	if hotMetric != "" && traces[0].AnalysedQueries == nil {
-		exit("hotMetric flag is only supported for 'vt keys' output")
-	}
-
-	firstTrace := traces[0]
-	if len(traces) != 1 {
-		compareTraces(os.Stdout, terminalWidth(), highlightQuery, firstTrace, traces[1])
+	if hasTrace {
+		if len(rs) == 2 {
+			compareTraces(os.Stdout, terminalWidth(), highlightQuery, rs[0], rs[1])
+		} else {
+			printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, rs[0])
+		}
 		return
 	}
 
-	if firstTrace.AnalysedQueries == nil {
-		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
-	} else {
-		printKeysSummary(os.Stdout, firstTrace.Name, firstTrace.AnalysedQueries, time.Now(), hotMetric, dbInfoPath)
+	printKeysSummary(os.Stdout, rs[0].Name, rs[0].AnalysedQueries, time.Now(), hotMetric, dbInfoPath)
+}
+
+func checkTraceConditions(hasTrace bool, filesToRead []fileInfo, hotMetric string) {
+	if !hasTrace {
+		return
+	}
+	for _, f := range filesToRead {
+		if f.fileType != traceFile {
+			panic("Trace files cannot be mixed with other file types")
+		}
+	}
+	if len(filesToRead) > 2 {
+		panic("Can only summarize up to two trace files at once")
+	}
+	if hotMetric != "" {
+		exit("hotMetric flag is only supported for 'vt keys' output")
 	}
 }
 

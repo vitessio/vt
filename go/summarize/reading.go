@@ -19,7 +19,6 @@ package summarize
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"sort"
@@ -28,25 +27,15 @@ import (
 	"github.com/vitessio/vt/go/keys"
 )
 
-func readTraceFile(fileName string) (readingSummary, error) {
-	// Open the JSON file
-	file, err := os.Open(fileName)
-	if err != nil {
-		return readingSummary{}, fmt.Errorf("error opening file: %w", err)
+func readTraceFile(fi fileInfo) (readingSummary, error) {
+	switch fi.fileType {
+	case traceFile:
+		return readTracedQueryFile(fi.filename), nil
+	case keysFile:
+		return readAnalysedQueryFile(fi.filename), nil
+	default:
+		return readingSummary{}, errors.New("unknown file format")
 	}
-	defer file.Close()
-
-	decoder, val := getDecoderAndDelim(file)
-
-	// Determine the type based on the first delimiter of the JSON file
-	switch val {
-	case json.Delim('['):
-		return readTracedQueryFile(decoder, fileName), nil
-	case json.Delim('{'):
-		return readAnalysedQueryFile(decoder, fileName), nil
-	}
-
-	return readingSummary{}, errors.New("unknown file format")
 }
 
 func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
@@ -72,19 +61,28 @@ func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
 	return decoder, delim
 }
 
-func readTracedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
-	var tracedQueries []TracedQuery
-	err := decoder.Decode(&tracedQueries)
+func readTracedQueryFile(fileName string) readingSummary {
+	c, err := os.ReadFile(fileName)
 	if err != nil {
-		exit("Error reading json: " + err.Error())
+		exit("Error opening file: " + err.Error())
 	}
 
-	sort.Slice(tracedQueries, func(i, j int) bool {
-		a, err := strconv.Atoi(tracedQueries[i].LineNumber)
+	type traceOutput struct {
+		FileType string        `json:"fileType"`
+		Queries  []TracedQuery `json:"queries"`
+	}
+	var to traceOutput
+	err = json.Unmarshal(c, &to)
+	if err != nil {
+		exit("Error parsing json: " + err.Error())
+	}
+
+	sort.Slice(to.Queries, func(i, j int) bool {
+		a, err := strconv.Atoi(to.Queries[i].LineNumber)
 		if err != nil {
 			return false
 		}
-		b, err := strconv.Atoi(tracedQueries[j].LineNumber)
+		b, err := strconv.Atoi(to.Queries[j].LineNumber)
 		if err != nil {
 			return false
 		}
@@ -93,19 +91,24 @@ func readTracedQueryFile(decoder *json.Decoder, fileName string) readingSummary 
 
 	return readingSummary{
 		Name:          fileName,
-		TracedQueries: tracedQueries,
+		TracedQueries: to.Queries,
 	}
 }
 
-func readAnalysedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
-	var output keys.Output
-	err := decoder.Decode(&output)
+func readAnalysedQueryFile(fileName string) readingSummary {
+	c, err := os.ReadFile(fileName)
 	if err != nil {
-		exit("Error reading json: " + err.Error())
+		exit("Error opening file: " + err.Error())
+	}
+
+	var ko keys.Output
+	err = json.Unmarshal(c, &ko)
+	if err != nil {
+		exit("Error parsing json: " + err.Error())
 	}
 
 	return readingSummary{
 		Name:            fileName,
-		AnalysedQueries: &output,
+		AnalysedQueries: &ko,
 	}
 }

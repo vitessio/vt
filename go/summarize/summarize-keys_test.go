@@ -67,7 +67,7 @@ func TestTableSummary(t *testing.T) {
 }
 
 func TestSummarizeKeysFile(t *testing.T) {
-	file, err := readTraceFile("../testdata/keys-log.json")
+	file, err := readTraceFile(fileInfo{filename: "../testdata/keys-log.json", fileType: keysFile})
 	require.NoError(t, err)
 	sb := &strings.Builder{}
 	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
@@ -92,7 +92,7 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 
 	for _, metric := range tests {
 		t.Run(metric, func(t *testing.T) {
-			file, err := readTraceFile("../testdata/bigger_slow_query_log.json")
+			file, err := readTraceFile(fileInfo{filename: "../testdata/bigger_slow_query_log.json", fileType: keysFile})
 			require.NoError(t, err)
 			sb := &strings.Builder{}
 			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)

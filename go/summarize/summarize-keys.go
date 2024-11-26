@@ -495,6 +495,11 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader g
 		if table.ColumnUses != nil {
 			panic("ColumnUses already set for table" + tblSummary.Table)
 		}
+		table.ColumnUses = tblSummary.ColumnUses
+		if table.JoinPredicates != nil {
+			panic("JoinPredicates already set for table" + tblSummary.Table)
+		}
+		table.JoinPredicates = tblSummary.JoinPredicates
 	}
 
 	// Collect failed queries

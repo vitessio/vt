@@ -184,7 +184,7 @@ Summary:
 }
 
 func TestSummarizeTraceFile(t *testing.T) {
-	file, err := readTraceFile("../testdata/trace-log.json")
+	file, err := readTraceFile(fileInfo{filename: "../testdata/trace-log.json", fileType: traceFile})
 	require.NoError(t, err)
 	sb := &strings.Builder{}
 	printTraceSummary(sb, 80, noHighlight, file)
