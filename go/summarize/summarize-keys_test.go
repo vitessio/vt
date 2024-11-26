@@ -43,7 +43,7 @@ func TestTableSummary(t *testing.T) {
 	}
 
 	ts := TableSummary{
-		Columns: map[ColumnInformation]ColumnUsage{
+		ColumnUses: map[ColumnInformation]ColumnUsage{
 			{Name: "l_shipmode", Pos: WhereRange}:    {Percentage: 6},
 			{Name: "l_receiptdate", Pos: WhereRange}: {Percentage: 28},
 			{Name: "l_shipdate", Pos: WhereRange}:    {Percentage: 22},

@@ -51,7 +51,7 @@ type (
 	}
 
 	Summary struct {
-		tables     []TableSummary
+		tables     []*TableSummary
 		failures   []FailuresSummary
 		hotQueries []keys.QueryAnalysisResult
 	}
@@ -60,7 +60,7 @@ type (
 		Table           string
 		ReadQueryCount  int
 		WriteQueryCount int
-		Columns         map[ColumnInformation]ColumnUsage
+		ColumnUses      map[ColumnInformation]ColumnUsage
 		JoinPredicates  []operators.JoinPredicate
 		Failed          bool
 		RowCount        int
@@ -77,6 +77,19 @@ type (
 
 	queryGraph map[graphKey]map[operators.JoinPredicate]int
 )
+
+func (s *Summary) GetTable(name string) *TableSummary {
+	for _, table := range s.tables {
+		if table.Table == name {
+			return table
+		}
+	}
+	return nil
+}
+
+func (s *Summary) AddTable(table *TableSummary) {
+	s.tables = append(s.tables, table)
+}
 
 const (
 	Join Position = iota
@@ -112,9 +125,9 @@ func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
 		ci ColumnInformation
 		cu ColumnUsage
 	}
-	columns := make([]colDetails, 0, len(ts.Columns))
+	columns := make([]colDetails, 0, len(ts.ColumnUses))
 	maxColUse := make(map[string]float64)
-	for colInfo, usage := range ts.Columns {
+	for colInfo, usage := range ts.ColumnUses {
 		columns = append(columns, colDetails{ci: colInfo, cu: usage})
 		if maxColUse[colInfo.Name] < usage.Percentage {
 			maxColUse[colInfo.Name] = usage.Percentage
@@ -156,19 +169,16 @@ func (ts TableSummary) UseCount() int {
 // and prints this summary information to the output.
 func printKeysSummary(out io.Writer, fileName string, analysedQueries *keys.Output, now time.Time, hotMetric, schemaInfoPath string) {
 	var err error
+	summary := &Summary{}
 
 	metricReader := getMetricForHotness(hotMetric)
 
-	var schemaInfo *schema.Info
-	if schemaInfoPath != "" {
-		schemaInfo, err = schema.Load(schemaInfoPath)
-		if err != nil {
-			panic(err)
-		}
+	err = summarizeSchemaInfo(summary, schemaInfoPath)
+	if err != nil {
+		panic(err)
 	}
-	summary := &Summary{}
-	summarizeKeysQueries(summary, analysedQueries, metricReader, schemaInfo)
 
+	summarizeKeysQueries(summary, analysedQueries, metricReader)
 	md := &markdown.MarkDown{}
 	msg := `# Query Analysis Report
 
@@ -178,7 +188,7 @@ func printKeysSummary(out io.Writer, fileName string, analysedQueries *keys.Outp
 `
 	md.Printf(msg, now.Format(time.DateTime), fileName)
 	renderHotQueries(md, summary.hotQueries, metricReader)
-	renderTableUsage(summary.tables, md, schemaInfo != nil)
+	renderTableUsage(summary.tables, md, schemaInfoPath != "")
 	renderTablesJoined(md, analysedQueries)
 	renderFailures(md, summary.failures)
 
@@ -186,6 +196,26 @@ func printKeysSummary(out io.Writer, fileName string, analysedQueries *keys.Outp
 	if err != nil {
 		panic(err)
 	}
+}
+
+func summarizeSchemaInfo(summary *Summary, schemaInfoPath string) error {
+	if schemaInfoPath == "" {
+		return nil
+	}
+	schemaInfo, err := schema.Load(schemaInfoPath)
+	if err != nil {
+		return err
+	}
+	for _, ti := range schemaInfo.Tables {
+		table := summary.GetTable(ti.Name)
+		if table == nil {
+			table = &TableSummary{Table: ti.Name}
+			summary.AddTable(table)
+		}
+		table.RowCount = ti.Rows
+	}
+
+	return nil
 }
 
 type getMetric = func(q keys.QueryAnalysisResult) float64
@@ -269,12 +299,15 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 	}
 }
 
-func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown, includeRowCount bool) {
+func renderTableUsage(tableSummaries []*TableSummary, md *markdown.MarkDown, includeRowCount bool) {
 	if len(tableSummaries) == 0 {
 		return
 	}
 
 	sort.Slice(tableSummaries, func(i, j int) bool {
+		if tableSummaries[i].UseCount() == tableSummaries[j].UseCount() {
+			return tableSummaries[i].Table < tableSummaries[j].Table
+		}
 		return tableSummaries[i].UseCount() > tableSummaries[j].UseCount()
 	})
 
@@ -287,7 +320,7 @@ func renderTableUsage(tableSummaries []TableSummary, md *markdown.MarkDown, incl
 	}
 }
 
-func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary, includeRowCount bool) {
+func renderTableOverview(md *markdown.MarkDown, tableSummaries []*TableSummary, includeRowCount bool) {
 	headers := []string{"Table Name", "Reads", "Writes"}
 	if includeRowCount {
 		headers = append(headers, "Number of Rows")
@@ -308,7 +341,7 @@ func renderTableOverview(md *markdown.MarkDown, tableSummaries []TableSummary, i
 	md.PrintTable(headers, rows)
 }
 
-func renderColumnUsageTable(md *markdown.MarkDown, summary TableSummary) {
+func renderColumnUsageTable(md *markdown.MarkDown, summary *TableSummary) {
 	md.PrintHeader(fmt.Sprintf("Table: `%s` (%d reads and %d writes)", summary.Table, summary.ReadQueryCount, summary.WriteQueryCount), 4)
 
 	headers := []string{"Column", "Position", "Used %"}
@@ -427,7 +460,7 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader getMetric, schemaInfo *schema.Info) {
+func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader getMetric) {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
@@ -438,39 +471,31 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader g
 		checkQueryForHotness(&summary.hotQueries, query, metricReader)
 	}
 
-	tableRows := make(map[string]int)
-	if schemaInfo != nil {
-		for _, ti := range schemaInfo.Tables {
-			tableRows[ti.Name] = ti.Rows
-		}
-	}
-
 	// Second pass: calculate percentages
 	for _, tblSummary := range tableSummaries {
 		tblSummary.ReadQueryCount = tableUsageReadCounts[tblSummary.Table]
 		tblSummary.WriteQueryCount = tableUsageWriteCounts[tblSummary.Table]
 		count := tblSummary.ReadQueryCount + tblSummary.WriteQueryCount
-		if schemaInfo != nil {
-			if rowCount, ok := tableRows[tblSummary.Table]; ok {
-				tblSummary.RowCount = rowCount
-			}
-		}
 		countF := float64(count)
-		for colName, usage := range tblSummary.Columns {
+		for colName, usage := range tblSummary.ColumnUses {
 			usage.Percentage = (float64(usage.Count) / countF) * 100
-			tblSummary.Columns[colName] = usage
+			tblSummary.ColumnUses[colName] = usage
 		}
 	}
 
 	// Convert map to slice
-	result := make([]TableSummary, 0, len(tableSummaries))
-	for _, summary := range tableSummaries {
-		result = append(result, *summary)
+	for _, tblSummary := range tableSummaries {
+		table := summary.GetTable(tblSummary.Table)
+		if table == nil {
+			summary.AddTable(tblSummary)
+			continue
+		}
+		table.ReadQueryCount = tblSummary.ReadQueryCount
+		table.WriteQueryCount = tblSummary.WriteQueryCount
+		if table.ColumnUses != nil {
+			panic("ColumnUses already set for table" + tblSummary.Table)
+		}
 	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Table < result[j].Table
-	})
-	summary.tables = result
 
 	// Collect failed queries
 	var failures []FailuresSummary
@@ -508,8 +533,8 @@ func gatherTableInfo(query keys.QueryAnalysisResult, tableSummaries map[string]*
 	for _, table := range query.TableNames {
 		if _, exists := tableSummaries[table]; !exists {
 			tableSummaries[table] = &TableSummary{
-				Table:   table,
-				Columns: make(map[ColumnInformation]ColumnUsage),
+				Table:      table,
+				ColumnUses: make(map[ColumnInformation]ColumnUsage),
 			}
 		}
 
@@ -536,9 +561,9 @@ func summarizeColumnUsage(tableSummary *TableSummary, query keys.QueryAnalysisRe
 		columns = slices.Compact(columns)
 
 		for _, col := range columns {
-			usage := tableSummary.Columns[col]
+			usage := tableSummary.ColumnUses[col]
 			usage.Count += query.UsageCount
-			tableSummary.Columns[col] = usage
+			tableSummary.ColumnUses[col] = usage
 		}
 	}
 
