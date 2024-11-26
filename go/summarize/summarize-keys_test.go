@@ -77,7 +77,7 @@ func TestSummarizeKeysFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, string(expected), sb.String())
 	if t.Failed() {
-		_ = os.WriteFile("../testdata/keys-summary.md.correct", []byte(sb.String()), 0o644)
+		_ = os.WriteFile("../testdata/expected/keys-summary.md", []byte(sb.String()), 0o644)
 	}
 }
 
