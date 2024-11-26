@@ -67,12 +67,31 @@ func TestTableSummary(t *testing.T) {
 }
 
 func TestSummarizeKeysFile(t *testing.T) {
-	file, err := readTraceFile(fileInfo{filename: "../testdata/keys-log.json", fileType: keysFile})
-	require.NoError(t, err)
 	sb := &strings.Builder{}
 	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-	printKeysSummary(sb, file.Name, file.AnalysedQueries, now, "", "../testdata/keys-schema-info.json")
+	fnKeys, err := readFile(fileInfo{
+		filename: "../testdata/keys-log.json",
+		fileType: keysFile,
+	})
+	require.NoError(t, err)
+
+	fnSchemaInfo, err := readFile(fileInfo{
+		filename: "../testdata/keys-schema-info.json",
+		fileType: dbInfoFile,
+	})
+	require.NoError(t, err)
+
+	s := NewSummary("")
+
+	err = fnKeys(s)
+	require.NoError(t, err)
+
+	err = fnSchemaInfo(s)
+	require.NoError(t, err)
+
+	s.PrintMarkdown(sb, now)
+
 	expected, err := os.ReadFile("../testdata/keys-summary.md")
 	require.NoError(t, err)
 	assert.Equal(t, string(expected), sb.String())
@@ -92,11 +111,18 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 
 	for _, metric := range tests {
 		t.Run(metric, func(t *testing.T) {
-			file, err := readTraceFile(fileInfo{filename: "../testdata/bigger_slow_query_log.json", fileType: keysFile})
+			fn, err := readFile(fileInfo{filename: "../testdata/bigger_slow_query_log.json", fileType: keysFile})
 			require.NoError(t, err)
 			sb := &strings.Builder{}
 			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
-			printKeysSummary(sb, file.Name, file.AnalysedQueries, now, metric, "")
+
+			s := NewSummary(metric)
+
+			err = fn(s)
+			require.NoError(t, err)
+
+			s.PrintMarkdown(sb, now)
+
 			expected, err := os.ReadFile(fmt.Sprintf("../testdata/bigger_slow_log_%s.md", metric))
 			require.NoError(t, err)
 			assert.Equal(t, string(expected), sb.String())

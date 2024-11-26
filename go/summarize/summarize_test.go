@@ -21,11 +21,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func tf1() readingSummary {
-	return readingSummary{
+func tf1() traceSummary {
+	return traceSummary{
 		Name: "test",
 		TracedQueries: []TracedQuery{{
 			Query:      "select * from music",
@@ -74,8 +73,8 @@ func tf1() readingSummary {
 	}
 }
 
-func tf2() readingSummary {
-	return readingSummary{
+func tf2() traceSummary {
+	return traceSummary{
 		Name: "test",
 		TracedQueries: []TracedQuery{{
 			Query:      "select * from music",
@@ -184,10 +183,9 @@ Summary:
 }
 
 func TestSummarizeTraceFile(t *testing.T) {
-	file, err := readTraceFile(fileInfo{filename: "../testdata/trace-log.json", fileType: traceFile})
-	require.NoError(t, err)
+	tq := readTraceFile(fileInfo{filename: "../testdata/trace-log.json", fileType: traceFile})
 	sb := &strings.Builder{}
-	printTraceSummary(sb, 80, noHighlight, file)
+	printTraceSummary(sb, 80, noHighlight, tq)
 	expected := `Query: INSERT INTO region (R_REGIONKEY, R_NAME, R_COMMENT) VALUES (1, 'ASIA',...
 Line # 80
 +-------------+-----------+----------------+----------------+

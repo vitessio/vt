@@ -27,15 +27,23 @@ import (
 	"golang.org/x/term"
 
 	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/markdown"
 )
 
 type (
-	readingSummary struct {
-		Name string
+	Summary struct {
+		tables        []*TableSummary
+		failures      []FailuresSummary
+		hotQueries    []keys.QueryAnalysisResult
+		hotQueryFn    getMetric
+		analyzedFiles []string
+		queryGraph    queryGraph
+		hasRowCount   bool
+	}
 
-		// Only one of these fields will be populated
-		TracedQueries   []TracedQuery // Set when analyzing a 'vt tester --trace' output
-		AnalysedQueries *keys.Output  // Set when analyzing a 'vt keys' output
+	traceSummary struct {
+		Name          string
+		TracedQueries []TracedQuery
 	}
 
 	fileInfo struct {
@@ -44,22 +52,23 @@ type (
 	}
 )
 
+func NewSummary(hotMetric string) *Summary {
+	return &Summary{
+		queryGraph: make(queryGraph),
+		hotQueryFn: getMetricForHotness(hotMetric),
+	}
+}
+
 func Run(files []string, hotMetric string) {
-	var dbInfoPath string
 	var filesToRead []fileInfo
 	var hasTrace bool
-
-	// if we have tracefiles, handle them
-	// otherwise, create a summary and feed it to all json inputs
-	// move rendering to this spot
-	// todo: add file types for other json types. Right now just checks for dbinfo files, else defaults
 
 	for _, file := range files {
 		typ, _ := getFileType(file)
 		switch typ {
 		case dbInfoFile:
 			fmt.Printf("dbinfo file: %s\n", file)
-			dbInfoPath = file
+			filesToRead = append(filesToRead, fileInfo{filename: file, fileType: dbInfoFile})
 		case transactionFile:
 			fmt.Printf("transaction file: %s\n", file)
 		case traceFile:
@@ -73,25 +82,70 @@ func Run(files []string, hotMetric string) {
 	}
 	checkTraceConditions(hasTrace, filesToRead, hotMetric)
 
-	rs := make([]readingSummary, len(filesToRead))
+	if hasTrace {
+		if len(filesToRead) == 2 {
+			compareTraces(os.Stdout, terminalWidth(), highlightQuery, readTraceFile(filesToRead[0]), readTraceFile(filesToRead[1]))
+		} else {
+			printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, readTraceFile(filesToRead[0]))
+		}
+		return
+	}
+
+	s := NewSummary(hotMetric)
+
+	rFuncs := make([]func(s *Summary) error, len(filesToRead))
 	var err error
 	for i, f := range filesToRead {
-		rs[i], err = readTraceFile(f)
+		rFuncs[i], err = readFile(f)
 		if err != nil {
 			exit(err.Error())
 		}
 	}
 
-	if hasTrace {
-		if len(rs) == 2 {
-			compareTraces(os.Stdout, terminalWidth(), highlightQuery, rs[0], rs[1])
-		} else {
-			printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, rs[0])
+	for _, f := range rFuncs {
+		err = f(s)
+		if err != nil {
+			panic(err)
 		}
-		return
 	}
+	s.PrintMarkdown(os.Stdout, time.Now())
+}
 
-	printKeysSummary(os.Stdout, rs[0].Name, rs[0].AnalysedQueries, time.Now(), hotMetric, dbInfoPath)
+func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) {
+	md := &markdown.MarkDown{}
+	msg := `# Query Analysis Report
+
+**Date of Analysis**: %s  
+**Analyzed Files**: ` + "%s" + `
+
+`
+
+	for i, file := range s.analyzedFiles {
+		s.analyzedFiles[i] = "`" + file + "`"
+	}
+	md.Printf(msg, now.Format(time.DateTime), strings.Join(s.analyzedFiles, ", "))
+	renderHotQueries(md, s.hotQueries, s.hotQueryFn)
+	renderTableUsage(md, s.tables, s.hasRowCount)
+	renderTablesJoined(md, s)
+	renderFailures(md, s.failures)
+
+	_, err := md.WriteTo(out)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (s *Summary) GetTable(name string) *TableSummary {
+	for _, table := range s.tables {
+		if table.Table == name {
+			return table
+		}
+	}
+	return nil
+}
+
+func (s *Summary) AddTable(table *TableSummary) {
+	s.tables = append(s.tables, table)
 }
 
 func checkTraceConditions(hasTrace bool, filesToRead []fileInfo, hotMetric string) {

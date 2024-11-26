@@ -18,21 +18,15 @@ package summarize
 
 import (
 	"fmt"
-	"io"
 	"iter"
-	"maps"
 	"slices"
 	"sort"
-	"strconv"
-	"time"
 
 	"vitess.io/vitess/go/slice"
 	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/vitessio/vt/go/keys"
-	"github.com/vitessio/vt/go/markdown"
-	"github.com/vitessio/vt/go/schema"
 )
 
 const HotQueryCount = 10
@@ -48,12 +42,6 @@ type (
 	ColumnInformation struct {
 		Name string
 		Pos  Position
-	}
-
-	Summary struct {
-		tables     []*TableSummary
-		failures   []FailuresSummary
-		hotQueries []keys.QueryAnalysisResult
 	}
 
 	TableSummary struct {
@@ -77,19 +65,6 @@ type (
 
 	queryGraph map[graphKey]map[operators.JoinPredicate]int
 )
-
-func (s *Summary) GetTable(name string) *TableSummary {
-	for _, table := range s.tables {
-		if table.Table == name {
-			return table
-		}
-	}
-	return nil
-}
-
-func (s *Summary) AddTable(table *TableSummary) {
-	s.tables = append(s.tables, table)
-}
 
 const (
 	Join Position = iota
@@ -165,59 +140,6 @@ func (ts TableSummary) UseCount() int {
 	return ts.ReadQueryCount + ts.WriteQueryCount
 }
 
-// printKeysSummary goes over all the analysed queries, gathers information about column usage per table,
-// and prints this summary information to the output.
-func printKeysSummary(out io.Writer, fileName string, analysedQueries *keys.Output, now time.Time, hotMetric, schemaInfoPath string) {
-	var err error
-	summary := &Summary{}
-
-	metricReader := getMetricForHotness(hotMetric)
-
-	err = summarizeSchemaInfo(summary, schemaInfoPath)
-	if err != nil {
-		panic(err)
-	}
-
-	summarizeKeysQueries(summary, analysedQueries, metricReader)
-	md := &markdown.MarkDown{}
-	msg := `# Query Analysis Report
-
-**Date of Analysis**: %s  
-**Analyzed File**: ` + "`%s`" + `
-
-`
-	md.Printf(msg, now.Format(time.DateTime), fileName)
-	renderHotQueries(md, summary.hotQueries, metricReader)
-	renderTableUsage(summary.tables, md, schemaInfoPath != "")
-	renderTablesJoined(md, analysedQueries)
-	renderFailures(md, summary.failures)
-
-	_, err = md.WriteTo(out)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func summarizeSchemaInfo(summary *Summary, schemaInfoPath string) error {
-	if schemaInfoPath == "" {
-		return nil
-	}
-	schemaInfo, err := schema.Load(schemaInfoPath)
-	if err != nil {
-		return err
-	}
-	for _, ti := range schemaInfo.Tables {
-		table := summary.GetTable(ti.Name)
-		if table == nil {
-			table = &TableSummary{Table: ti.Name}
-			summary.AddTable(table)
-		}
-		table.RowCount = ti.Rows
-	}
-
-	return nil
-}
-
 type getMetric = func(q keys.QueryAnalysisResult) float64
 
 func getMetricForHotness(metric string) getMetric {
@@ -248,122 +170,6 @@ func getMetricForHotness(metric string) getMetric {
 	}
 }
 
-func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult, metricReader getMetric) {
-	if len(queries) == 0 {
-		return
-	}
-
-	hasTime := false
-	// Sort the queries in descending order of hotness
-	sort.Slice(queries, func(i, j int) bool {
-		if queries[i].QueryTime != 0 {
-			hasTime = true
-		}
-		return metricReader(queries[i]) > metricReader(queries[j])
-	})
-
-	if !hasTime {
-		return
-	}
-
-	md.PrintHeader("Top Queries", 2)
-
-	// Prepare table headers and rows
-	headers := []string{"Query ID", "Usage Count", "Total Query Time (ms)", "Avg Query Time (ms)", "Total Rows Examined"}
-	var rows [][]string
-
-	for i, query := range queries {
-		queryID := fmt.Sprintf("Q%d", i+1)
-		avgQueryTime := query.QueryTime / float64(query.UsageCount)
-		rows = append(rows, []string{
-			queryID,
-			strconv.Itoa(query.UsageCount),
-			fmt.Sprintf("%.2f", query.QueryTime),
-			fmt.Sprintf("%.2f", avgQueryTime),
-			strconv.Itoa(query.RowsExamined),
-		})
-	}
-
-	// Print the table
-	md.PrintTable(headers, rows)
-
-	// After the table, list the full queries with their IDs
-	md.PrintHeader("Query Details", 3)
-	for i, query := range queries {
-		queryID := fmt.Sprintf("Q%d", i+1)
-		md.PrintHeader(queryID, 4)
-		md.Println("```sql")
-		md.Println(query.QueryStructure)
-		md.Println("```")
-		md.NewLine()
-	}
-}
-
-func renderTableUsage(tableSummaries []*TableSummary, md *markdown.MarkDown, includeRowCount bool) {
-	if len(tableSummaries) == 0 {
-		return
-	}
-
-	sort.Slice(tableSummaries, func(i, j int) bool {
-		if tableSummaries[i].UseCount() == tableSummaries[j].UseCount() {
-			return tableSummaries[i].Table < tableSummaries[j].Table
-		}
-		return tableSummaries[i].UseCount() > tableSummaries[j].UseCount()
-	})
-
-	md.PrintHeader("Tables", 2)
-	renderTableOverview(md, tableSummaries, includeRowCount)
-
-	md.PrintHeader("Column Usage", 3)
-	for _, summary := range tableSummaries {
-		renderColumnUsageTable(md, summary)
-	}
-}
-
-func renderTableOverview(md *markdown.MarkDown, tableSummaries []*TableSummary, includeRowCount bool) {
-	headers := []string{"Table Name", "Reads", "Writes"}
-	if includeRowCount {
-		headers = append(headers, "Number of Rows")
-	}
-	var rows [][]string
-	for _, summary := range tableSummaries {
-		thisRow := []string{
-			summary.Table,
-			strconv.Itoa(summary.ReadQueryCount),
-			strconv.Itoa(summary.WriteQueryCount),
-		}
-		if includeRowCount {
-			thisRow = append(thisRow, strconv.Itoa(summary.RowCount))
-		}
-
-		rows = append(rows, thisRow)
-	}
-	md.PrintTable(headers, rows)
-}
-
-func renderColumnUsageTable(md *markdown.MarkDown, summary *TableSummary) {
-	md.PrintHeader(fmt.Sprintf("Table: `%s` (%d reads and %d writes)", summary.Table, summary.ReadQueryCount, summary.WriteQueryCount), 4)
-
-	headers := []string{"Column", "Position", "Used %"}
-	var rows [][]string
-	var lastName string
-	for colInfo, usage := range summary.GetColumns() {
-		name := colInfo.Name
-		if lastName == name {
-			name = ""
-		} else {
-			lastName = name
-		}
-		rows = append(rows, []string{
-			name,
-			colInfo.Pos.String(),
-			fmt.Sprintf("%.0f%%", usage.Percentage),
-		})
-	}
-
-	md.PrintTable(headers, rows)
-}
-
 func (g queryGraph) AddJoinPredicate(key graphKey, pred operators.JoinPredicate) {
 	if in, exists := g[key]; exists {
 		in[pred]++
@@ -371,84 +177,6 @@ func (g queryGraph) AddJoinPredicate(key graphKey, pred operators.JoinPredicate)
 	}
 
 	g[key] = map[operators.JoinPredicate]int{pred: 1}
-}
-
-func renderTablesJoined(md *markdown.MarkDown, summary *keys.Output) {
-	g := make(queryGraph)
-	for _, query := range summary.Queries {
-		for _, pred := range query.JoinPredicates {
-			key := makeKey(pred.LHS, pred.RHS)
-			g.AddJoinPredicate(key, pred)
-		}
-	}
-
-	if len(g) > 0 {
-		md.PrintHeader("Tables Joined", 2)
-	}
-
-	type joinDetails struct {
-		Tbl1, Tbl2  string
-		Occurrences int
-		predicates  []operators.JoinPredicate
-	}
-
-	var joins []joinDetails
-	for tables, predicates := range g {
-		occurrences := 0
-		for _, count := range predicates {
-			occurrences += count
-		}
-		joinPredicates := slices.Collect(maps.Keys(predicates))
-		sort.Slice(joinPredicates, func(i, j int) bool {
-			return joinPredicates[i].String() < joinPredicates[j].String()
-		})
-		joins = append(joins, joinDetails{
-			Tbl1:        tables.Tbl1,
-			Tbl2:        tables.Tbl2,
-			Occurrences: occurrences,
-			predicates:  joinPredicates,
-		})
-	}
-
-	sort.Slice(joins, func(i, j int) bool {
-		if joins[i].Occurrences != joins[j].Occurrences {
-			return joins[i].Occurrences > joins[j].Occurrences
-		}
-		if joins[i].Tbl1 != joins[j].Tbl1 {
-			return joins[i].Tbl1 < joins[j].Tbl1
-		}
-		return joins[i].Tbl2 < joins[j].Tbl2
-	})
-
-	md.Println("```")
-	for _, join := range joins {
-		md.Printf("%s ↔ %s (Occurrences: %d)\n", join.Tbl1, join.Tbl2, join.Occurrences)
-		for i, pred := range join.predicates {
-			var s string
-			if i == len(join.predicates)-1 {
-				s = "└─"
-			} else {
-				s = "├─"
-			}
-			md.Printf("%s %s\n", s, pred.String())
-		}
-		md.NewLine()
-	}
-	md.Println("```")
-}
-
-func renderFailures(md *markdown.MarkDown, failures []FailuresSummary) {
-	if len(failures) == 0 {
-		return
-	}
-	md.PrintHeader("Failures", 2)
-
-	headers := []string{"Error", "Count"}
-	var rows [][]string
-	for _, failure := range failures {
-		rows = append(rows, []string{failure.Error, strconv.Itoa(failure.Count)})
-	}
-	md.PrintTable(headers, rows)
 }
 
 // makeKey creates a graph key from two columns. The key is always sorted in ascending order.
@@ -460,7 +188,7 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhs.Table, lhs.Table}
 }
 
-func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader getMetric) {
+func summarizeKeysQueries(summary *Summary, queries *keys.Output) {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
@@ -468,7 +196,7 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader g
 	// First pass: collect all data and count occurrences
 	for _, query := range queries.Queries {
 		gatherTableInfo(query, tableSummaries, tableUsageWriteCounts, tableUsageReadCounts)
-		checkQueryForHotness(&summary.hotQueries, query, metricReader)
+		checkQueryForHotness(&summary.hotQueries, query, summary.hotQueryFn)
 	}
 
 	// Second pass: calculate percentages
@@ -511,6 +239,13 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output, metricReader g
 		})
 	}
 	summary.failures = failures
+
+	for _, query := range queries.Queries {
+		for _, pred := range query.JoinPredicates {
+			key := makeKey(pred.LHS, pred.RHS)
+			summary.queryGraph.AddJoinPredicate(key, pred)
+		}
+	}
 }
 
 func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult, metricReader getMetric) {

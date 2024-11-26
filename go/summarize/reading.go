@@ -19,49 +19,35 @@ package summarize
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"os"
 	"sort"
 	"strconv"
 
 	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/schema"
 )
 
-func readTraceFile(fi fileInfo) (readingSummary, error) {
+func readTraceFile(fi fileInfo) traceSummary {
 	switch fi.fileType {
 	case traceFile:
-		return readTracedQueryFile(fi.filename), nil
+		return readTracedQueryFile(fi.filename)
+	default:
+		panic("Unsupported file type")
+	}
+}
+
+func readFile(fi fileInfo) (func(s *Summary) error, error) {
+	switch fi.fileType {
 	case keysFile:
 		return readAnalysedQueryFile(fi.filename), nil
+	case dbInfoFile:
+		return readDBInfoFile(fi.filename), nil
 	default:
-		return readingSummary{}, errors.New("unknown file format")
+		return nil, errors.New("unknown file format")
 	}
 }
 
-func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
-	// Create a decoder
-	decoder := json.NewDecoder(file)
-
-	// Read the opening bracket
-	val, err := decoder.Token()
-	if err != nil {
-		exit("Error reading json: " + err.Error())
-	}
-	delim, ok := val.(json.Delim)
-	if !ok {
-		exit("Error reading json: expected delimiter")
-	}
-
-	// Reset the file pointer to the beginning
-	_, err = file.Seek(0, io.SeekStart)
-	if err != nil {
-		exit("Error rewinding file: " + err.Error())
-	}
-	decoder = json.NewDecoder(file)
-	return decoder, delim
-}
-
-func readTracedQueryFile(fileName string) readingSummary {
+func readTracedQueryFile(fileName string) traceSummary {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
 		exit("Error opening file: " + err.Error())
@@ -89,13 +75,13 @@ func readTracedQueryFile(fileName string) readingSummary {
 		return a < b
 	})
 
-	return readingSummary{
+	return traceSummary{
 		Name:          fileName,
 		TracedQueries: to.Queries,
 	}
 }
 
-func readAnalysedQueryFile(fileName string) readingSummary {
+func readAnalysedQueryFile(fileName string) func(s *Summary) error {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
 		exit("Error opening file: " + err.Error())
@@ -107,8 +93,30 @@ func readAnalysedQueryFile(fileName string) readingSummary {
 		exit("Error parsing json: " + err.Error())
 	}
 
-	return readingSummary{
-		Name:            fileName,
-		AnalysedQueries: &ko,
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		summarizeKeysQueries(s, &ko)
+		return nil
+	}
+}
+
+func readDBInfoFile(fileName string) func(s *Summary) error {
+	schemaInfo, err := schema.Load(fileName)
+	if err != nil {
+		panic(err)
+	}
+
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		s.hasRowCount = true
+		for _, ti := range schemaInfo.Tables {
+			table := s.GetTable(ti.Name)
+			if table == nil {
+				table = &TableSummary{Table: ti.Name}
+				s.AddTable(table)
+			}
+			table.RowCount = ti.Rows
+		}
+		return nil
 	}
 }
