@@ -36,7 +36,7 @@ type (
 
 type summaryWorker = func(s *Summary) error
 
-func Run(files []string, hotMetric string) {
+func Run(files []string, hotMetric string, showGraph bool) {
 	var traces []traceSummary
 	var workers []summaryWorker
 
@@ -61,7 +61,10 @@ func Run(files []string, hotMetric string) {
 
 	traceCount := len(traces)
 	if traceCount <= 0 {
-		printSummary(hotMetric, workers)
+		s := printSummary(hotMetric, workers)
+		if showGraph {
+			renderQueryGraph(s)
+		}
 		return
 	}
 
@@ -74,7 +77,7 @@ func Run(files []string, hotMetric string) {
 	}
 }
 
-func printSummary(hotMetric string, workers []summaryWorker) {
+func printSummary(hotMetric string, workers []summaryWorker) *Summary {
 	s := NewSummary(hotMetric)
 	for _, worker := range workers {
 		err := worker(s)
@@ -83,6 +86,7 @@ func printSummary(hotMetric string, workers []summaryWorker) {
 		}
 	}
 	s.PrintMarkdown(os.Stdout, time.Now())
+	return s
 }
 
 func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) {

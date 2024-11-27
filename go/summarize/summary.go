@@ -36,6 +36,7 @@ type (
 		hotQueryFn    getMetric
 		analyzedFiles []string
 		queryGraph    queryGraph
+		joins         []joinDetails
 		hasRowCount   bool
 	}
 

@@ -18,14 +18,12 @@ package summarize
 
 import (
 	"fmt"
-	"maps"
 	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	humanize "github.com/dustin/go-humanize"
-	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
@@ -148,31 +146,7 @@ func renderColumnUsageTable(md *markdown.MarkDown, summary *TableSummary) {
 }
 
 func renderTablesJoined(md *markdown.MarkDown, summary *Summary) {
-	type joinDetails struct {
-		Tbl1, Tbl2  string
-		Occurrences int
-		predicates  []operators.JoinPredicate
-	}
-
-	var joins []joinDetails
-	for tables, predicates := range summary.queryGraph {
-		occurrences := 0
-		for _, count := range predicates {
-			occurrences += count
-		}
-		joinPredicates := slices.Collect(maps.Keys(predicates))
-		sort.Slice(joinPredicates, func(i, j int) bool {
-			return joinPredicates[i].String() < joinPredicates[j].String()
-		})
-		joins = append(joins, joinDetails{
-			Tbl1:        tables.Tbl1,
-			Tbl2:        tables.Tbl2,
-			Occurrences: occurrences,
-			predicates:  joinPredicates,
-		})
-	}
-
-	if len(joins) == 0 {
+	if len(summary.joins) == 0 {
 		return
 	}
 
@@ -180,18 +154,8 @@ func renderTablesJoined(md *markdown.MarkDown, summary *Summary) {
 		md.PrintHeader("Tables Joined", 2)
 	}
 
-	sort.Slice(joins, func(i, j int) bool {
-		if joins[i].Occurrences != joins[j].Occurrences {
-			return joins[i].Occurrences > joins[j].Occurrences
-		}
-		if joins[i].Tbl1 != joins[j].Tbl1 {
-			return joins[i].Tbl1 < joins[j].Tbl1
-		}
-		return joins[i].Tbl2 < joins[j].Tbl2
-	})
-
 	md.Println("```")
-	for _, join := range joins {
+	for _, join := range summary.joins {
 		md.Printf("%s ↔ %s (Occurrences: %d)\n", join.Tbl1, join.Tbl2, join.Occurrences)
 		for i, pred := range join.predicates {
 			var s string

@@ -19,6 +19,7 @@ package summarize
 import (
 	"fmt"
 	"iter"
+	"maps"
 	"slices"
 	"sort"
 
@@ -51,6 +52,12 @@ type (
 
 	graphKey struct {
 		Tbl1, Tbl2 string
+	}
+
+	joinDetails struct {
+		Tbl1, Tbl2  string
+		Occurrences int
+		predicates  []operators.JoinPredicate
 	}
 
 	queryGraph map[graphKey]map[operators.JoinPredicate]int
@@ -236,6 +243,32 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) {
 			summary.queryGraph.AddJoinPredicate(key, pred)
 		}
 	}
+
+	for tables, predicates := range summary.queryGraph {
+		occurrences := 0
+		for _, count := range predicates {
+			occurrences += count
+		}
+		joinPredicates := slices.Collect(maps.Keys(predicates))
+		sort.Slice(joinPredicates, func(i, j int) bool {
+			return joinPredicates[i].String() < joinPredicates[j].String()
+		})
+		summary.joins = append(summary.joins, joinDetails{
+			Tbl1:        tables.Tbl1,
+			Tbl2:        tables.Tbl2,
+			Occurrences: occurrences,
+			predicates:  joinPredicates,
+		})
+	}
+	sort.Slice(summary.joins, func(i, j int) bool {
+		if summary.joins[i].Occurrences != summary.joins[j].Occurrences {
+			return summary.joins[i].Occurrences > summary.joins[j].Occurrences
+		}
+		if summary.joins[i].Tbl1 != summary.joins[j].Tbl1 {
+			return summary.joins[i].Tbl1 < summary.joins[j].Tbl1
+		}
+		return summary.joins[i].Tbl2 < summary.joins[j].Tbl2
+	})
 }
 
 func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult, metricReader getMetric) {
