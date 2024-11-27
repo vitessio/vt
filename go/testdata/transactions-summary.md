@@ -5,7 +5,8 @@
 
 ## Transaction Patterns
 
-Pattern 1 (Observed 2 times)
+### Pattern 1 (Observed 2 times)
+
 
 Tables Involved: tblA, tblB
 ### Query Patterns

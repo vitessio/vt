@@ -60,10 +60,10 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 		avgQueryTime := query.QueryTime / float64(query.UsageCount)
 		rows = append(rows, []string{
 			queryID,
-			strconv.Itoa(query.UsageCount),
+			humanize.Comma(int64(query.UsageCount)),
 			fmt.Sprintf("%.2f", query.QueryTime),
 			fmt.Sprintf("%.2f", avgQueryTime),
-			strconv.Itoa(query.RowsExamined),
+			humanize.Comma(int64(query.RowsExamined)),
 		})
 	}
 
@@ -112,8 +112,8 @@ func renderTableOverview(md *markdown.MarkDown, tableSummaries []*TableSummary, 
 	for _, summary := range tableSummaries {
 		thisRow := []string{
 			summary.Table,
-			strconv.Itoa(summary.ReadQueryCount),
-			strconv.Itoa(summary.WriteQueryCount),
+			humanize.Comma(int64(summary.ReadQueryCount)),
+			humanize.Comma(int64(summary.WriteQueryCount)),
 		}
 		if includeRowCount {
 			thisRow = append(thisRow, humanize.Comma(int64(summary.RowCount)))
