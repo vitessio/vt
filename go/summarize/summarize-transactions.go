@@ -24,16 +24,28 @@ import (
 
 func summarizeTransactions(s *Summary, txs []transactions.Signature) error {
 	for _, tx := range txs {
+		patterns, interesting := summarizeQueries(tx.Queries)
+		if !interesting {
+			continue
+		}
 		s.transactions = append(s.transactions, TransactionSummary{
 			Count:   tx.Count,
-			Queries: summarizeQueries(tx.Queries),
+			Queries: patterns,
 		})
 	}
 	return nil
 }
 
-func summarizeQueries(queries []transactions.Query) (patterns []QueryPattern) {
+func summarizeQueries(queries []transactions.Query) (patterns []QueryPattern, interesting bool) {
 	for _, q := range queries {
+		if !interesting {
+			// Check if any of the predicates are interesting
+			for _, predicate := range q.Predicates {
+				if predicate.Val >= 0 {
+					interesting = true
+				}
+			}
+		}
 		patterns = append(patterns, QueryPattern{
 			Type:           q.Op,
 			Table:          q.AffectedTable,

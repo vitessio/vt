@@ -235,12 +235,15 @@ func renderTransactions(md *markdown.MarkDown, transactions []TransactionSummary
 		}
 		tables = uniquefy(tables)
 		md.NewLine()
-		md.Printf("Pattern %d (Observed %d times)\n\n", i+1, tx.Count)
+		md.PrintHeader(fmt.Sprintf("Pattern %d (Observed %d times)\n\n", i+1, tx.Count), 3)
 		md.Printf("Tables Involved: %s\n", strings.Join(tables, ", "))
 		md.PrintHeader("Query Patterns", 3)
 		for i, query := range tx.Queries {
 			md.Printf("%d. **%s** on `%s`  \n", i+1, strings.ToTitle(query.Type), query.Table)
 			md.Printf("   Predicates: %s\n\n", strings.Join(query.Predicates, " AND "))
+		}
+		if i != len(transactions)-1 {
+			md.Printf("---\n")
 		}
 	}
 }
