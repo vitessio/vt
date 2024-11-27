@@ -1,4 +1,5 @@
 {
+    "fileType": "keys",
     "queries": [
       {
         "queryStructure": "SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :1 /* INT64 */",

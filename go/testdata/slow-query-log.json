@@ -1,4 +1,5 @@
 {
+    "fileType": "keys",
     "queries": [
       {
         "queryStructure": "SELECT `m1_0`.`id`, `m1_0`.`name`, `m1_0`.`value`, `m1_0`.`date` FROM `items` AS `m1_0` WHERE `m1_0`.`id` = :_m1_0_id /* INT64 */",

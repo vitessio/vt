@@ -25,59 +25,75 @@ import (
 
 	"github.com/alecthomas/chroma/quick"
 	"golang.org/x/term"
-
-	"github.com/vitessio/vt/go/keys"
 )
 
 type (
-	readingSummary struct {
-		Name string
-
-		// Only one of these fields will be populated
-		TracedQueries   []TracedQuery // Set when analyzing a 'vt tester --trace' output
-		AnalysedQueries *keys.Output  // Set when analyzing a 'vt keys' output
+	traceSummary struct {
+		Name          string
+		TracedQueries []TracedQuery
 	}
 )
 
+type summaryWorker = func(s *Summary) error
+
 func Run(files []string, hotMetric string) {
-	var traceFiles []string
-	var dbInfoPath string
-	// todo: add file types for other json types. Right now just checks for dbinfo files, else defaults
+	var traces []traceSummary
+	var workers []summaryWorker
+
 	for _, file := range files {
-		typ, _ := getFileType(file)
+		typ, err := getFileType(file)
+		if err != nil {
+			panic(err.Error())
+		}
 		switch typ {
 		case dbInfoFile:
-			fmt.Printf("dbinfo file: %s\n", file)
-			dbInfoPath = file
+			workers = append(workers, readDBInfoFile(file))
+		case transactionFile:
+			workers = append(workers, readTransactionFile(file))
+		case traceFile:
+			traces = append(traces, readTracedFile(file))
+		case keysFile:
+			workers = append(workers, readKeysFile(file))
 		default:
-			fmt.Printf("trace file: %s\n", file)
-			traceFiles = append(traceFiles, file)
+			panic("Unknown file type")
 		}
 	}
 
-	traces := make([]readingSummary, len(traceFiles))
-	var err error
-	for i, arg := range traceFiles {
-		traces[i], err = readTraceFile(arg)
+	traceCount := len(traces)
+	if traceCount <= 0 {
+		printSummary(hotMetric, workers)
+		return
+	}
+
+	checkTraceConditions(traces, workers, hotMetric)
+	switch traceCount {
+	case 1:
+		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
+	case 2:
+		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
+	}
+}
+
+func printSummary(hotMetric string, workers []summaryWorker) {
+	s := NewSummary(hotMetric)
+	for _, worker := range workers {
+		err := worker(s)
 		if err != nil {
 			exit(err.Error())
 		}
 	}
+	s.PrintMarkdown(os.Stdout, time.Now())
+}
 
-	if hotMetric != "" && traces[0].AnalysedQueries == nil {
+func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) {
+	if len(workers) > 0 {
+		panic("Trace files cannot be mixed with other file types")
+	}
+	if len(traces) > 2 {
+		panic("Can only summarize up to two trace files at once")
+	}
+	if hotMetric != "" {
 		exit("hotMetric flag is only supported for 'vt keys' output")
-	}
-
-	firstTrace := traces[0]
-	if len(traces) != 1 {
-		compareTraces(os.Stdout, terminalWidth(), highlightQuery, firstTrace, traces[1])
-		return
-	}
-
-	if firstTrace.AnalysedQueries == nil {
-		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, firstTrace)
-	} else {
-		printKeysSummary(os.Stdout, firstTrace, time.Now(), hotMetric, dbInfoPath)
 	}
 }
 

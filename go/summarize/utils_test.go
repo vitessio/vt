@@ -33,7 +33,7 @@ func TestGetFileType(t *testing.T) {
 	testCases := []testCase{
 		{
 			filename:     "../testdata/keys-log.json",
-			expectedType: unknownFile,
+			expectedType: keysFile,
 		},
 		{
 			filename:     "../testdata/sakila-schema-info.json",

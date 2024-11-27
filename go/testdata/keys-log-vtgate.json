@@ -1,4 +1,5 @@
 {
+    "fileType": "keys",
     "queries": [
       {
         "queryStructure": "VEXPLAIN TRACE INSERT INTO `pincode_areas`(`pincode`, `area_name`) VALUES (:vtg1, :vtg2), (:vtg3, :vtg4), (:vtg5, :vtg6), (:vtg7, :vtg8), (:vtg9, :vtg10), (:vtg11, :vtg12), (:vtg13, :vtg14), (:vtg15, :vtg16), (:vtg17, :vtg18), (:vtg19, :vtg20), (:vtg21, :vtg22), (:vtg23, :vtg24), (:vtg25, :vtg26), (:vtg27, :vtg28), (:vtg29, :vtg30)",

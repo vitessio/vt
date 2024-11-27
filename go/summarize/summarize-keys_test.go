@@ -43,7 +43,7 @@ func TestTableSummary(t *testing.T) {
 	}
 
 	ts := TableSummary{
-		Columns: map[ColumnInformation]ColumnUsage{
+		ColumnUses: map[ColumnInformation]ColumnUsage{
 			{Name: "l_shipmode", Pos: WhereRange}:    {Percentage: 6},
 			{Name: "l_receiptdate", Pos: WhereRange}: {Percentage: 28},
 			{Name: "l_shipdate", Pos: WhereRange}:    {Percentage: 22},
@@ -67,17 +67,27 @@ func TestTableSummary(t *testing.T) {
 }
 
 func TestSummarizeKeysFile(t *testing.T) {
-	file, err := readTraceFile("../testdata/keys-log.json")
-	require.NoError(t, err)
 	sb := &strings.Builder{}
 	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-	printKeysSummary(sb, file, now, "", "../testdata/keys-schema-info.json")
+	fnKeys := readKeysFile("../testdata/keys-log.json")
+	fnSchemaInfo := readDBInfoFile("../testdata/keys-schema-info.json")
+
+	s := NewSummary("")
+
+	err := fnKeys(s)
+	require.NoError(t, err)
+
+	err = fnSchemaInfo(s)
+	require.NoError(t, err)
+
+	s.PrintMarkdown(sb, now)
+
 	expected, err := os.ReadFile("../testdata/keys-summary.md")
 	require.NoError(t, err)
 	assert.Equal(t, string(expected), sb.String())
 	if t.Failed() {
-		_ = os.WriteFile("../testdata/keys-summary.md.correct", []byte(sb.String()), 0o644)
+		_ = os.WriteFile("../testdata/expected/keys-summary.md", []byte(sb.String()), 0o644)
 	}
 }
 
@@ -92,11 +102,17 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 
 	for _, metric := range tests {
 		t.Run(metric, func(t *testing.T) {
-			file, err := readTraceFile("../testdata/bigger_slow_query_log.json")
-			require.NoError(t, err)
+			fn := readKeysFile("../testdata/bigger_slow_query_log.json")
 			sb := &strings.Builder{}
 			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
-			printKeysSummary(sb, file, now, metric, "")
+
+			s := NewSummary(metric)
+
+			err := fn(s)
+			require.NoError(t, err)
+
+			s.PrintMarkdown(sb, now)
+
 			expected, err := os.ReadFile(fmt.Sprintf("../testdata/bigger_slow_log_%s.md", metric))
 			require.NoError(t, err)
 			assert.Equal(t, string(expected), sb.String())

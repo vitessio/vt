@@ -37,28 +37,28 @@ func TestKeys(t *testing.T) {
 				FileName: "../../t/tpch_failing_queries.test",
 				Loader:   data.SlowQueryLogLoader{},
 			},
-			expectedFile: "../testdata/keys-log.json",
+			expectedFile: "keys-log.json",
 		},
 		{
 			cfg: Config{
 				FileName: "../testdata/vtgate.query.log",
 				Loader:   data.VtGateLogLoader{NeedsBindVars: false},
 			},
-			expectedFile: "../testdata/keys-log-vtgate.json",
+			expectedFile: "keys-log-vtgate.json",
 		},
 		{
 			cfg: Config{
 				FileName: "../testdata/slow_query_log",
 				Loader:   data.SlowQueryLogLoader{},
 			},
-			expectedFile: "../testdata/slow-query-log.json",
+			expectedFile: "slow-query-log.json",
 		},
 		{
 			cfg: Config{
 				FileName: "../testdata/bigger_slow_query_log.log",
 				Loader:   data.SlowQueryLogLoader{},
 			},
-			expectedFile: "../testdata/bigger_slow_query_log.json",
+			expectedFile: "bigger_slow_query_log.json",
 		},
 	}
 
@@ -68,12 +68,12 @@ func TestKeys(t *testing.T) {
 			err := run(sb, tcase.cfg)
 			require.NoError(t, err)
 
-			out, err := os.ReadFile(tcase.expectedFile)
+			out, err := os.ReadFile("../testdata/" + tcase.expectedFile)
 			require.NoError(t, err)
 
 			assert.Equal(t, string(out), sb.String())
 			if t.Failed() {
-				_ = os.WriteFile(tcase.expectedFile+".correct", []byte(sb.String()), 0o644)
+				_ = os.WriteFile("../testdata/expected/"+tcase.expectedFile, []byte(sb.String()), 0o644)
 			}
 		})
 	}

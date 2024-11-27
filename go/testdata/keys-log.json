@@ -1,4 +1,5 @@
 {
+    "fileType": "keys",
     "queries": [
       {
         "queryStructure": "INSERT INTO `region`(`R_REGIONKEY`, `R_NAME`, `R_COMMENT`) VALUES (:1 /* INT64 */, :2 /* VARCHAR */, :3 /* VARCHAR */), (:4 /* INT64 */, :5 /* VARCHAR */, :6 /* VARCHAR */)",

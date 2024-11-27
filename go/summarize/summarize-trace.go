@@ -62,9 +62,9 @@ func visit(trace Trace, f func(Trace)) {
 	}
 }
 
-func summarizeTraces(file readingSummary) map[string]QuerySummary {
+func summarizeTraces(tq []TracedQuery) map[string]QuerySummary {
 	summary := make(map[string]QuerySummary)
-	for _, traceElement := range file.TracedQueries {
+	for _, traceElement := range tq {
 		summary[traceElement.Query] = summarizeTrace(traceElement)
 	}
 	return summary
@@ -100,15 +100,15 @@ func summarizeTrace(t TracedQuery) QuerySummary {
 	return summary
 }
 
-func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, file1, file2 readingSummary) {
-	summary1 := summarizeTraces(file1)
-	summary2 := summarizeTraces(file2)
+func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, tq1, tq2 traceSummary) {
+	summary1 := summarizeTraces(tq1.TracedQueries)
+	summary2 := summarizeTraces(tq2.TracedQueries)
 
 	var significantChanges, totalQueries int
 	var s1RouteCalls, s1DataSent, s1MemoryRows, s1ShardsQueried int
 	var s2RouteCalls, s2DataSent, s2MemoryRows, s2ShardsQueried int
 
-	for _, q := range file1.TracedQueries {
+	for _, q := range tq1.TracedQueries {
 		s1, ok1 := summary1[q.Query]
 		s2, ok2 := summary2[q.Query]
 		if !ok1 || !ok2 {
@@ -117,7 +117,7 @@ func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, file1,
 		totalQueries++
 
 		table := tablewriter.NewWriter(out)
-		table.SetHeader([]string{"Metric", file1.Name, file2.Name, "Diff", "% Change"})
+		table.SetHeader([]string{"Metric", tq1.Name, tq2.Name, "Diff", "% Change"})
 		table.SetAutoFormatHeaders(false)
 
 		m1 := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
@@ -180,9 +180,9 @@ func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) 
 	return percentChange < -significantChangeThreshold
 }
 
-func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, file readingSummary) {
-	summary := summarizeTraces(file)
-	for i, query := range file.TracedQueries {
+func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, tq traceSummary) {
+	summary := summarizeTraces(tq.TracedQueries)
+	for i, query := range tq.TracedQueries {
 		if i > 0 {
 			fmt.Fprintln(out)
 		}

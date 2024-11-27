@@ -1,18 +1,18 @@
 # Query Analysis Report
 
 **Date of Analysis**: 2024-01-01 01:02:03  
-**Analyzed File**: `../testdata/keys-log.json`
+**Analyzed Files**: `../testdata/keys-log.json`, `../testdata/keys-schema-info.json`
 
 ## Tables
 |Table Name|Reads|Writes|Number of Rows|
 |---|---|---|---|
-|lineitem|17|1|42047555|
-|orders|11|1|12047555|
+|lineitem|17|1|42,047,555|
+|orders|11|1|12,047,555|
 |nation|10|1|150|
 |supplier|8|1|318|
-|customer|7|1|280000|
-|part|5|1|2761|
-|partsupp|4|1|32381|
+|customer|7|1|280,000|
+|part|5|1|2,761|
+|partsupp|4|1|32,381|
 |region|2|1|20|
 
 ### Column Usage

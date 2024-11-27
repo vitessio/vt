@@ -18,94 +18,107 @@ package summarize
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
 	"os"
 	"sort"
 	"strconv"
 
 	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/schema"
+	"github.com/vitessio/vt/go/transactions"
 )
 
-func readTraceFile(fileName string) (readingSummary, error) {
-	// Open the JSON file
-	file, err := os.Open(fileName)
+func readTracedFile(fileName string) traceSummary {
+	c, err := os.ReadFile(fileName)
 	if err != nil {
-		return readingSummary{}, fmt.Errorf("error opening file: %w", err)
-	}
-	defer file.Close()
-
-	decoder, val := getDecoderAndDelim(file)
-
-	// Determine the type based on the first delimiter of the JSON file
-	switch val {
-	case json.Delim('['):
-		return readTracedQueryFile(decoder, fileName), nil
-	case json.Delim('{'):
-		return readAnalysedQueryFile(decoder, fileName), nil
+		exit("Error opening file: " + err.Error())
 	}
 
-	return readingSummary{}, errors.New("unknown file format")
-}
-
-func getDecoderAndDelim(file *os.File) (*json.Decoder, json.Delim) {
-	// Create a decoder
-	decoder := json.NewDecoder(file)
-
-	// Read the opening bracket
-	val, err := decoder.Token()
+	type traceOutput struct {
+		FileType string        `json:"fileType"`
+		Queries  []TracedQuery `json:"queries"`
+	}
+	var to traceOutput
+	err = json.Unmarshal(c, &to)
 	if err != nil {
-		exit("Error reading json: " + err.Error())
-	}
-	delim, ok := val.(json.Delim)
-	if !ok {
-		exit("Error reading json: expected delimiter")
+		exit("Error parsing json: " + err.Error())
 	}
 
-	// Reset the file pointer to the beginning
-	_, err = file.Seek(0, io.SeekStart)
-	if err != nil {
-		exit("Error rewinding file: " + err.Error())
-	}
-	decoder = json.NewDecoder(file)
-	return decoder, delim
-}
-
-func readTracedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
-	var tracedQueries []TracedQuery
-	err := decoder.Decode(&tracedQueries)
-	if err != nil {
-		exit("Error reading json: " + err.Error())
-	}
-
-	sort.Slice(tracedQueries, func(i, j int) bool {
-		a, err := strconv.Atoi(tracedQueries[i].LineNumber)
+	sort.Slice(to.Queries, func(i, j int) bool {
+		a, err := strconv.Atoi(to.Queries[i].LineNumber)
 		if err != nil {
 			return false
 		}
-		b, err := strconv.Atoi(tracedQueries[j].LineNumber)
+		b, err := strconv.Atoi(to.Queries[j].LineNumber)
 		if err != nil {
 			return false
 		}
 		return a < b
 	})
 
-	return readingSummary{
+	return traceSummary{
 		Name:          fileName,
-		TracedQueries: tracedQueries,
+		TracedQueries: to.Queries,
 	}
 }
 
-func readAnalysedQueryFile(decoder *json.Decoder, fileName string) readingSummary {
-	var output keys.Output
-	err := decoder.Decode(&output)
+func readTransactionFile(fileName string) func(s *Summary) error {
+	c, err := os.ReadFile(fileName)
 	if err != nil {
-		exit("Error reading json: " + err.Error())
+		exit("Error opening file: " + err.Error())
 	}
 
-	return readingSummary{
-		Name:            fileName,
-		AnalysedQueries: &output,
+	type txOutput struct {
+		FileType   string                   `json:"fileType"`
+		Signatures []transactions.Signature `json:"signatures"`
+	}
+
+	var to txOutput
+	err = json.Unmarshal(c, &to)
+	if err != nil {
+		exit("Error parsing json: " + err.Error())
+	}
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		return summarizeTransactions(s, to.Signatures)
+	}
+}
+
+func readKeysFile(fileName string) func(s *Summary) error {
+	c, err := os.ReadFile(fileName)
+	if err != nil {
+		exit("Error opening file: " + err.Error())
+	}
+
+	var ko keys.Output
+	err = json.Unmarshal(c, &ko)
+	if err != nil {
+		exit("Error parsing json: " + err.Error())
+	}
+
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		summarizeKeysQueries(s, &ko)
+		return nil
+	}
+}
+
+func readDBInfoFile(fileName string) func(s *Summary) error {
+	schemaInfo, err := schema.Load(fileName)
+	if err != nil {
+		panic(err)
+	}
+
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		s.hasRowCount = true
+		for _, ti := range schemaInfo.Tables {
+			table := s.GetTable(ti.Name)
+			if table == nil {
+				table = &TableSummary{Table: ti.Name}
+				s.AddTable(table)
+			}
+			table.RowCount = ti.Rows
+		}
+		return nil
 	}
 }
