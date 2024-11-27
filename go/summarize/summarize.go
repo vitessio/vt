@@ -45,11 +45,6 @@ type (
 		Name          string
 		TracedQueries []TracedQuery
 	}
-
-	fileInfo struct {
-		filename string
-		fileType
-	}
 )
 
 func NewSummary(hotMetric string) *Summary {
@@ -59,53 +54,43 @@ func NewSummary(hotMetric string) *Summary {
 	}
 }
 
+type summaryWorker = func(s *Summary) error
+
 func Run(files []string, hotMetric string) {
-	var filesToRead []fileInfo
-	var hasTrace bool
+	var traces []traceSummary
+	var workers []summaryWorker
 
 	for _, file := range files {
 		typ, _ := getFileType(file)
 		switch typ {
 		case dbInfoFile:
-			fmt.Printf("dbinfo file: %s\n", file)
-			filesToRead = append(filesToRead, fileInfo{filename: file, fileType: dbInfoFile})
+			workers = append(workers, readDBInfoFile(file))
 		case transactionFile:
 			fmt.Printf("transaction file: %s\n", file)
 		case traceFile:
-			filesToRead = append(filesToRead, fileInfo{filename: file, fileType: traceFile})
-			hasTrace = true
+			traces = append(traces, readTracedFile(file))
 		case keysFile:
-			filesToRead = append(filesToRead, fileInfo{filename: file, fileType: keysFile})
+			workers = append(workers, readKeysFile(file))
 		default:
 			panic("Unknown file type")
 		}
 	}
-	checkTraceConditions(hasTrace, filesToRead, hotMetric)
 
-	if hasTrace {
-		if len(filesToRead) == 2 {
-			compareTraces(os.Stdout, terminalWidth(), highlightQuery, readTraceFile(filesToRead[0]), readTraceFile(filesToRead[1]))
-		} else {
-			printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, readTraceFile(filesToRead[0]))
-		}
+	checkTraceConditions(traces, workers, hotMetric)
+
+	if len(traces) == 2 {
+		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
+		return
+	} else if len(traces) == 1 {
+		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
 		return
 	}
 
 	s := NewSummary(hotMetric)
-
-	rFuncs := make([]func(s *Summary) error, len(filesToRead))
-	var err error
-	for i, f := range filesToRead {
-		rFuncs[i], err = readFile(f)
+	for _, worker := range workers {
+		err := worker(s)
 		if err != nil {
 			exit(err.Error())
-		}
-	}
-
-	for _, f := range rFuncs {
-		err = f(s)
-		if err != nil {
-			panic(err)
 		}
 	}
 	s.PrintMarkdown(os.Stdout, time.Now())
@@ -148,16 +133,14 @@ func (s *Summary) AddTable(table *TableSummary) {
 	s.tables = append(s.tables, table)
 }
 
-func checkTraceConditions(hasTrace bool, filesToRead []fileInfo, hotMetric string) {
-	if !hasTrace {
+func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) {
+	if len(traces) == 0 {
 		return
 	}
-	for _, f := range filesToRead {
-		if f.fileType != traceFile {
-			panic("Trace files cannot be mixed with other file types")
-		}
+	if len(workers) > 0 {
+		panic("Trace files cannot be mixed with other file types")
 	}
-	if len(filesToRead) > 2 {
+	if len(traces) > 2 {
 		panic("Can only summarize up to two trace files at once")
 	}
 	if hotMetric != "" {

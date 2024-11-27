@@ -183,7 +183,7 @@ Summary:
 }
 
 func TestSummarizeTraceFile(t *testing.T) {
-	tq := readTraceFile(fileInfo{filename: "../testdata/trace-log.json", fileType: traceFile})
+	tq := readTracedFile("../testdata/trace-log.json")
 	sb := &strings.Builder{}
 	printTraceSummary(sb, 80, noHighlight, tq)
 	expected := `Query: INSERT INTO region (R_REGIONKEY, R_NAME, R_COMMENT) VALUES (1, 'ASIA',...

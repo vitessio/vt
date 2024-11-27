@@ -18,7 +18,6 @@ package summarize
 
 import (
 	"encoding/json"
-	"errors"
 	"os"
 	"sort"
 	"strconv"
@@ -27,27 +26,7 @@ import (
 	"github.com/vitessio/vt/go/schema"
 )
 
-func readTraceFile(fi fileInfo) traceSummary {
-	switch fi.fileType {
-	case traceFile:
-		return readTracedQueryFile(fi.filename)
-	default:
-		panic("Unsupported file type")
-	}
-}
-
-func readFile(fi fileInfo) (func(s *Summary) error, error) {
-	switch fi.fileType {
-	case keysFile:
-		return readAnalysedQueryFile(fi.filename), nil
-	case dbInfoFile:
-		return readDBInfoFile(fi.filename), nil
-	default:
-		return nil, errors.New("unknown file format")
-	}
-}
-
-func readTracedQueryFile(fileName string) traceSummary {
+func readTracedFile(fileName string) traceSummary {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
 		exit("Error opening file: " + err.Error())
@@ -81,7 +60,7 @@ func readTracedQueryFile(fileName string) traceSummary {
 	}
 }
 
-func readAnalysedQueryFile(fileName string) func(s *Summary) error {
+func readKeysFile(fileName string) func(s *Summary) error {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
 		exit("Error opening file: " + err.Error())
