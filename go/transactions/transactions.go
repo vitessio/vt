@@ -141,7 +141,7 @@ func createPredicateInfo(
 	op sqlparser.ComparisonExprOperator,
 	value string,
 	n *normalizer,
-) predicateInfo {
+) PredicateInfo {
 	tableInfo, err := st.TableInfoForExpr(expr)
 	if err != nil {
 		panic(err)
@@ -150,7 +150,7 @@ func createPredicateInfo(
 	if table == nil {
 		panic("table not found")
 	}
-	return predicateInfo{
+	return PredicateInfo{
 		Table: table.Name.String(),
 		Col:   expr.Name.String(),
 		Op:    op,
@@ -174,7 +174,7 @@ func (n *normalizer) normalize(s string) int {
 	return id
 }
 
-func getPredicates(e sqlparser.Expr, st *semantics.SemTable, n *normalizer) (predicates []predicateInfo) {
+func getPredicates(e sqlparser.Expr, st *semantics.SemTable, n *normalizer) (predicates []PredicateInfo) {
 	// TODO: Implement support for join predicates
 	for _, predicate := range sqlparser.SplitAndExpression(nil, e) {
 		cmp, ok := predicate.(*sqlparser.ComparisonExpr)
@@ -224,7 +224,7 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 
 func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n *normalizer, tx *Signature) {
 	// Find all predicates in the where clause that use a column and a literal
-	var predicates []predicateInfo
+	var predicates []PredicateInfo
 	if query.Where != nil {
 		predicates = getPredicates(query.Where.Expr, st, n)
 	}
@@ -248,7 +248,7 @@ func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n
 }
 
 func (s *state) consumeDelete(del *sqlparser.Delete, st *semantics.SemTable, n *normalizer, tx *Signature) {
-	var predicates []predicateInfo
+	var predicates []PredicateInfo
 	if del.Where != nil {
 		predicates = getPredicates(del.Where.Expr, st, n)
 	}

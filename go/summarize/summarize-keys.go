@@ -44,16 +44,6 @@ type (
 		Pos  Position
 	}
 
-	TableSummary struct {
-		Table           string
-		ReadQueryCount  int
-		WriteQueryCount int
-		ColumnUses      map[ColumnInformation]ColumnUsage
-		JoinPredicates  []operators.JoinPredicate
-		Failed          bool
-		RowCount        int
-	}
-
 	FailuresSummary struct {
 		Error string
 		Count int

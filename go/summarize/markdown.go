@@ -22,6 +22,7 @@ import (
 	"slices"
 	"sort"
 	"strconv"
+	"strings"
 
 	humanize "github.com/dustin/go-humanize"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
@@ -147,10 +148,6 @@ func renderColumnUsageTable(md *markdown.MarkDown, summary *TableSummary) {
 }
 
 func renderTablesJoined(md *markdown.MarkDown, summary *Summary) {
-	if len(summary.queryGraph) > 0 {
-		md.PrintHeader("Tables Joined", 2)
-	}
-
 	type joinDetails struct {
 		Tbl1, Tbl2  string
 		Occurrences int
@@ -173,6 +170,14 @@ func renderTablesJoined(md *markdown.MarkDown, summary *Summary) {
 			Occurrences: occurrences,
 			predicates:  joinPredicates,
 		})
+	}
+
+	if len(joins) == 0 {
+		return
+	}
+
+	if len(summary.queryGraph) > 0 {
+		md.PrintHeader("Tables Joined", 2)
 	}
 
 	sort.Slice(joins, func(i, j int) bool {
@@ -214,4 +219,33 @@ func renderFailures(md *markdown.MarkDown, failures []FailuresSummary) {
 		rows = append(rows, []string{failure.Error, strconv.Itoa(failure.Count)})
 	}
 	md.PrintTable(headers, rows)
+}
+
+func renderTransactions(md *markdown.MarkDown, transactions []TransactionSummary) {
+	if len(transactions) == 0 {
+		return
+	}
+
+	md.PrintHeader("Transaction Patterns", 2)
+
+	for i, tx := range transactions {
+		var tables []string
+		for _, query := range tx.Queries {
+			tables = append(tables, query.Table)
+		}
+		tables = uniquefy(tables)
+		md.NewLine()
+		md.Printf("Pattern %d (Observed %d times)\n\n", i+1, tx.Count)
+		md.Printf("Tables Involved: %s\n", strings.Join(tables, ", "))
+		md.PrintHeader("Query Patterns", 3)
+		for i, query := range tx.Queries {
+			md.Printf("%d. **%s** on `%s`  \n", i+1, strings.ToTitle(query.Type), query.Table)
+			md.Printf("   Predicates: %s\n\n", strings.Join(query.Predicates, " AND "))
+		}
+	}
+}
+
+func uniquefy(s []string) []string {
+	sort.Strings(s)
+	return slices.Compact(s)
 }

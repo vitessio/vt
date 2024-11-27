@@ -15,3 +15,31 @@ limitations under the License.
 */
 
 package summarize
+
+import (
+	"vitess.io/vitess/go/slice"
+
+	"github.com/vitessio/vt/go/transactions"
+)
+
+func summarizeTransactions(s *Summary, txs []transactions.Signature) error {
+	for _, tx := range txs {
+		s.transactions = append(s.transactions, TransactionSummary{
+			Count:   tx.Count,
+			Queries: summarizeQueries(tx.Queries),
+		})
+	}
+	return nil
+}
+
+func summarizeQueries(queries []transactions.Query) (patterns []QueryPattern) {
+	for _, q := range queries {
+		patterns = append(patterns, QueryPattern{
+			Type:           q.Op,
+			Table:          q.AffectedTable,
+			Predicates:     slice.Map(q.Predicates, func(p transactions.PredicateInfo) string { return p.String() }),
+			UpdatedColumns: q.UpdatedColumns,
+		})
+	}
+	return
+}

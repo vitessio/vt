@@ -25,34 +25,14 @@ import (
 
 	"github.com/alecthomas/chroma/quick"
 	"golang.org/x/term"
-
-	"github.com/vitessio/vt/go/keys"
-	"github.com/vitessio/vt/go/markdown"
 )
 
 type (
-	Summary struct {
-		tables        []*TableSummary
-		failures      []FailuresSummary
-		hotQueries    []keys.QueryAnalysisResult
-		hotQueryFn    getMetric
-		analyzedFiles []string
-		queryGraph    queryGraph
-		hasRowCount   bool
-	}
-
 	traceSummary struct {
 		Name          string
 		TracedQueries []TracedQuery
 	}
 )
-
-func NewSummary(hotMetric string) *Summary {
-	return &Summary{
-		queryGraph: make(queryGraph),
-		hotQueryFn: getMetricForHotness(hotMetric),
-	}
-}
 
 type summaryWorker = func(s *Summary) error
 
@@ -103,43 +83,6 @@ func printSummary(hotMetric string, workers []summaryWorker) {
 		}
 	}
 	s.PrintMarkdown(os.Stdout, time.Now())
-}
-
-func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) {
-	md := &markdown.MarkDown{}
-	msg := `# Query Analysis Report
-
-**Date of Analysis**: %s  
-**Analyzed Files**: ` + "%s" + `
-
-`
-
-	for i, file := range s.analyzedFiles {
-		s.analyzedFiles[i] = "`" + file + "`"
-	}
-	md.Printf(msg, now.Format(time.DateTime), strings.Join(s.analyzedFiles, ", "))
-	renderHotQueries(md, s.hotQueries, s.hotQueryFn)
-	renderTableUsage(md, s.tables, s.hasRowCount)
-	renderTablesJoined(md, s)
-	renderFailures(md, s.failures)
-
-	_, err := md.WriteTo(out)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (s *Summary) GetTable(name string) *TableSummary {
-	for _, table := range s.tables {
-		if table.Table == name {
-			return table
-		}
-	}
-	return nil
-}
-
-func (s *Summary) AddTable(table *TableSummary) {
-	s.tables = append(s.tables, table)
 }
 
 func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) {

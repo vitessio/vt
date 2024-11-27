@@ -77,8 +77,9 @@ func readTransactionFile(fileName string) func(s *Summary) error {
 	if err != nil {
 		exit("Error parsing json: " + err.Error())
 	}
-	return func(*Summary) error {
-		return nil
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		return summarizeTransactions(s, to.Signatures)
 	}
 }
 

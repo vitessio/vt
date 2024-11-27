@@ -3,7 +3,7 @@
   "signatures": [
     {
       "count": 2,
-      "query-signatures": [
+      "queries": [
         {
           "op": "update",
           "affected_table": "tblA",

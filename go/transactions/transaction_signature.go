@@ -30,21 +30,21 @@ import (
 type (
 	Signature struct {
 		Count   int     `json:"count"`
-		Queries []Query `json:"qqueries"`
+		Queries []Query `json:"queries"`
 	}
 
 	Query struct {
 		Op             string          `json:"op"`
 		AffectedTable  string          `json:"affected_table"`
 		UpdatedColumns []string        `json:"updated_columns,omitempty"`
-		Predicates     []predicateInfo `json:"predicates,omitempty"`
+		Predicates     []PredicateInfo `json:"predicates,omitempty"`
 	}
 
 	txSignatureMap struct {
 		data map[uint64][]*Signature
 	}
 
-	predicateInfo struct {
+	PredicateInfo struct {
 		Table string                           `json:"table"`
 		Col   string                           `json:"col"`
 		Op    sqlparser.ComparisonExprOperator `json:"op"`
@@ -52,22 +52,12 @@ type (
 	}
 )
 
-func (pi predicateInfo) String() string {
+func (pi PredicateInfo) String() string {
 	val := strconv.Itoa(pi.Val)
 	if pi.Val == -1 {
 		val = "?"
 	}
 	return fmt.Sprintf("%s.%s %s %s", pi.Table, pi.Col, pi.Op.ToString(), val)
-}
-
-func (tx *Signature) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
-		Count   int     `json:"count"`
-		Queries []Query `json:"query-signatures"`
-	}{
-		Count:   tx.Count,
-		Queries: tx.Queries,
-	})
 }
 
 func (tx *Signature) Hash64() uint64 {
@@ -182,7 +172,7 @@ func (tx *Signature) CleanUp() *Signature {
 	newValues := make(map[int]int)
 	newQueries := make([]Query, 0, len(tx.Queries))
 	for _, query := range tx.Queries {
-		newPredicates := make([]predicateInfo, 0, len(query.Predicates))
+		newPredicates := make([]PredicateInfo, 0, len(query.Predicates))
 		for _, predicate := range query.Predicates {
 			if usedValues[predicate.Val] == 1 {
 				predicate.Val = -1
