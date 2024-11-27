@@ -28,12 +28,12 @@ import (
 )
 
 type (
-	TxSignature struct {
-		Count   int       `json:"count"`
-		Queries []TxQuery `json:"qqueries"`
+	Signature struct {
+		Count   int     `json:"count"`
+		Queries []Query `json:"qqueries"`
 	}
 
-	TxQuery struct {
+	Query struct {
 		Op             string          `json:"op"`
 		AffectedTable  string          `json:"affected_table"`
 		UpdatedColumns []string        `json:"updated_columns,omitempty"`
@@ -41,7 +41,7 @@ type (
 	}
 
 	txSignatureMap struct {
-		data map[uint64][]*TxSignature
+		data map[uint64][]*Signature
 	}
 
 	predicateInfo struct {
@@ -60,17 +60,17 @@ func (pi predicateInfo) String() string {
 	return fmt.Sprintf("%s.%s %s %s", pi.Table, pi.Col, pi.Op.ToString(), val)
 }
 
-func (tx *TxSignature) MarshalJSON() ([]byte, error) {
+func (tx *Signature) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Count   int       `json:"count"`
-		Queries []TxQuery `json:"query-signatures"`
+		Count   int     `json:"count"`
+		Queries []Query `json:"query-signatures"`
 	}{
 		Count:   tx.Count,
 		Queries: tx.Queries,
 	})
 }
 
-func (tx *TxSignature) Hash64() uint64 {
+func (tx *Signature) Hash64() uint64 {
 	hasher := fnv.New64a()
 
 	for _, query := range tx.Queries {
@@ -80,7 +80,7 @@ func (tx *TxSignature) Hash64() uint64 {
 	return hasher.Sum64()
 }
 
-func (tx TxQuery) addToHash(hash hash.Hash64) {
+func (tx Query) addToHash(hash hash.Hash64) {
 	_, _ = hash.Write([]byte(tx.Op))
 	_, _ = hash.Write([]byte{0})
 	_, _ = hash.Write([]byte(tx.AffectedTable))
@@ -97,7 +97,7 @@ func (tx TxQuery) addToHash(hash hash.Hash64) {
 	}
 }
 
-func (tx TxQuery) Equals(other TxQuery) bool {
+func (tx Query) Equals(other Query) bool {
 	if tx.Op != other.Op {
 		return false
 	}
@@ -125,11 +125,11 @@ func (tx TxQuery) Equals(other TxQuery) bool {
 
 func newTxSignatureMap() *txSignatureMap {
 	return &txSignatureMap{
-		data: make(map[uint64][]*TxSignature),
+		data: make(map[uint64][]*Signature),
 	}
 }
 
-func (m *txSignatureMap) Add(tx *TxSignature) {
+func (m *txSignatureMap) Add(tx *Signature) {
 	hash := tx.Hash64()
 
 	bucket, exists := m.data[hash]
@@ -137,7 +137,7 @@ func (m *txSignatureMap) Add(tx *TxSignature) {
 	// Check if the hash already exists
 	if !exists {
 		tx.Count = 1
-		m.data[hash] = []*TxSignature{tx}
+		m.data[hash] = []*Signature{tx}
 		return
 	}
 
@@ -153,7 +153,7 @@ func (m *txSignatureMap) Add(tx *TxSignature) {
 	m.data[hash] = append(bucket, tx)
 }
 
-func (tx *TxSignature) Equals(other *TxSignature) bool {
+func (tx *Signature) Equals(other *Signature) bool {
 	if len(tx.Queries) != len(other.Queries) {
 		return false
 	}
@@ -167,7 +167,7 @@ func (tx *TxSignature) Equals(other *TxSignature) bool {
 }
 
 // CleanUp removes values that are only used once and replaces them with -1
-func (tx *TxSignature) CleanUp() *TxSignature {
+func (tx *Signature) CleanUp() *Signature {
 	usedValues := make(map[int]int)
 
 	// First let's count how many times each value is used
@@ -180,7 +180,7 @@ func (tx *TxSignature) CleanUp() *TxSignature {
 	// Now we replace values only used once with -1
 	newCount := 0
 	newValues := make(map[int]int)
-	newQueries := make([]TxQuery, 0, len(tx.Queries))
+	newQueries := make([]Query, 0, len(tx.Queries))
 	for _, query := range tx.Queries {
 		newPredicates := make([]predicateInfo, 0, len(query.Predicates))
 		for _, predicate := range query.Predicates {
@@ -198,7 +198,7 @@ func (tx *TxSignature) CleanUp() *TxSignature {
 			}
 			newPredicates = append(newPredicates, predicate)
 		}
-		newQueries = append(newQueries, TxQuery{
+		newQueries = append(newQueries, Query{
 			Op:             query.Op,
 			AffectedTable:  query.AffectedTable,
 			UpdatedColumns: query.UpdatedColumns,
@@ -206,7 +206,7 @@ func (tx *TxSignature) CleanUp() *TxSignature {
 		})
 	}
 
-	return &TxSignature{
+	return &Signature{
 		Queries: newQueries,
 		Count:   tx.Count,
 	}
@@ -214,7 +214,7 @@ func (tx *TxSignature) CleanUp() *TxSignature {
 
 func (m *txSignatureMap) MarshalJSON() ([]byte, error) {
 	// Collect all interesting TxSignatures into a slice
-	var signatures []*TxSignature
+	var signatures []*Signature
 	for _, bucket := range m.data {
 		for _, txSig := range bucket {
 			if txSig.Count > 1 {

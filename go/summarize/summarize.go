@@ -61,12 +61,15 @@ func Run(files []string, hotMetric string) {
 	var workers []summaryWorker
 
 	for _, file := range files {
-		typ, _ := getFileType(file)
+		typ, err := getFileType(file)
+		if err != nil {
+			panic(err.Error())
+		}
 		switch typ {
 		case dbInfoFile:
 			workers = append(workers, readDBInfoFile(file))
 		case transactionFile:
-			fmt.Printf("transaction file: %s\n", file)
+			workers = append(workers, readTransactionFile(file))
 		case traceFile:
 			traces = append(traces, readTracedFile(file))
 		case keysFile:
@@ -76,16 +79,22 @@ func Run(files []string, hotMetric string) {
 		}
 	}
 
-	checkTraceConditions(traces, workers, hotMetric)
-
-	if len(traces) == 2 {
-		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
-		return
-	} else if len(traces) == 1 {
-		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
+	traceCount := len(traces)
+	if traceCount <= 0 {
+		printSummary(hotMetric, workers)
 		return
 	}
 
+	checkTraceConditions(traces, workers, hotMetric)
+	switch traceCount {
+	case 1:
+		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
+	case 2:
+		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
+	}
+}
+
+func printSummary(hotMetric string, workers []summaryWorker) {
 	s := NewSummary(hotMetric)
 	for _, worker := range workers {
 		err := worker(s)
@@ -134,9 +143,6 @@ func (s *Summary) AddTable(table *TableSummary) {
 }
 
 func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) {
-	if len(traces) == 0 {
-		return
-	}
 	if len(workers) > 0 {
 		panic("Trace files cannot be mixed with other file types")
 	}

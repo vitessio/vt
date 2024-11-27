@@ -204,7 +204,7 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for queries := range ch {
 		n := &normalizer{m: make(map[string]int)}
-		tx := &TxSignature{}
+		tx := &Signature{}
 		for _, query := range queries {
 			st, err := semantics.Analyze(query, "ks", s.si)
 			if err != nil {
@@ -222,7 +222,7 @@ func (s *state) consume(ch <-chan []sqlparser.Statement, wg *sync.WaitGroup) {
 	}
 }
 
-func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n *normalizer, tx *TxSignature) {
+func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n *normalizer, tx *Signature) {
 	// Find all predicates in the where clause that use a column and a literal
 	var predicates []predicateInfo
 	if query.Where != nil {
@@ -239,7 +239,7 @@ func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n
 		panic("multi-table updates not supported")
 	}
 
-	tx.Queries = append(tx.Queries, TxQuery{
+	tx.Queries = append(tx.Queries, Query{
 		Op:             "update",
 		AffectedTable:  sqlparser.String(query.TableExprs[0]),
 		UpdatedColumns: updatedColumns,
@@ -247,7 +247,7 @@ func (s *state) consumeUpdate(query *sqlparser.Update, st *semantics.SemTable, n
 	})
 }
 
-func (s *state) consumeDelete(del *sqlparser.Delete, st *semantics.SemTable, n *normalizer, tx *TxSignature) {
+func (s *state) consumeDelete(del *sqlparser.Delete, st *semantics.SemTable, n *normalizer, tx *Signature) {
 	var predicates []predicateInfo
 	if del.Where != nil {
 		predicates = getPredicates(del.Where.Expr, st, n)
@@ -257,14 +257,14 @@ func (s *state) consumeDelete(del *sqlparser.Delete, st *semantics.SemTable, n *
 		panic("multi-table updates not supported")
 	}
 
-	tx.Queries = append(tx.Queries, TxQuery{
+	tx.Queries = append(tx.Queries, Query{
 		Op:            "delete",
 		AffectedTable: sqlparser.String(del.TableExprs[0]),
 		Predicates:    predicates,
 	})
 }
 
-func (s *state) addSignature(tx *TxSignature) {
+func (s *state) addSignature(tx *Signature) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

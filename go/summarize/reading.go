@@ -24,6 +24,7 @@ import (
 
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/schema"
+	"github.com/vitessio/vt/go/transactions"
 )
 
 func readTracedFile(fileName string) traceSummary {
@@ -57,6 +58,27 @@ func readTracedFile(fileName string) traceSummary {
 	return traceSummary{
 		Name:          fileName,
 		TracedQueries: to.Queries,
+	}
+}
+
+func readTransactionFile(fileName string) func(s *Summary) error {
+	c, err := os.ReadFile(fileName)
+	if err != nil {
+		exit("Error opening file: " + err.Error())
+	}
+
+	type txOutput struct {
+		FileType   string                   `json:"fileType"`
+		Signatures []transactions.Signature `json:"signatures"`
+	}
+
+	var to txOutput
+	err = json.Unmarshal(c, &to)
+	if err != nil {
+		exit("Error parsing json: " + err.Error())
+	}
+	return func(*Summary) error {
+		return nil
 	}
 }
 
