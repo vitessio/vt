@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 
+	humanize "github.com/dustin/go-humanize"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
 	"github.com/vitessio/vt/go/keys"
@@ -114,7 +115,7 @@ func renderTableOverview(md *markdown.MarkDown, tableSummaries []*TableSummary, 
 			strconv.Itoa(summary.WriteQueryCount),
 		}
 		if includeRowCount {
-			thisRow = append(thisRow, strconv.Itoa(summary.RowCount))
+			thisRow = append(thisRow, humanize.Comma(int64(summary.RowCount)))
 		}
 
 		rows = append(rows, thisRow)
