@@ -1,6 +1,6 @@
 module github.com/vitessio/vt
 
-go 1.23.2
+go 1.23.3
 
 require (
 	github.com/sirupsen/logrus v1.9.3
@@ -30,7 +30,7 @@ require (
 	github.com/DataDog/sketches-go v1.4.6 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/aquarapid/vaultlib v0.5.1 // indirect
-	github.com/armon/go-metrics v0.5.3 // indirect
+	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -132,5 +132,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace github.com/armon/go-metrics => github.com/hashicorp/go-metrics v0.5.3
