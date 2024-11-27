@@ -16,3 +16,7 @@ Tables Involved: tblA, tblB
 2. **UPDATE** on `tblB`  
    Predicates: tblB.bar = 0 AND tblB.id = ?
 
+### Shared Predicate Values
+* Value 0 applied to:
+  - tblA.foo
+  - tblB.bar

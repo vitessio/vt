@@ -52,6 +52,10 @@ type (
 	TransactionSummary struct {
 		Count   int
 		Queries []QueryPattern
+
+		// Joins contain a list of columns that are joined together.
+		// Each outer slice is one set of columns that are joined together.
+		Joins [][]string
 	}
 
 	QueryPattern struct {

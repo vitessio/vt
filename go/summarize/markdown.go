@@ -242,6 +242,14 @@ func renderTransactions(md *markdown.MarkDown, transactions []TransactionSummary
 			md.Printf("%d. **%s** on `%s`  \n", i+1, strings.ToTitle(query.Type), query.Table)
 			md.Printf("   Predicates: %s\n\n", strings.Join(query.Predicates, " AND "))
 		}
+
+		md.PrintHeader("Shared Predicate Values", 3)
+		for idx, join := range tx.Joins {
+			md.Printf("* Value %d applied to:\n", idx)
+			for _, s := range join {
+				md.Printf("  - %s\n", s)
+			}
+		}
 		if i != len(transactions)-1 {
 			md.Printf("---\n")
 		}

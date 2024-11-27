@@ -17,6 +17,10 @@ limitations under the License.
 package summarize
 
 import (
+	"fmt"
+	"maps"
+	"slices"
+
 	"vitess.io/vitess/go/slice"
 
 	"github.com/vitessio/vt/go/transactions"
@@ -24,26 +28,25 @@ import (
 
 func summarizeTransactions(s *Summary, txs []transactions.Signature) error {
 	for _, tx := range txs {
-		patterns, interesting := summarizeQueries(tx.Queries)
-		if !interesting {
+		patterns, joins := summarizeQueries(tx.Queries)
+		if len(joins) == 0 {
 			continue
 		}
 		s.transactions = append(s.transactions, TransactionSummary{
 			Count:   tx.Count,
 			Queries: patterns,
+			Joins:   joins,
 		})
 	}
 	return nil
 }
 
-func summarizeQueries(queries []transactions.Query) (patterns []QueryPattern, interesting bool) {
+func summarizeQueries(queries []transactions.Query) (patterns []QueryPattern, joins [][]string) {
+	columnJoins := map[int][]string{}
 	for _, q := range queries {
-		if !interesting {
-			// Check if any of the predicates are interesting
-			for _, predicate := range q.Predicates {
-				if predicate.Val >= 0 {
-					interesting = true
-				}
+		for _, predicate := range q.Predicates {
+			if predicate.Val >= 0 {
+				columnJoins[predicate.Val] = append(columnJoins[predicate.Val], fmt.Sprintf("%s.%s", q.AffectedTable, predicate.Col))
 			}
 		}
 		patterns = append(patterns, QueryPattern{
@@ -52,6 +55,13 @@ func summarizeQueries(queries []transactions.Query) (patterns []QueryPattern, in
 			Predicates:     slice.Map(q.Predicates, func(p transactions.PredicateInfo) string { return p.String() }),
 			UpdatedColumns: q.UpdatedColumns,
 		})
+	}
+	joinKeys := slices.Collect(maps.Keys(columnJoins))
+	slices.Sort(joinKeys)
+
+	for _, key := range joinKeys {
+		cols := columnJoins[key]
+		joins = append(joins, cols)
 	}
 	return
 }
