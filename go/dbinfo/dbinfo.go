@@ -60,8 +60,9 @@ type TableInfo struct {
 }
 
 type Info struct {
-	FileType string      `json:"fileType"`
-	Tables   []TableInfo `json:"tables"`
+	FileType        string             `json:"fileType"`
+	Tables          []*TableInfo       `json:"tables"`
+	GlobalVariables *map[string]string `json:"globalVariables"`
 }
 
 func Get(cfg Config) (*Info, error) {
@@ -79,7 +80,7 @@ func Get(cfg Config) (*Info, error) {
 		return nil, err
 	}
 
-	var tableInfo []TableInfo
+	var tableInfo []*TableInfo
 	tableMap := make(map[string]*TableInfo)
 
 	for tableName, tableRows := range ts {
@@ -106,12 +107,18 @@ func Get(cfg Config) (*Info, error) {
 	}
 
 	for tableName := range tableMap {
-		tableInfo = append(tableInfo, *tableMap[tableName])
+		tableInfo = append(tableInfo, tableMap[tableName])
+	}
+
+	globalVariables, err := dbh.getGlobalVariables()
+	if err != nil {
+		return nil, err
 	}
 
 	dbInfo := &Info{
-		FileType: "dbinfo",
-		Tables:   tableInfo,
+		FileType:        "dbinfo",
+		Tables:          tableInfo,
+		GlobalVariables: globalVariables,
 	}
 	return dbInfo, nil
 }

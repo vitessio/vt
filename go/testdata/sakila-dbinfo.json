@@ -1,5 +1,10 @@
 {
   "fileType": "dbinfo",
+  "globalVariables": {
+    "binlog_format": "ROW",
+    "binlog_row_image": "FULL",
+    "log_bin": "ON"
+  },
   "tables": [
     {
       "name": "inventory",

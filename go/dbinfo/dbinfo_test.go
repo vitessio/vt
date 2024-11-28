@@ -27,27 +27,41 @@ import (
 	"vitess.io/vitess/go/test/endtoend/utils"
 )
 
-func TestDBInfoRowCount(t *testing.T) {
+func TestDBInfoLoad(t *testing.T) {
 	si, err := Load("../testdata/sakila-dbinfo.json")
 	require.NoError(t, err)
 	require.NotNil(t, si)
-	require.NotEmpty(t, si.Tables)
-	require.Len(t, si.Tables, 23)
-	var tables []string
-	for _, table := range si.Tables {
-		tables = append(tables, table.Name)
-	}
-	require.Contains(t, tables, "actor")
-	require.NotContains(t, tables, "foo")
-	for _, table := range si.Tables {
-		require.NotEmpty(t, table.Name)
-		switch table.Name {
-		case "language":
-			require.Equal(t, 6, table.Rows)
-		case "film":
-			require.Equal(t, 1000, table.Rows)
+
+	t.Run("validateTableInfo", func(t *testing.T) {
+		require.NotEmpty(t, si.Tables)
+		require.Len(t, si.Tables, 23)
+		var tables []string
+		for _, table := range si.Tables {
+			tables = append(tables, table.Name)
 		}
-	}
+		require.Contains(t, tables, "actor")
+		require.NotContains(t, tables, "foo")
+		for _, table := range si.Tables {
+			require.NotEmpty(t, table.Name)
+			switch table.Name {
+			case "language":
+				require.Equal(t, 6, table.Rows)
+			case "film":
+				require.Equal(t, 1000, table.Rows)
+			}
+		}
+	})
+
+	t.Run("validateGlobalVariables", func(t *testing.T) {
+		require.NotEmpty(t, si.GlobalVariables)
+		require.Len(t, *si.GlobalVariables, 3)
+		expected := map[string]string{
+			"binlog_format":    "ROW",
+			"binlog_row_image": "FULL",
+			"log_bin":          "ON",
+		}
+		require.EqualValues(t, expected, *si.GlobalVariables)
+	})
 }
 
 func TestDBInfoGet(t *testing.T) {
@@ -56,6 +70,7 @@ func TestDBInfoGet(t *testing.T) {
 
 	err := clusterInstance.StartTopo()
 	require.NoError(t, err)
+
 	schemaFile := "../testdata/sakila-schema-ddls.sql"
 	schemaBytes, err := os.ReadFile(schemaFile)
 	require.NoError(t, err)
@@ -124,5 +139,12 @@ func TestDBInfoGet(t *testing.T) {
 		require.Empty(t, colLastUpdate.KeyType)
 		require.False(t, colLastUpdate.IsNullable)
 		require.Equal(t, "default_generated on update current_timestamp", colLastUpdate.Extra)
+	})
+
+	t.Run("getGlobalVariables", func(t *testing.T) {
+		gv, err := dbh.getGlobalVariables()
+		require.NoError(t, err)
+		require.NotNil(t, gv)
+		require.NotEmpty(t, (gv))
 	})
 }
