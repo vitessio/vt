@@ -83,7 +83,7 @@ func TestDBInfoGet(t *testing.T) {
 	require.NoError(t, err)
 	defer cancel()
 
-	t.Run("createSchema", func(t *testing.T) {
+	t.Run("create schema", func(t *testing.T) {
 		conn, err := mysql.Connect(context.Background(), &cp)
 		require.NoError(t, err)
 		qr, err := conn.ExecuteFetch("show databases", 1000, false)
@@ -100,19 +100,17 @@ func TestDBInfoGet(t *testing.T) {
 
 	dbh := NewDBHelper(&cp)
 
-	t.Run("getTableSizes", func(t *testing.T) {
+	t.Run("table sizes", func(t *testing.T) {
 		ts, err := dbh.getTableSizes()
 		require.NoError(t, err)
-		require.NotNil(t, ts)
 		require.Len(t, ts, 16)
 		require.Equal(t, 6, ts["language"])
 		require.Equal(t, 1000, ts["film"])
 	})
 
-	t.Run("getColumnInfo", func(t *testing.T) {
+	t.Run("column info", func(t *testing.T) {
 		tc, err := dbh.getColumnInfo()
 		require.NoError(t, err)
-		require.NotNil(t, tc)
 		require.Len(t, tc, 16)
 
 		require.Len(t, tc["language"], 3)
@@ -141,10 +139,9 @@ func TestDBInfoGet(t *testing.T) {
 		require.Equal(t, "default_generated on update current_timestamp", colLastUpdate.Extra)
 	})
 
-	t.Run("getGlobalVariables", func(t *testing.T) {
+	t.Run("global variables", func(t *testing.T) {
 		gv, err := dbh.getGlobalVariables()
 		require.NoError(t, err)
-		require.NotNil(t, gv)
-		require.NotEmpty(t, (gv))
+		require.NotEmpty(t, gv)
 	})
 }
