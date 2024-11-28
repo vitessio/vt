@@ -22,8 +22,8 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/vitessio/vt/go/dbinfo"
 	"github.com/vitessio/vt/go/keys"
-	"github.com/vitessio/vt/go/schema"
 	"github.com/vitessio/vt/go/transactions"
 )
 
@@ -103,7 +103,7 @@ func readKeysFile(fileName string) func(s *Summary) error {
 }
 
 func readDBInfoFile(fileName string) func(s *Summary) error {
-	schemaInfo, err := schema.Load(fileName)
+	schemaInfo, err := dbinfo.Load(fileName)
 	if err != nil {
 		panic(err)
 	}
