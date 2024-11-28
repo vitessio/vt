@@ -26,6 +26,7 @@ import (
 
 func testerCmd() *cobra.Command {
 	var cfg vttester.Config
+	var inputType string
 
 	cmd := &cobra.Command{
 		Aliases: []string{"test"},
@@ -36,6 +37,12 @@ func testerCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg.Tests = args
 			cfg.Compare = true
+			loader, err := configureLoader(inputType, true)
+			if err != nil {
+				return err
+			}
+			cfg.Loader = loader
+
 			return usageErr(cmd, vttester.Run(cfg))
 		},
 	}
@@ -44,6 +51,7 @@ func testerCmd() *cobra.Command {
 
 	cmd.Flags().BoolVar(&cfg.OLAP, "olap", false, "Use OLAP to run the queries.")
 	cmd.Flags().BoolVar(&cfg.XUnit, "xunit", false, "Get output in an xml file instead of errors directory")
+	addInputTypeFlag(cmd, &inputType)
 
 	return cmd
 }
