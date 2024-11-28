@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
 )
 
@@ -67,15 +68,25 @@ func createForceGraphData(s *Summary) forceGraphData {
 func renderQueryGraph(s *Summary) {
 	data := createForceGraphData(s)
 
-	// Start the HTTP server
-	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-		serveIndex(w, data)
-	})
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		panic(err)
+	}
+	defer listener.Close()
 
-	port := "1010"
-	fmt.Printf("Server started at http://localhost:%s\n", port)
+	// Get the assigned port
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		exit("could not create a listener")
+	}
+	fmt.Printf("Server started at http://localhost:%d\nExit the program with CTRL+C\n", addr.Port)
+
+	// Start the server
 	// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around timeouts
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	err = http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		serveIndex(w, data)
+	}))
+	if err != nil {
 		exit(err.Error())
 	}
 }
