@@ -36,7 +36,7 @@ func TestGetFileType(t *testing.T) {
 			expectedType: keysFile,
 		},
 		{
-			filename:     "../testdata/sakila-schema-info.json",
+			filename:     "../testdata/sakila-dbinfo.json",
 			expectedType: dbInfoFile,
 		},
 		{

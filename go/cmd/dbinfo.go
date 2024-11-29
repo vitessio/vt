@@ -20,23 +20,23 @@ import (
 	"github.com/spf13/cobra"
 	"vitess.io/vitess/go/mysql"
 
-	"github.com/vitessio/vt/go/schema"
+	"github.com/vitessio/vt/go/dbinfo"
 )
 
-func schemaCmd() *cobra.Command {
+func dbinfoCmd() *cobra.Command {
 	var vtParams mysql.ConnParams
 
 	cmd := &cobra.Command{
-		Use:     "schema ",
+		Use:     "dbinfo ",
 		Short:   "Loads info from the database including row counts",
-		Example: "vt schema",
+		Example: "vt dbinfo",
 		Args:    cobra.ExactArgs(0),
 		RunE: func(_ *cobra.Command, _ []string) error {
-			cfg := schema.Config{
+			cfg := dbinfo.Config{
 				VTParams: vtParams,
 			}
 
-			return schema.Run(cfg)
+			return dbinfo.Run(cfg)
 		},
 	}
 

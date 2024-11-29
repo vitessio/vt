@@ -1,15 +1,25 @@
 # VT Utilities
 
-The `vt` binary encapsulates several utility tools for Vitess, providing a comprehensive suite for testing, summarizing, and query analysis.
+The `vt` binary encapsulates several utility tools for Vitess, providing a comprehensive suite for testing, summarizing,
+and query analysis.
 
 ## Tools Included
-- **`vt test`**: A testing utility using the same test files as the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
-- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, joins, and column usage.
-- **`vt transactions`**: A tool that analyzes query logs to identify transaction patterns and outputs a JSON report detailing these patterns.
-- **`vt trace`**: A tool that generates execution traces for queries without comparing against MySQL. It helps analyze query behavior and performance in Vitess environments.
+
+- **`vt test`**: A testing utility using the same test files as
+  the [MySQL Test Framework](https://github.com/mysql/mysql-server/tree/8.0/mysql-test). It compares the results of
+  identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
+- **`vt keys`**: A utility that analyzes query logs and provides information about queries, tables, joins, and column
+  usage.
+- **`vt transactions`**: A tool that analyzes query logs to identify transaction patterns and outputs a JSON report
+  detailing these patterns.
+- **`vt trace`**: A tool that generates execution traces for queries without comparing against MySQL. It helps analyze
+  query behavior and performance in Vitess environments.
 - **`vt summarize`**: A tool used to summarize or compare trace logs or key logs for easier human consumption.
+- **`vt dbinfo`**: A tool that provides information about the database schema, including row counts, useful column
+  attributes and relevant subset of global variables.
 
 ## Installation
+
 You can install `vt` using the following command:
 
 ```bash
@@ -18,7 +28,8 @@ go install github.com/vitessio/vt/go/vt@latest
 
 ## Testing Methodology
 
-To verify compatibility and correctness, the testing strategy involves running identical queries on both MySQL and vtgate, followed by a comparison of results. The process includes:
+To verify compatibility and correctness, the testing strategy involves running identical queries on both MySQL and
+vtgate, followed by a comparison of results. The process includes:
 
 1. **Query Execution**: Each test query is executed on both MySQL and vtgate.
 2. **Result Comparison**: The returned data, result set structure (column types, order), and errors are compared.
@@ -27,7 +38,9 @@ To verify compatibility and correctness, the testing strategy involves running i
 This dual-testing strategy ensures high confidence in vtgate's compatibility with MySQL.
 
 ### Sharded Testing Strategy
-Vitess operates in a sharded environment, presenting unique challenges, especially during schema changes (DDL). The `vt test` tool handles these by converting DDL statements into VSchema commands.
+
+Vitess operates in a sharded environment, presenting unique challenges, especially during schema changes (DDL). The
+`vt test` tool handles these by converting DDL statements into VSchema commands.
 
 Here's an example of running `vt test`:
 
@@ -60,7 +73,9 @@ vt trace --vschema=t/vschema.json --backup-path=/path/to/backup --number-of-shar
 ```
 
 `vt trace` accepts most of the same configuration flags as `vt test`, including:
-- `--sharded`: Enable auto-sharded mode - uses primary keys as sharding keys. Not a good idea for a production environment, but can be used to ensure that all queries work in a sharded environment. 
+
+- `--sharded`: Enable auto-sharded mode - uses primary keys as sharding keys. Not a good idea for a production
+  environment, but can be used to ensure that all queries work in a sharded environment.
 - `--vschema`: Specify the VSchema configuration
 - `--backup-path`: Initialize from a backup
 - `--number-of-shards`: Specify the number of shards to bring up
@@ -69,6 +84,7 @@ vt trace --vschema=t/vschema.json --backup-path=/path/to/backup --number-of-shar
 Both `vt trace` and `vt keys` support different input file formats through the `--input-type` flag:
 
 Example using different input types:
+
 ```bash
 # Analyze SQL file or slow query log
 vt trace slow-query.log > trace-log.json
@@ -90,7 +106,7 @@ vt summarize trace-log1.json trace-log2.json  # Compare two traces
 ## Key Analysis Workflow
 
 `vt keys` analyzes query logs and outputs detailed information about tables, columns usage and joins in queries.
-This data can be summarized using `vt summarize`. 
+This data can be summarized using `vt summarize`.
 Here's a typical workflow:
 
 1. **Run `vt keys` to analyze queries**:
@@ -106,7 +122,8 @@ Here's a typical workflow:
    vt trace --input-type=vtgate-log vtgate-querylog.log > trace-log.json
    ```
 
-This command generates a `keys-log.json` file that contains a detailed analysis of table and column usage from the queries.
+This command generates a `keys-log.json` file that contains a detailed analysis of table and column usage from the
+queries.
 
 2. **Summarize the `keys-log` using `vt summarize`**:
 
@@ -114,8 +131,16 @@ This command generates a `keys-log.json` file that contains a detailed analysis 
    vt summarize keys-log.json
    ```
 
-   This command summarizes the key analysis, providing insight into which tables and columns are used across queries, and how frequently they are involved in filters, groupings, and joins.  
+   This command summarizes the key analysis, providing insight into which tables and columns are used across queries,
+   and how frequently they are involved in filters, groupings, and joins.  
    [Here](https://github.com/vitessio/vt/blob/main/go/summarize/testdata/keys-summary.md) is an example summary report.
+
+   If you have access to the running database, you can use `vt dbinfo > dbinfo.json` and pass it to `summarize` so 
+   that the analysis can take into the account the additional information from the database schema and configuration:
+
+   ```bash
+   vt summarize keys-log.json dbinfo.json
+   ```
 
 ## Transaction Analysis with vt transactions
 The `vt transactions` command is designed to analyze query logs and identify patterns of transactional queries. 
@@ -156,4 +181,5 @@ Vitess Tester is licensed under the Apache 2.0 license. See the [LICENSE](./LICE
 
 ## Acknowledgments
 
-Vitess Tester started as a fork from [pingcap/mysql-tester](https://github.com/pingcap/mysql-tester). We thank the original authors for their foundational work.
+Vitess Tester started as a fork from [pingcap/mysql-tester](https://github.com/pingcap/mysql-tester). We thank the
+original authors for their foundational work.

@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package schema
+package dbinfo
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 
@@ -47,14 +45,24 @@ func run(out io.Writer, cfg Config) error {
 	return err
 }
 
+type TableColumn struct {
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	KeyType    string `json:"keyType,omitempty"`
+	IsNullable bool   `json:"isNullable,omitempty"`
+	Extra      string `json:"extra,omitempty"`
+}
+
 type TableInfo struct {
-	Name string `json:"name"`
-	Rows int    `json:"rows"`
+	Name    string         `json:"name"`
+	Rows    int            `json:"rows"`
+	Columns []*TableColumn `json:"columns"`
 }
 
 type Info struct {
-	FileType string      `json:"fileType"`
-	Tables   []TableInfo `json:"tables"`
+	FileType        string            `json:"fileType"`
+	Tables          []*TableInfo      `json:"tables"`
+	GlobalVariables map[string]string `json:"globalVariables"`
 }
 
 func Get(cfg Config) (*Info, error) {
@@ -66,29 +74,53 @@ func Get(cfg Config) (*Info, error) {
 		DbName: cfg.VTParams.DbName,
 	}
 
-	vtConn, err := mysql.Connect(context.Background(), vtParams)
+	dbh := NewDBHelper(vtParams)
+	ts, err := dbh.getTableSizes()
 	if err != nil {
 		return nil, err
 	}
-	defer vtConn.Close()
-	queryTableSizes := "SELECT table_name, table_rows FROM information_schema.tables WHERE table_schema = '%s' and table_type = 'BASE TABLE'"
-	qr, err := vtConn.ExecuteFetch(fmt.Sprintf(queryTableSizes, cfg.VTParams.DbName), -1, false)
-	if err != nil {
-		return nil, err
-	}
-	var tables []TableInfo
-	for _, row := range qr.Rows {
-		tableName := row[0].ToString()
-		tableRows, _ := row[1].ToInt64()
-		tables = append(tables, TableInfo{
+
+	var tableInfo []*TableInfo
+	tableMap := make(map[string]*TableInfo)
+
+	for tableName, tableRows := range ts {
+		tableMap[tableName] = &TableInfo{
 			Name: tableName,
-			Rows: int(tableRows),
-		})
+			Rows: tableRows,
+		}
 	}
-	schemaInfo := &Info{
-		Tables: tables,
+
+	tc, err := dbh.getColumnInfo()
+	if err != nil {
+		return nil, err
 	}
-	return schemaInfo, nil
+
+	for tableName, columns := range tc {
+		ti, ok := tableMap[tableName]
+		if !ok {
+			ti = &TableInfo{
+				Name: tableName,
+			}
+			tableMap[tableName] = ti
+		}
+		ti.Columns = columns
+	}
+
+	for tableName := range tableMap {
+		tableInfo = append(tableInfo, tableMap[tableName])
+	}
+
+	globalVariables, err := dbh.getGlobalVariables()
+	if err != nil {
+		return nil, err
+	}
+
+	dbInfo := &Info{
+		FileType:        "dbinfo",
+		Tables:          tableInfo,
+		GlobalVariables: globalVariables,
+	}
+	return dbInfo, nil
 }
 
 func Load(fileName string) (*Info, error) {
