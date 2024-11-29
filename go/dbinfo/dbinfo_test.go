@@ -54,13 +54,13 @@ func TestDBInfoLoad(t *testing.T) {
 
 	t.Run("validateGlobalVariables", func(t *testing.T) {
 		require.NotEmpty(t, si.GlobalVariables)
-		require.Len(t, *si.GlobalVariables, 3)
+		require.Len(t, si.GlobalVariables, 3)
 		expected := map[string]string{
 			"binlog_format":    "ROW",
 			"binlog_row_image": "FULL",
 			"log_bin":          "ON",
 		}
-		require.EqualValues(t, expected, *si.GlobalVariables)
+		require.EqualValues(t, expected, si.GlobalVariables)
 	})
 }
 

@@ -49,7 +49,7 @@ type TableColumn struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
 	KeyType    string `json:"keyType,omitempty"`
-	IsNullable bool   `json:"isNullable"`
+	IsNullable bool   `json:"isNullable,omitempty"`
 	Extra      string `json:"extra,omitempty"`
 }
 
@@ -60,9 +60,9 @@ type TableInfo struct {
 }
 
 type Info struct {
-	FileType        string             `json:"fileType"`
-	Tables          []*TableInfo       `json:"tables"`
-	GlobalVariables *map[string]string `json:"globalVariables"`
+	FileType        string            `json:"fileType"`
+	Tables          []*TableInfo      `json:"tables"`
+	GlobalVariables map[string]string `json:"globalVariables"`
 }
 
 func Get(cfg Config) (*Info, error) {

@@ -44,7 +44,7 @@ func dbinfoCmd() *cobra.Command {
 	cmd.Flags().IntVarP(&vtParams.Port, "port", "", 3306, "Database port")
 	cmd.Flags().StringVarP(&vtParams.Uname, "user", "", "root", "Database user")
 	cmd.Flags().StringVarP(&vtParams.Pass, "password", "", "", "Database password")
-	cmd.Flags().StringVarP(&vtParams.DbName, "database", "", "sakila", "Database name")
+	cmd.Flags().StringVarP(&vtParams.DbName, "database", "", "", "Database name")
 
 	return cmd
 }

@@ -19,7 +19,6 @@ package dbinfo
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"vitess.io/vitess/go/mysql"
@@ -99,13 +98,14 @@ func (dbh *DBHelper) getColumnInfo() (tableColumns, error) {
 	return tc, nil
 }
 
-func (dbh *DBHelper) getGlobalVariables() (*map[string]string, error) {
+func (dbh *DBHelper) getGlobalVariables() (map[string]string, error) {
 	// Currently only use simple regex to match the variable names
 	// If the variable name contains ".*" then it is treated as a regex, else exact match
 	globalVariablesToFetch := []string{
 		"binlog_format",
 		"binlog_row_image",
 		"log_bin",
+		"gtid_mode",
 	}
 
 	vtConn, cancel, err := dbh.GetConnection()
@@ -123,31 +123,10 @@ func (dbh *DBHelper) getGlobalVariables() (*map[string]string, error) {
 		variable := row[0].ToString()
 		value := row[1].ToString()
 		for _, gvName := range globalVariablesToFetch {
-			if strings.Contains(gvName, ".*") {
-				matched, _ := regexp.MatchString(gvName, variable)
-				if matched {
-					gv[variable] = value
-				}
-			} else if variable == gvName {
+			if variable == gvName {
 				gv[variable] = value
 			}
 		}
 	}
-	return &gv, nil
+	return gv, nil
 }
-
-// For future enhancements
-// Primary key info
-// SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME
-// FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-// WHERE CONSTRAINT_NAME = 'PRIMARY' AND TABLE_SCHEMA = 'your_database_name';
-
-// Indexes
-// SELECT TABLE_SCHEMA, TABLE_NAME, INDEX_NAME, COLUMN_NAME, NON_UNIQUE
-// FROM INFORMATION_SCHEMA.STATISTICS
-// WHERE TABLE_SCHEMA = 'your_database_name'
-
-// Foreign Keys with Dependency Information
-// SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-// FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-// WHERE TABLE_SCHEMA = 'your_database_name' AND REFERENCED_TABLE_NAME IS NOT NULL;
