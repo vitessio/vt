@@ -144,4 +144,68 @@ func TestDBInfoGet(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, gv)
 	})
+
+	t.Run("primary keys", func(t *testing.T) {
+		pks, err := dbh.getPrimaryKeys()
+		require.NoError(t, err)
+		require.Len(t, pks, 16)
+		want := map[string][]string{
+			"actor":         {"actor_id"},
+			"film":          {"film_id"},
+			"language":      {"language_id"},
+			"film_category": {"film_id", "category_id"},
+			"film_actor":    {"actor_id", "film_id"},
+		}
+		for tableName, columns := range want {
+			pk, ok := pks[tableName]
+			require.True(t, ok)
+			require.Equal(t, columns, pk.columns)
+		}
+	})
+
+	t.Run("indexes", func(t *testing.T) {
+		idxs, err := dbh.getIndexes()
+		require.NoError(t, err)
+		require.Equal(t, 16, idxs.len())
+		idx, ok := idxs["film_actor"]
+		require.True(t, ok)
+		require.Len(t, idx.indexes, 2)
+		require.Equal(t, "idx_fk_film_id", idx.indexes["idx_fk_film_id"].indexName)
+		require.Equal(t, []string{"film_id"}, idx.indexes["idx_fk_film_id"].columns)
+		idx, ok = idxs["rental"]
+		require.True(t, ok)
+		require.Len(t, idx.indexes, 5)
+		require.Equal(t, "rental_date", idx.indexes["rental_date"].indexName)
+		require.Equal(t, []string{"rental_date", "inventory_id", "customer_id"}, idx.indexes["rental_date"].columns)
+		require.Equal(t, "PRIMARY", idx.indexes["PRIMARY_KEY"].indexName)
+		require.Equal(t, []string{"rental_id"}, idx.indexes["PRIMARY_KEY"].columns)
+	})
+
+	t.Run("foreign keys", func(t *testing.T) {
+		fks, err := dbh.getForeignKeys()
+		require.NoError(t, err)
+		require.Len(t, fks, 11)
+		fk, ok := fks["city"]
+		require.True(t, ok)
+		require.Len(t, fk, 1)
+		require.Equal(t, "city", fk[0].tableName)
+		require.Equal(t, "country_id", fk[0].columnName)
+		require.Equal(t, "fk_city_country", fk[0].constraintName)
+		require.Equal(t, "country", fk[0].referencedTableName)
+		require.Equal(t, "country_id", fk[0].referencedColumnName)
+
+		fk, ok = fks["store"]
+		require.True(t, ok)
+		require.Len(t, fk, 2)
+		require.Equal(t, "store", fk[0].tableName)
+		require.Equal(t, "address_id", fk[0].columnName)
+		require.Equal(t, "fk_store_address", fk[0].constraintName)
+		require.Equal(t, "address", fk[0].referencedTableName)
+		require.Equal(t, "address_id", fk[0].referencedColumnName)
+		require.Equal(t, "store", fk[1].tableName)
+		require.Equal(t, "manager_staff_id", fk[1].columnName)
+		require.Equal(t, "fk_store_staff", fk[1].constraintName)
+		require.Equal(t, "staff", fk[1].referencedTableName)
+		require.Equal(t, "staff_id", fk[1].referencedColumnName)
+	})
 }
