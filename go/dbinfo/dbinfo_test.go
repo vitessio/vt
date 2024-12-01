@@ -156,10 +156,10 @@ func TestDBInfoGet(t *testing.T) {
 			"film_category": {"film_id", "category_id"},
 			"film_actor":    {"actor_id", "film_id"},
 		}
-		for tableName, columns := range want {
+		for tableName, Columns := range want {
 			pk, ok := pks[tableName]
 			require.True(t, ok)
-			require.Equal(t, columns, pk.columns)
+			require.Equal(t, Columns, pk.Columns)
 		}
 	})
 
@@ -169,16 +169,16 @@ func TestDBInfoGet(t *testing.T) {
 		require.Equal(t, 16, idxs.len())
 		idx, ok := idxs["film_actor"]
 		require.True(t, ok)
-		require.Len(t, idx.indexes, 2)
-		require.Equal(t, "idx_fk_film_id", idx.indexes["idx_fk_film_id"].indexName)
-		require.Equal(t, []string{"film_id"}, idx.indexes["idx_fk_film_id"].columns)
+		require.Len(t, idx.Indexes, 2)
+		require.Equal(t, "idx_fk_film_id", idx.Indexes["idx_fk_film_id"].IndexName)
+		require.Equal(t, []string{"film_id"}, idx.Indexes["idx_fk_film_id"].Columns)
 		idx, ok = idxs["rental"]
 		require.True(t, ok)
-		require.Len(t, idx.indexes, 5)
-		require.Equal(t, "rental_date", idx.indexes["rental_date"].indexName)
-		require.Equal(t, []string{"rental_date", "inventory_id", "customer_id"}, idx.indexes["rental_date"].columns)
-		require.Equal(t, "PRIMARY", idx.indexes["PRIMARY_KEY"].indexName)
-		require.Equal(t, []string{"rental_id"}, idx.indexes["PRIMARY_KEY"].columns)
+		require.Len(t, idx.Indexes, 5)
+		require.Equal(t, "rental_date", idx.Indexes["rental_date"].IndexName)
+		require.Equal(t, []string{"rental_date", "inventory_id", "customer_id"}, idx.Indexes["rental_date"].Columns)
+		require.Equal(t, "PRIMARY", idx.Indexes["PRIMARY_KEY"].IndexName)
+		require.Equal(t, []string{"rental_id"}, idx.Indexes["PRIMARY_KEY"].Columns)
 	})
 
 	t.Run("foreign keys", func(t *testing.T) {
@@ -188,24 +188,24 @@ func TestDBInfoGet(t *testing.T) {
 		fk, ok := fks["city"]
 		require.True(t, ok)
 		require.Len(t, fk, 1)
-		require.Equal(t, "city", fk[0].tableName)
-		require.Equal(t, "country_id", fk[0].columnName)
-		require.Equal(t, "fk_city_country", fk[0].constraintName)
-		require.Equal(t, "country", fk[0].referencedTableName)
-		require.Equal(t, "country_id", fk[0].referencedColumnName)
+		require.Equal(t, "city", fk[0].TableName)
+		require.Equal(t, "country_id", fk[0].ColumnName)
+		require.Equal(t, "fk_city_country", fk[0].ConstraintName)
+		require.Equal(t, "country", fk[0].ReferencedTableName)
+		require.Equal(t, "country_id", fk[0].ReferencedColumnName)
 
 		fk, ok = fks["store"]
 		require.True(t, ok)
 		require.Len(t, fk, 2)
-		require.Equal(t, "store", fk[0].tableName)
-		require.Equal(t, "address_id", fk[0].columnName)
-		require.Equal(t, "fk_store_address", fk[0].constraintName)
-		require.Equal(t, "address", fk[0].referencedTableName)
-		require.Equal(t, "address_id", fk[0].referencedColumnName)
-		require.Equal(t, "store", fk[1].tableName)
-		require.Equal(t, "manager_staff_id", fk[1].columnName)
-		require.Equal(t, "fk_store_staff", fk[1].constraintName)
-		require.Equal(t, "staff", fk[1].referencedTableName)
-		require.Equal(t, "staff_id", fk[1].referencedColumnName)
+		require.Equal(t, "store", fk[0].TableName)
+		require.Equal(t, "address_id", fk[0].ColumnName)
+		require.Equal(t, "fk_store_address", fk[0].ConstraintName)
+		require.Equal(t, "address", fk[0].ReferencedTableName)
+		require.Equal(t, "address_id", fk[0].ReferencedColumnName)
+		require.Equal(t, "store", fk[1].TableName)
+		require.Equal(t, "manager_staff_id", fk[1].ColumnName)
+		require.Equal(t, "fk_store_staff", fk[1].ConstraintName)
+		require.Equal(t, "staff", fk[1].ReferencedTableName)
+		require.Equal(t, "staff_id", fk[1].ReferencedColumnName)
 	})
 }

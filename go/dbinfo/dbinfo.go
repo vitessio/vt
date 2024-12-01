@@ -63,6 +63,9 @@ type Info struct {
 	FileType        string            `json:"fileType"`
 	Tables          []*TableInfo      `json:"tables"`
 	GlobalVariables map[string]string `json:"globalVariables"`
+	PrimaryKeys     PrimaryKeys       `json:"primaryKeys"`
+	Indexes         Indexes           `json:"indexes"`
+	ForeignKeys     ForeignKeys       `json:"foreignKeys"`
 }
 
 func Get(cfg Config) (*Info, error) {
@@ -115,10 +118,28 @@ func Get(cfg Config) (*Info, error) {
 		return nil, err
 	}
 
+	primaryKeys, err := dbh.getPrimaryKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	indexes, err := dbh.getIndexes()
+	if err != nil {
+		return nil, err
+	}
+
+	foreignKeys, err := dbh.getForeignKeys()
+	if err != nil {
+		return nil, err
+	}
+
 	dbInfo := &Info{
 		FileType:        "dbinfo",
 		Tables:          tableInfo,
 		GlobalVariables: globalVariables,
+		PrimaryKeys:     primaryKeys,
+		Indexes:         indexes,
+		ForeignKeys:     foreignKeys,
 	}
 	return dbInfo, nil
 }
