@@ -54,10 +54,11 @@ func TestDBInfoLoad(t *testing.T) {
 
 	t.Run("validateGlobalVariables", func(t *testing.T) {
 		require.NotEmpty(t, si.GlobalVariables)
-		require.Len(t, si.GlobalVariables, 3)
+		require.Len(t, si.GlobalVariables, 4)
 		expected := map[string]string{
 			"binlog_format":    "ROW",
 			"binlog_row_image": "FULL",
+			"gtid_mode":        "OFF",
 			"log_bin":          "ON",
 		}
 		require.EqualValues(t, expected, si.GlobalVariables)
@@ -159,26 +160,26 @@ func TestDBInfoGet(t *testing.T) {
 		for tableName, Columns := range want {
 			pk, ok := pks[tableName]
 			require.True(t, ok)
-			require.Equal(t, Columns, pk.Columns)
+			require.Equal(t, Columns, pk.columns)
 		}
 	})
 
 	t.Run("indexes", func(t *testing.T) {
 		idxs, err := dbh.getIndexes()
 		require.NoError(t, err)
-		require.Equal(t, 16, idxs.len())
+		require.Len(t, idxs, 16)
 		idx, ok := idxs["film_actor"]
 		require.True(t, ok)
-		require.Len(t, idx.Indexes, 2)
-		require.Equal(t, "idx_fk_film_id", idx.Indexes["idx_fk_film_id"].IndexName)
-		require.Equal(t, []string{"film_id"}, idx.Indexes["idx_fk_film_id"].Columns)
+		require.Len(t, idx.indexes, 2)
+		require.Equal(t, "idx_fk_film_id", idx.indexes["idx_fk_film_id"].Name)
+		require.Equal(t, []string{"film_id"}, idx.indexes["idx_fk_film_id"].Columns)
 		idx, ok = idxs["rental"]
 		require.True(t, ok)
-		require.Len(t, idx.Indexes, 5)
-		require.Equal(t, "rental_date", idx.Indexes["rental_date"].IndexName)
-		require.Equal(t, []string{"rental_date", "inventory_id", "customer_id"}, idx.Indexes["rental_date"].Columns)
-		require.Equal(t, "PRIMARY", idx.Indexes["PRIMARY_KEY"].IndexName)
-		require.Equal(t, []string{"rental_id"}, idx.Indexes["PRIMARY_KEY"].Columns)
+		require.Len(t, idx.indexes, 5)
+		require.Equal(t, "rental_date", idx.indexes["rental_date"].Name)
+		require.Equal(t, []string{"rental_date", "inventory_id", "customer_id"}, idx.indexes["rental_date"].Columns)
+		require.Equal(t, "PRIMARY", idx.indexes["PRIMARY_KEY"].Name)
+		require.Equal(t, []string{"rental_id"}, idx.indexes["PRIMARY_KEY"].Columns)
 	})
 
 	t.Run("foreign keys", func(t *testing.T) {
@@ -188,7 +189,6 @@ func TestDBInfoGet(t *testing.T) {
 		fk, ok := fks["city"]
 		require.True(t, ok)
 		require.Len(t, fk, 1)
-		require.Equal(t, "city", fk[0].TableName)
 		require.Equal(t, "country_id", fk[0].ColumnName)
 		require.Equal(t, "fk_city_country", fk[0].ConstraintName)
 		require.Equal(t, "country", fk[0].ReferencedTableName)
@@ -197,12 +197,10 @@ func TestDBInfoGet(t *testing.T) {
 		fk, ok = fks["store"]
 		require.True(t, ok)
 		require.Len(t, fk, 2)
-		require.Equal(t, "store", fk[0].TableName)
 		require.Equal(t, "address_id", fk[0].ColumnName)
 		require.Equal(t, "fk_store_address", fk[0].ConstraintName)
 		require.Equal(t, "address", fk[0].ReferencedTableName)
 		require.Equal(t, "address_id", fk[0].ReferencedColumnName)
-		require.Equal(t, "store", fk[1].TableName)
 		require.Equal(t, "manager_staff_id", fk[1].ColumnName)
 		require.Equal(t, "fk_store_staff", fk[1].ConstraintName)
 		require.Equal(t, "staff", fk[1].ReferencedTableName)

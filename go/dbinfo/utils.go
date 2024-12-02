@@ -131,20 +131,20 @@ func (dbh *DBHelper) getGlobalVariables() (map[string]string, error) {
 	return gv, nil
 }
 
-type PrimaryKey struct {
-	TableName string   `json:"tableName"`
-	Columns   []string `json:"columns"`
+type primaryKey struct {
+	tableName string
+	columns   []string
 }
-type PrimaryKeys map[string]*PrimaryKey
+type primaryKeys map[string]*primaryKey
 
-func (dbh *DBHelper) getPrimaryKeys() (PrimaryKeys, error) {
+func (dbh *DBHelper) getPrimaryKeys() (primaryKeys, error) {
 	vtConn, cancel, err := dbh.GetConnection()
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
 
-	pks := make(PrimaryKeys)
+	pks := make(primaryKeys)
 	queryPrimaryKeys := "select table_name, column_name from information_schema.key_column_usage where constraint_name = 'PRIMARY' and table_schema = '%s' order by table_name"
 	query := fmt.Sprintf(queryPrimaryKeys, dbh.vtParams.DbName)
 	qr, err := vtConn.ExecuteFetch(query, -1, false)
@@ -156,39 +156,27 @@ func (dbh *DBHelper) getPrimaryKeys() (PrimaryKeys, error) {
 		columnName := row[1].ToString()
 		pk, ok := pks[tableName]
 		if !ok {
-			pk = &PrimaryKey{TableName: tableName}
+			pk = &primaryKey{tableName: tableName}
 			pks[tableName] = pk
 		}
-		pk.Columns = append(pk.Columns, columnName)
+		pk.columns = append(pk.columns, columnName)
 	}
 	return pks, nil
 }
 
-type TableIndex struct {
-	TableName string            `json:"tableName"`
-	Indexes   map[string]*Index `json:"indexes"`
+type tableIndex struct {
+	tableName string
+	indexes   map[string]*Index
 }
 
-type Index struct {
-	IndexName string   `json:"indexName"`
-	Columns   []string `json:"columns"`
-	NonUnique bool     `json:"nonUnique,omitempty"`
-}
-
-type Indexes map[string]*TableIndex
-
-func (i *Indexes) len() int {
-	return len(*i)
-}
-
-func (dbh *DBHelper) getIndexes() (Indexes, error) {
+func (dbh *DBHelper) getIndexes() (map[string]*tableIndex, error) {
 	vtConn, cancel, err := dbh.GetConnection()
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
 
-	idxs := make(Indexes)
+	idxs := make(map[string]*tableIndex)
 	queryIndexes := "select table_name, index_name, column_name, non_unique from information_schema.statistics where table_schema = '%s' order by table_name, index_name"
 	query := fmt.Sprintf(queryIndexes, dbh.vtParams.DbName)
 	qr, err := vtConn.ExecuteFetch(query, -1, false)
@@ -202,50 +190,31 @@ func (dbh *DBHelper) getIndexes() (Indexes, error) {
 		nonUnique, _ := row[3].ToBool()
 		tidx, ok := idxs[tableName]
 		if !ok {
-			tidx = &TableIndex{TableName: tableName, Indexes: make(map[string]*Index)}
+			tidx = &tableIndex{tableName: tableName, indexes: make(map[string]*Index)}
 			idxs[tableName] = tidx
 		}
 		idxName := indexName
 		if idxName == "PRIMARY" {
 			idxName = "PRIMARY_KEY"
 		}
-		idx, ok := tidx.Indexes[idxName]
+		idx, ok := tidx.indexes[idxName]
 		if !ok {
-			idx = &Index{IndexName: indexName, NonUnique: nonUnique}
-			tidx.Indexes[idxName] = idx
+			idx = &Index{Name: indexName, NonUnique: nonUnique}
+			tidx.indexes[idxName] = idx
 		}
 		idx.Columns = append(idx.Columns, columnName)
 	}
 	return idxs, nil
 }
 
-// Foreign Keys with Dependency Information
-// SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
-// FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-// WHERE TABLE_SCHEMA = 'your_database_name' AND REFERENCED_TABLE_NAME IS NOT NULL;
-
-type ForeignKey struct {
-	TableName            string `json:"tableName"`
-	ColumnName           string `json:"columnName"`
-	ConstraintName       string `json:"constraintName"`
-	ReferencedTableName  string `json:"referencedTableName"`
-	ReferencedColumnName string `json:"referencedColumnName"`
-}
-
-func (fk *ForeignKey) String() string {
-	return fmt.Sprintf("Table: %s, Column: %s, Constraint: %s, RefTable: %s, RefColumn: %s", fk.TableName, fk.ColumnName, fk.ConstraintName, fk.ReferencedTableName, fk.ReferencedColumnName)
-}
-
-type ForeignKeys map[string][]*ForeignKey
-
-func (dbh *DBHelper) getForeignKeys() (ForeignKeys, error) {
+func (dbh *DBHelper) getForeignKeys() (map[string][]*ForeignKey, error) {
 	vtConn, cancel, err := dbh.GetConnection()
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
 
-	fks := make(ForeignKeys)
+	fks := make(map[string][]*ForeignKey)
 	queryForeignKeys := "select table_name, column_name, constraint_name, referenced_table_name, referenced_column_name from information_schema.key_column_usage where table_schema = '%s' and referenced_table_name is not null"
 	query := fmt.Sprintf(queryForeignKeys, dbh.vtParams.DbName)
 	qr, err := vtConn.ExecuteFetch(query, -1, false)
@@ -254,16 +223,11 @@ func (dbh *DBHelper) getForeignKeys() (ForeignKeys, error) {
 	}
 	for _, row := range qr.Rows {
 		tableName := row[0].ToString()
-		columnName := row[1].ToString()
-		constraintName := row[2].ToString()
-		referencedTableName := row[3].ToString()
-		referencedColumnName := row[4].ToString()
 		fk := &ForeignKey{
-			TableName:            tableName,
-			ColumnName:           columnName,
-			ConstraintName:       constraintName,
-			ReferencedTableName:  referencedTableName,
-			ReferencedColumnName: referencedColumnName,
+			ColumnName:           row[1].ToString(),
+			ConstraintName:       row[2].ToString(),
+			ReferencedTableName:  row[3].ToString(),
+			ReferencedColumnName: row[4].ToString(),
 		}
 		fks[tableName] = append(fks[tableName], fk)
 	}
