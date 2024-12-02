@@ -1,69 +1,49 @@
 {
   "fileType": "dbinfo",
-  "globalVariables": {
-    "binlog_format": "ROW",
-    "binlog_row_image": "FULL",
-    "log_bin": "ON"
-  },
   "tables": [
     {
-      "name": "inventory",
-      "rows": 4581,
+      "name": "actor",
+      "rows": 200,
       "columns": [
         {
-          "name": "inventory_id",
-          "type": "mediumint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "film_id",
+          "name": "actor_id",
           "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "store_id",
-          "type": "tinyint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "language",
-      "rows": 6,
-      "columns": [
-        {
-          "name": "language_id",
-          "type": "tinyint",
-          "keyType": "PRI",
-          "isNullable": false,
+          "keyType": "pri",
           "extra": "auto_increment"
         },
         {
-          "name": "name",
-          "type": "char",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "name": "first_name",
+          "type": "varchar"
+        },
+        {
+          "name": "last_name",
+          "type": "varchar",
+          "keyType": "mul"
         },
         {
           "name": "last_update",
           "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "actor_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_actor_last_name",
+          "columns": [
+            "last_name"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "actor_id"
+          ]
         }
       ]
     },
@@ -73,832 +53,20 @@
       "columns": [
         {
           "name": "actor_id",
-          "type": "smallint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "smallint"
         },
         {
           "name": "first_name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "varchar"
         },
         {
           "name": "last_name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "varchar"
         },
         {
           "name": "film_info",
           "type": "text",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "staff_list",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "ID",
-          "type": "tinyint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "address",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "zip code",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "phone",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "city",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "country",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "SID",
-          "type": "tinyint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "film_text",
-      "rows": 1000,
-      "columns": [
-        {
-          "name": "film_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "title",
-          "type": "varchar",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "description",
-          "type": "text",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "country",
-      "rows": 109,
-      "columns": [
-        {
-          "name": "country_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "country",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "nicer_but_slower_film_list",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "FID",
-          "type": "smallint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "title",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "description",
-          "type": "text",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "category",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "price",
-          "type": "decimal",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "length",
-          "type": "smallint",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "rating",
-          "type": "enum",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "actors",
-          "type": "text",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "film_list",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "FID",
-          "type": "smallint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "title",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "description",
-          "type": "text",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "category",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "price",
-          "type": "decimal",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "length",
-          "type": "smallint",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "rating",
-          "type": "enum",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "actors",
-          "type": "text",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "sales_by_film_category",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "category",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "total_sales",
-          "type": "decimal",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "payment",
-      "rows": 16086,
-      "columns": [
-        {
-          "name": "payment_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "customer_id",
-          "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "staff_id",
-          "type": "tinyint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "rental_id",
-          "type": "int",
-          "keyType": "MUL",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "amount",
-          "type": "decimal",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "payment_date",
-          "type": "datetime",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": true,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "staff",
-      "rows": 2,
-      "columns": [
-        {
-          "name": "staff_id",
-          "type": "tinyint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "first_name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "address_id",
-          "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "picture",
-          "type": "blob",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "email",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "store_id",
-          "type": "tinyint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "active",
-          "type": "tinyint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "username",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "password",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "film_category",
-      "rows": 1000,
-      "columns": [
-        {
-          "name": "film_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "category_id",
-          "type": "tinyint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "film_actor",
-      "rows": 5462,
-      "columns": [
-        {
-          "name": "actor_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "film_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "city",
-      "rows": 600,
-      "columns": [
-        {
-          "name": "city_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "city",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "country_id",
-          "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "customer_list",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "ID",
-          "type": "smallint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "address",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "zip code",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "phone",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "city",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "country",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "notes",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "SID",
-          "type": "tinyint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "sales_by_store",
-      "rows": 0,
-      "columns": [
-        {
-          "name": "store",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "manager",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "total_sales",
-          "type": "decimal",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        }
-      ]
-    },
-    {
-      "name": "category",
-      "rows": 16,
-      "columns": [
-        {
-          "name": "category_id",
-          "type": "tinyint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "customer",
-      "rows": 599,
-      "columns": [
-        {
-          "name": "customer_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "store_id",
-          "type": "tinyint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "first_name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_name",
-          "type": "varchar",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "email",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "address_id",
-          "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "active",
-          "type": "tinyint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "create_date",
-          "type": "datetime",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": true,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "actor",
-      "rows": 200,
-      "columns": [
-        {
-          "name": "actor_id",
-          "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "first_name",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_name",
-          "type": "varchar",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "rental",
-      "rows": 15425,
-      "columns": [
-        {
-          "name": "rental_id",
-          "type": "int",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "rental_date",
-          "type": "datetime",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "inventory_id",
-          "type": "mediumint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "customer_id",
-          "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "return_date",
-          "type": "datetime",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
-        },
-        {
-          "name": "staff_id",
-          "type": "tinyint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
-        }
-      ]
-    },
-    {
-      "name": "store",
-      "rows": 2,
-      "columns": [
-        {
-          "name": "store_id",
-          "type": "tinyint",
-          "keyType": "PRI",
-          "isNullable": false,
-          "extra": "auto_increment"
-        },
-        {
-          "name": "manager_staff_id",
-          "type": "tinyint",
-          "keyType": "UNI",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "address_id",
-          "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
-        },
-        {
-          "name": "last_update",
-          "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+          "isNullable": true
         }
       ]
     },
@@ -909,65 +77,344 @@
         {
           "name": "address_id",
           "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
+          "keyType": "pri",
           "extra": "auto_increment"
         },
         {
           "name": "address",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "varchar"
         },
         {
           "name": "address2",
           "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
+          "isNullable": true
         },
         {
           "name": "district",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "varchar"
         },
         {
           "name": "city_id",
           "type": "smallint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
+          "keyType": "mul"
         },
         {
           "name": "postal_code",
           "type": "varchar",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
+          "isNullable": true
         },
         {
           "name": "phone",
-          "type": "varchar",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "varchar"
         },
         {
           "name": "location",
           "type": "geometry",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
+          "keyType": "mul"
         },
         {
           "name": "last_update",
           "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "address_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "address_id"
+          ]
+        },
+        {
+          "Name": "idx_fk_city_id",
+          "columns": [
+            "city_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_location",
+          "columns": [
+            "location"
+          ],
+          "nonUnique": true
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "city_id",
+          "constraintName": "fk_address_city",
+          "referencedTableName": "city",
+          "referencedColumnName": "city_id"
+        }
+      ]
+    },
+    {
+      "name": "category",
+      "rows": 16,
+      "columns": [
+        {
+          "name": "category_id",
+          "type": "tinyint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "name",
+          "type": "varchar"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "category_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "category_id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "city",
+      "rows": 600,
+      "columns": [
+        {
+          "name": "city_id",
+          "type": "smallint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "city",
+          "type": "varchar"
+        },
+        {
+          "name": "country_id",
+          "type": "smallint",
+          "keyType": "mul"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "city_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_country_id",
+          "columns": [
+            "country_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "city_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "country_id",
+          "constraintName": "fk_city_country",
+          "referencedTableName": "country",
+          "referencedColumnName": "country_id"
+        }
+      ]
+    },
+    {
+      "name": "country",
+      "rows": 109,
+      "columns": [
+        {
+          "name": "country_id",
+          "type": "smallint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "country",
+          "type": "varchar"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "country_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "country_id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "customer",
+      "rows": 599,
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "smallint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "store_id",
+          "type": "tinyint",
+          "keyType": "mul"
+        },
+        {
+          "name": "first_name",
+          "type": "varchar"
+        },
+        {
+          "name": "last_name",
+          "type": "varchar",
+          "keyType": "mul"
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "address_id",
+          "type": "smallint",
+          "keyType": "mul"
+        },
+        {
+          "name": "active",
+          "type": "tinyint"
+        },
+        {
+          "name": "create_date",
+          "type": "datetime"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "isNullable": true,
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "customer_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_store_id",
+          "columns": [
+            "store_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_last_name",
+          "columns": [
+            "last_name"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "customer_id"
+          ]
+        },
+        {
+          "Name": "idx_fk_address_id",
+          "columns": [
+            "address_id"
+          ],
+          "nonUnique": true
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "address_id",
+          "constraintName": "fk_customer_address",
+          "referencedTableName": "address",
+          "referencedColumnName": "address_id"
+        },
+        {
+          "columnName": "store_id",
+          "constraintName": "fk_customer_store",
+          "referencedTableName": "store",
+          "referencedColumnName": "store_id"
+        }
+      ]
+    },
+    {
+      "name": "customer_list",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "ID",
+          "type": "smallint"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "address",
+          "type": "varchar"
+        },
+        {
+          "name": "zip code",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "phone",
+          "type": "varchar"
+        },
+        {
+          "name": "city",
+          "type": "varchar"
+        },
+        {
+          "name": "country",
+          "type": "varchar"
+        },
+        {
+          "name": "notes",
+          "type": "varchar"
+        },
+        {
+          "name": "SID",
+          "type": "tinyint"
         }
       ]
     },
@@ -978,95 +425,909 @@
         {
           "name": "film_id",
           "type": "smallint",
-          "keyType": "PRI",
-          "isNullable": false,
+          "keyType": "pri",
           "extra": "auto_increment"
         },
         {
           "name": "title",
           "type": "varchar",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
+          "keyType": "mul"
         },
         {
           "name": "description",
           "type": "text",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
+          "isNullable": true
         },
         {
           "name": "release_year",
           "type": "year",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
+          "isNullable": true
         },
         {
           "name": "language_id",
           "type": "tinyint",
-          "keyType": "MUL",
-          "isNullable": false,
-          "extra": ""
+          "keyType": "mul"
         },
         {
           "name": "original_language_id",
           "type": "tinyint",
-          "keyType": "MUL",
-          "isNullable": true,
-          "extra": ""
+          "keyType": "mul",
+          "isNullable": true
         },
         {
           "name": "rental_duration",
-          "type": "tinyint",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "tinyint"
         },
         {
           "name": "rental_rate",
-          "type": "decimal",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "decimal"
         },
         {
           "name": "length",
           "type": "smallint",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
+          "isNullable": true
         },
         {
           "name": "replacement_cost",
-          "type": "decimal",
-          "keyType": "",
-          "isNullable": false,
-          "extra": ""
+          "type": "decimal"
         },
         {
           "name": "rating",
           "type": "enum",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
+          "isNullable": true
         },
         {
           "name": "special_features",
           "type": "set",
-          "keyType": "",
-          "isNullable": true,
-          "extra": ""
+          "isNullable": true
         },
         {
           "name": "last_update",
           "type": "timestamp",
-          "keyType": "",
-          "isNullable": false,
-          "extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "film_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_language_id",
+          "columns": [
+            "language_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_fk_original_language_id",
+          "columns": [
+            "original_language_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_title",
+          "columns": [
+            "title"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "film_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "language_id",
+          "constraintName": "fk_film_language",
+          "referencedTableName": "language",
+          "referencedColumnName": "language_id"
+        },
+        {
+          "columnName": "original_language_id",
+          "constraintName": "fk_film_language_original",
+          "referencedTableName": "language",
+          "referencedColumnName": "language_id"
+        }
+      ]
+    },
+    {
+      "name": "film_actor",
+      "rows": 5462,
+      "columns": [
+        {
+          "name": "actor_id",
+          "type": "smallint",
+          "keyType": "pri"
+        },
+        {
+          "name": "film_id",
+          "type": "smallint",
+          "keyType": "pri"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "actor_id",
+          "film_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_film_id",
+          "columns": [
+            "film_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "actor_id",
+            "film_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "actor_id",
+          "constraintName": "fk_film_actor_actor",
+          "referencedTableName": "actor",
+          "referencedColumnName": "actor_id"
+        },
+        {
+          "columnName": "film_id",
+          "constraintName": "fk_film_actor_film",
+          "referencedTableName": "film",
+          "referencedColumnName": "film_id"
+        }
+      ]
+    },
+    {
+      "name": "film_category",
+      "rows": 1000,
+      "columns": [
+        {
+          "name": "film_id",
+          "type": "smallint",
+          "keyType": "pri"
+        },
+        {
+          "name": "category_id",
+          "type": "tinyint",
+          "keyType": "pri"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "film_id",
+          "category_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "fk_film_category_category",
+          "columns": [
+            "category_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "film_id",
+            "category_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "category_id",
+          "constraintName": "fk_film_category_category",
+          "referencedTableName": "category",
+          "referencedColumnName": "category_id"
+        },
+        {
+          "columnName": "film_id",
+          "constraintName": "fk_film_category_film",
+          "referencedTableName": "film",
+          "referencedColumnName": "film_id"
+        }
+      ]
+    },
+    {
+      "name": "film_list",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "FID",
+          "type": "smallint"
+        },
+        {
+          "name": "title",
+          "type": "varchar"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "isNullable": true
+        },
+        {
+          "name": "category",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "price",
+          "type": "decimal"
+        },
+        {
+          "name": "length",
+          "type": "smallint",
+          "isNullable": true
+        },
+        {
+          "name": "rating",
+          "type": "enum",
+          "isNullable": true
+        },
+        {
+          "name": "actors",
+          "type": "text",
+          "isNullable": true
+        }
+      ]
+    },
+    {
+      "name": "film_text",
+      "rows": 1000,
+      "columns": [
+        {
+          "name": "film_id",
+          "type": "smallint",
+          "keyType": "pri"
+        },
+        {
+          "name": "title",
+          "type": "varchar",
+          "keyType": "mul"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "isNullable": true
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "film_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "film_id"
+          ]
+        },
+        {
+          "Name": "idx_title_description",
+          "columns": [
+            "title",
+            "description"
+          ],
+          "nonUnique": true
+        }
+      ]
+    },
+    {
+      "name": "inventory",
+      "rows": 4581,
+      "columns": [
+        {
+          "name": "inventory_id",
+          "type": "mediumint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "film_id",
+          "type": "smallint",
+          "keyType": "mul"
+        },
+        {
+          "name": "store_id",
+          "type": "tinyint",
+          "keyType": "mul"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "inventory_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_film_id",
+          "columns": [
+            "film_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_store_id_film_id",
+          "columns": [
+            "store_id",
+            "film_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "inventory_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "film_id",
+          "constraintName": "fk_inventory_film",
+          "referencedTableName": "film",
+          "referencedColumnName": "film_id"
+        },
+        {
+          "columnName": "store_id",
+          "constraintName": "fk_inventory_store",
+          "referencedTableName": "store",
+          "referencedColumnName": "store_id"
+        }
+      ]
+    },
+    {
+      "name": "language",
+      "rows": 6,
+      "columns": [
+        {
+          "name": "language_id",
+          "type": "tinyint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "name",
+          "type": "char"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "language_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "language_id"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nicer_but_slower_film_list",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "FID",
+          "type": "smallint"
+        },
+        {
+          "name": "title",
+          "type": "varchar"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "isNullable": true
+        },
+        {
+          "name": "category",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "price",
+          "type": "decimal"
+        },
+        {
+          "name": "length",
+          "type": "smallint",
+          "isNullable": true
+        },
+        {
+          "name": "rating",
+          "type": "enum",
+          "isNullable": true
+        },
+        {
+          "name": "actors",
+          "type": "text",
+          "isNullable": true
+        }
+      ]
+    },
+    {
+      "name": "payment",
+      "rows": 16086,
+      "columns": [
+        {
+          "name": "payment_id",
+          "type": "smallint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "customer_id",
+          "type": "smallint",
+          "keyType": "mul"
+        },
+        {
+          "name": "staff_id",
+          "type": "tinyint",
+          "keyType": "mul"
+        },
+        {
+          "name": "rental_id",
+          "type": "int",
+          "keyType": "mul",
+          "isNullable": true
+        },
+        {
+          "name": "amount",
+          "type": "decimal"
+        },
+        {
+          "name": "payment_date",
+          "type": "datetime"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "isNullable": true,
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "payment_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_staff_id",
+          "columns": [
+            "staff_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "payment_id"
+          ]
+        },
+        {
+          "Name": "fk_payment_rental",
+          "columns": [
+            "rental_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_fk_customer_id",
+          "columns": [
+            "customer_id"
+          ],
+          "nonUnique": true
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "customer_id",
+          "constraintName": "fk_payment_customer",
+          "referencedTableName": "customer",
+          "referencedColumnName": "customer_id"
+        },
+        {
+          "columnName": "rental_id",
+          "constraintName": "fk_payment_rental",
+          "referencedTableName": "rental",
+          "referencedColumnName": "rental_id"
+        },
+        {
+          "columnName": "staff_id",
+          "constraintName": "fk_payment_staff",
+          "referencedTableName": "staff",
+          "referencedColumnName": "staff_id"
+        }
+      ]
+    },
+    {
+      "name": "rental",
+      "rows": 15425,
+      "columns": [
+        {
+          "name": "rental_id",
+          "type": "int",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "rental_date",
+          "type": "datetime",
+          "keyType": "mul"
+        },
+        {
+          "name": "inventory_id",
+          "type": "mediumint",
+          "keyType": "mul"
+        },
+        {
+          "name": "customer_id",
+          "type": "smallint",
+          "keyType": "mul"
+        },
+        {
+          "name": "return_date",
+          "type": "datetime",
+          "isNullable": true
+        },
+        {
+          "name": "staff_id",
+          "type": "tinyint",
+          "keyType": "mul"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "rental_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "rental_date",
+          "columns": [
+            "rental_date",
+            "inventory_id",
+            "customer_id"
+          ]
+        },
+        {
+          "Name": "idx_fk_customer_id",
+          "columns": [
+            "customer_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_fk_inventory_id",
+          "columns": [
+            "inventory_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_fk_staff_id",
+          "columns": [
+            "staff_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "rental_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "customer_id",
+          "constraintName": "fk_rental_customer",
+          "referencedTableName": "customer",
+          "referencedColumnName": "customer_id"
+        },
+        {
+          "columnName": "inventory_id",
+          "constraintName": "fk_rental_inventory",
+          "referencedTableName": "inventory",
+          "referencedColumnName": "inventory_id"
+        },
+        {
+          "columnName": "staff_id",
+          "constraintName": "fk_rental_staff",
+          "referencedTableName": "staff",
+          "referencedColumnName": "staff_id"
+        }
+      ]
+    },
+    {
+      "name": "sales_by_film_category",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "category",
+          "type": "varchar"
+        },
+        {
+          "name": "total_sales",
+          "type": "decimal",
+          "isNullable": true
+        }
+      ]
+    },
+    {
+      "name": "sales_by_store",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "store",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "manager",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "total_sales",
+          "type": "decimal",
+          "isNullable": true
+        }
+      ]
+    },
+    {
+      "name": "staff",
+      "rows": 2,
+      "columns": [
+        {
+          "name": "staff_id",
+          "type": "tinyint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "first_name",
+          "type": "varchar"
+        },
+        {
+          "name": "last_name",
+          "type": "varchar"
+        },
+        {
+          "name": "address_id",
+          "type": "smallint",
+          "keyType": "mul"
+        },
+        {
+          "name": "picture",
+          "type": "blob",
+          "isNullable": true
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "store_id",
+          "type": "tinyint",
+          "keyType": "mul"
+        },
+        {
+          "name": "active",
+          "type": "tinyint"
+        },
+        {
+          "name": "username",
+          "type": "varchar"
+        },
+        {
+          "name": "password",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "staff_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_address_id",
+          "columns": [
+            "address_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_fk_store_id",
+          "columns": [
+            "store_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "staff_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "address_id",
+          "constraintName": "fk_staff_address",
+          "referencedTableName": "address",
+          "referencedColumnName": "address_id"
+        },
+        {
+          "columnName": "store_id",
+          "constraintName": "fk_staff_store",
+          "referencedTableName": "store",
+          "referencedColumnName": "store_id"
+        }
+      ]
+    },
+    {
+      "name": "staff_list",
+      "rows": 0,
+      "columns": [
+        {
+          "name": "ID",
+          "type": "tinyint"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "address",
+          "type": "varchar"
+        },
+        {
+          "name": "zip code",
+          "type": "varchar",
+          "isNullable": true
+        },
+        {
+          "name": "phone",
+          "type": "varchar"
+        },
+        {
+          "name": "city",
+          "type": "varchar"
+        },
+        {
+          "name": "country",
+          "type": "varchar"
+        },
+        {
+          "name": "SID",
+          "type": "tinyint"
+        }
+      ]
+    },
+    {
+      "name": "store",
+      "rows": 2,
+      "columns": [
+        {
+          "name": "store_id",
+          "type": "tinyint",
+          "keyType": "pri",
+          "extra": "auto_increment"
+        },
+        {
+          "name": "manager_staff_id",
+          "type": "tinyint",
+          "keyType": "uni"
+        },
+        {
+          "name": "address_id",
+          "type": "smallint",
+          "keyType": "mul"
+        },
+        {
+          "name": "last_update",
+          "type": "timestamp",
+          "extra": "default_generated on update current_timestamp"
+        }
+      ],
+      "primaryKey": {
+        "columns": [
+          "store_id"
+        ]
+      },
+      "indexes": [
+        {
+          "Name": "idx_fk_address_id",
+          "columns": [
+            "address_id"
+          ],
+          "nonUnique": true
+        },
+        {
+          "Name": "idx_unique_manager",
+          "columns": [
+            "manager_staff_id"
+          ]
+        },
+        {
+          "Name": "PRIMARY",
+          "columns": [
+            "store_id"
+          ]
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columnName": "address_id",
+          "constraintName": "fk_store_address",
+          "referencedTableName": "address",
+          "referencedColumnName": "address_id"
+        },
+        {
+          "columnName": "manager_staff_id",
+          "constraintName": "fk_store_staff",
+          "referencedTableName": "staff",
+          "referencedColumnName": "staff_id"
         }
       ]
     }
-  ]
+  ],
+  "globalVariables": {
+    "binlog_format": "ROW",
+    "binlog_row_image": "FULL",
+    "gtid_mode": "OFF",
+    "log_bin": "ON"
+  }
 }

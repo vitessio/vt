@@ -54,10 +54,11 @@ func TestDBInfoLoad(t *testing.T) {
 
 	t.Run("validateGlobalVariables", func(t *testing.T) {
 		require.NotEmpty(t, si.GlobalVariables)
-		require.Len(t, si.GlobalVariables, 3)
+		require.Len(t, si.GlobalVariables, 4)
 		expected := map[string]string{
 			"binlog_format":    "ROW",
 			"binlog_row_image": "FULL",
+			"gtid_mode":        "OFF",
 			"log_bin":          "ON",
 		}
 		require.EqualValues(t, expected, si.GlobalVariables)
@@ -143,5 +144,66 @@ func TestDBInfoGet(t *testing.T) {
 		gv, err := dbh.getGlobalVariables()
 		require.NoError(t, err)
 		require.NotEmpty(t, gv)
+	})
+
+	t.Run("primary keys", func(t *testing.T) {
+		pks, err := dbh.getPrimaryKeys()
+		require.NoError(t, err)
+		require.Len(t, pks, 16)
+		want := map[string][]string{
+			"actor":         {"actor_id"},
+			"film":          {"film_id"},
+			"language":      {"language_id"},
+			"film_category": {"film_id", "category_id"},
+			"film_actor":    {"actor_id", "film_id"},
+		}
+		for tableName, Columns := range want {
+			pk, ok := pks[tableName]
+			require.True(t, ok)
+			require.Equal(t, Columns, pk.columns)
+		}
+	})
+
+	t.Run("indexes", func(t *testing.T) {
+		idxs, err := dbh.getIndexes()
+		require.NoError(t, err)
+		require.Len(t, idxs, 16)
+		idx, ok := idxs["film_actor"]
+		require.True(t, ok)
+		require.Len(t, idx.indexes, 2)
+		require.Equal(t, "idx_fk_film_id", idx.indexes["idx_fk_film_id"].Name)
+		require.Equal(t, []string{"film_id"}, idx.indexes["idx_fk_film_id"].Columns)
+		idx, ok = idxs["rental"]
+		require.True(t, ok)
+		require.Len(t, idx.indexes, 5)
+		require.Equal(t, "rental_date", idx.indexes["rental_date"].Name)
+		require.Equal(t, []string{"rental_date", "inventory_id", "customer_id"}, idx.indexes["rental_date"].Columns)
+		require.Equal(t, "PRIMARY", idx.indexes["PRIMARY_KEY"].Name)
+		require.Equal(t, []string{"rental_id"}, idx.indexes["PRIMARY_KEY"].Columns)
+	})
+
+	t.Run("foreign keys", func(t *testing.T) {
+		fks, err := dbh.getForeignKeys()
+		require.NoError(t, err)
+		require.Len(t, fks, 11)
+		fk, ok := fks["city"]
+		require.True(t, ok)
+		require.Len(t, fk, 1)
+		require.Equal(t, "country_id", fk[0].ColumnName)
+		require.Equal(t, "fk_city_country", fk[0].ConstraintName)
+		require.Equal(t, "country", fk[0].ReferencedTableName)
+		require.Equal(t, "country_id", fk[0].ReferencedColumnName)
+
+		fk, ok = fks["store"]
+		require.True(t, ok)
+		require.Len(t, fk, 2)
+		require.Equal(t, "address_id", fk[0].ColumnName)
+		require.Equal(t, "fk_store_address", fk[0].ConstraintName)
+		require.Equal(t, "address", fk[0].ReferencedTableName)
+		require.Equal(t, "address_id", fk[0].ReferencedColumnName)
+		require.Equal(t, "manager_staff_id", fk[1].ColumnName)
+		require.Equal(t, "fk_store_staff", fk[1].ConstraintName)
+		require.Equal(t, "staff", fk[1].ReferencedTableName)
+		require.Equal(t, "staff_id", fk[1].ReferencedColumnName)
 	})
 }
