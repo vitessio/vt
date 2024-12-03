@@ -209,7 +209,7 @@ const templateHTML = `<head>
         </div>
     </div>
     <script>
-		let data = {{.Data}};
+        let data = {{.Data}};
         data.links.forEach(link => {
             const a = data.nodes[link.source_idx];
             const b = data.nodes[link.target_idx];
@@ -224,7 +224,7 @@ const templateHTML = `<head>
             b.links.push(link);
         });
 
-		let scale = function(value) {
+        let scale = function(value) {
             return 1 + (value - 1) * (12 - 1) / ({{.MaxValue}} - 1)
         }
 
@@ -232,7 +232,7 @@ const templateHTML = `<head>
         const highlightLinks = new Set();
         let hoverNode = null;
 
-		const Graph = ForceGraph()
+        const Graph = ForceGraph()
         (document.getElementById('graph'))
             .backgroundColor('#101020')
             .graphData(data)
@@ -277,6 +277,9 @@ const templateHTML = `<head>
             .linkDirectionalParticles(5)
             .linkDirectionalParticleWidth(link => {
                 if (highlightLinks.has(link)) {
+                    // we want to scale the size of the particle according to the size of the link
+                    // the particles and links don't scale the same way in the UI, so to make it more equal between the two
+                    // we use different size modifiers (2.2, 1.8, 1.6, etc) depending on the size of the link
                     let val = scale(link.value) * 1.2
                     if (val <= 2) {
                         return val * 2.2
