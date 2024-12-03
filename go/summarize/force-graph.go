@@ -185,7 +185,6 @@ TODO:
 	- New relationship: FKs
 	- See the join the predicates when hovering the links
 	- Different sizes of nodes and links based on table size and relationship occurrences
-	- Add a legend
 */
 
 const templateHTML = `<head>
@@ -194,6 +193,16 @@ const templateHTML = `<head>
 </head>
 <body>
     <div id="graph"></div>
+    <div style="position: absolute; top: 50px; right: 50px; font-size: 16px; background-color: white; padding: 10px;">
+        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+            <div style="width: 20px; height: 10px; background-color: rgb(0,184,0); margin-right: 5px;"></div>
+            <span>Transaction</span>
+        </div>
+        <div style="display: flex; align-items: center;">
+            <div style="width: 20px; height: 10px; background-color: rgb(184,0,0); margin-right: 5px;"></div>
+            <span>Join</span>
+        </div>
+    </div>
     <script>
 		let data = {{.Data}};
         data.links.forEach(link => {
@@ -211,7 +220,7 @@ const templateHTML = `<head>
         });
 
 		let scale = function(value) {
-            return 1 + (value - 1) * (20 - 1) / ({{.MaxValue}} - 1)
+            return 1 + (value - 1) * (12 - 1) / ({{.MaxValue}} - 1)
         }
 
         const highlightNodes = new Set();
@@ -244,7 +253,7 @@ const templateHTML = `<head>
             })
             .linkWidth(link => {
                 if (highlightLinks.has(link)) {
-                    return scale(link.value) * 1.3
+                    return scale(link.value) * 1.2
                 }
                 return scale(link.value)
             })
@@ -254,20 +263,29 @@ const templateHTML = `<head>
             .linkDirectionalParticles(5)
             .linkDirectionalParticleWidth(link => {
                 if (highlightLinks.has(link)) {
-                    let v = scale(link.value)
-                    if (v <= 4) {
-                        return 4
-                    } else if (v <= 8) {
-                        return v
+                    let val = scale(link.value) * 1.2
+                    if (val <= 2) {
+                        return val * 2.2
+                    } else if (val <= 4) {
+                        return val * 1.8
+                    } else if (val <= 6) {
+                        return val * 1.6
+                    } else if (val <= 8) {
+                        return val * 1.35
+                    } else if (val <= 10) {
+                        return val * 1.1
                     } else {
-                        return v/1.5
+                        return val
                     }
                 }
                 return 0
             })
-            .nodeCanvasObject((node, ctx) => {
+            .nodeCanvasObject((node, ctx, globalScale) => {
                 const label = node.id;
-                const fontSize = 2;
+                let fontSize = 8/(globalScale/2);
+                if (fontSize >= 14) {
+                    fontSize = 14
+                }
                 ctx.font = fontSize+'px Sans-Serif';
 
                 ctx.fillStyle = 'rgb(255,255,255)';
@@ -275,7 +293,7 @@ const templateHTML = `<head>
                     ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
                 }
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, 4, 0, 2 * Math.PI, false);
+                ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
                 ctx.fill();
 
                 ctx.textAlign = 'center';
@@ -284,7 +302,7 @@ const templateHTML = `<head>
                 if (highlightNodes.has(node)) {
                     ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
                 }
-                ctx.fillText(label, node.x, node.y+6);
+                ctx.fillText(label, node.x, node.y+7);
 
                 if (highlightNodes.has(node)) {
                     ctx.beginPath();
@@ -302,8 +320,8 @@ const templateHTML = `<head>
 
                 hoverNode = node || null;
             })
-            .d3Force('link').strength(link => {
-                return data.links[link.index].value * 0.05
+            .d3Force('force').strength(link => {
+                return data.links[link.index].value * 0.02
             });
     </script>
 </body>`
