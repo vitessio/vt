@@ -30,30 +30,36 @@ type (
 	}
 
 	link struct {
-		Source    string `json:"source"`
-		SourceIdx int    `json:"source_idx"`
-		Target    string `json:"target"`
-		TargetIdx int    `json:"target_idx"`
-		Value     int    `json:"value"`
-		Type      string `json:"type"`
+		Source    string  `json:"source"`
+		SourceIdx int     `json:"source_idx"`
+		Target    string  `json:"target"`
+		TargetIdx int     `json:"target_idx"`
+		Value     int     `json:"value"`
+		Type      string  `json:"type"`
+		Curvature float64 `json:"curvature"`
+	}
+
+	data struct {
+		Nodes []node `json:"nodes"`
+		Links []link `json:"links"`
 	}
 
 	forceGraphData struct {
-		Nodes []node `json:"nodes"`
-		Links []link `json:"links"`
+		maxValue int
+		data
 	}
 )
 
 func createForceGraphData(s *Summary) forceGraphData {
-	var data forceGraphData
+	var result forceGraphData
 
 	idxTableNode := make(map[string]int)
 	for _, table := range s.tables {
-		data.Nodes = append(data.Nodes, node{ID: table.Table})
-		idxTableNode[table.Table] = len(data.Nodes) - 1
+		result.Nodes = append(result.Nodes, node{ID: table.Table})
+		idxTableNode[table.Table] = len(result.Nodes) - 1
 	}
 	for _, join := range s.joins {
-		data.Links = append(data.Links, link{
+		result.Links = append(result.Links, link{
 			Source:    join.Tbl1,
 			SourceIdx: idxTableNode[join.Tbl1],
 			Target:    join.Tbl2,
@@ -81,7 +87,7 @@ func createForceGraphData(s *Summary) forceGraphData {
 		}
 	}
 	for key, val := range txTablesMap {
-		data.Links = append(data.Links, link{
+		result.Links = append(result.Links, link{
 			Source:    key.Tbl1,
 			SourceIdx: idxTableNode[key.Tbl1],
 			Target:    key.Tbl2,
@@ -91,7 +97,26 @@ func createForceGraphData(s *Summary) forceGraphData {
 		})
 	}
 
-	return data
+	m := make(map[graphKey][]int)
+
+	for i, l := range result.Links {
+		if l.Value > result.maxValue {
+			result.maxValue = l.Value
+		}
+		m[createGraphKey(l.Source, l.Target)] = append(m[createGraphKey(l.Source, l.Target)], i)
+	}
+	const curvatureMinMax = 0.5
+	for _, links := range m {
+		if len(links) == 1 {
+			continue
+		}
+		delta := 2 * curvatureMinMax / (len(links) - 1)
+		for i, idx := range links {
+			result.Links[idx].Curvature = -curvatureMinMax + float64(i*delta)
+		}
+	}
+
+	return result
 }
 
 func createGraphKey(tableA, tableB string) graphKey {
@@ -129,7 +154,7 @@ func renderQueryGraph(s *Summary) {
 
 // Function to dynamically generate and serve index.html
 func serveIndex(w http.ResponseWriter, data forceGraphData) {
-	dataBytes, err := json.Marshal(data)
+	dataBytes, err := json.Marshal(data.data)
 	if err != nil {
 		exit(err.Error())
 	}
@@ -140,8 +165,16 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) {
 		return
 	}
 
-	// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around escaping
-	if err := tmpl.Execute(w, template.JS(dataBytes)); err != nil {
+	d := struct {
+		Data     any
+		MaxValue int
+	}{
+		// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around escaping
+		Data:     template.JS(dataBytes),
+		MaxValue: data.maxValue,
+	}
+
+	if err := tmpl.Execute(w, d); err != nil {
 		http.Error(w, "Failed to execute template", http.StatusInternalServerError)
 		return
 	}
@@ -164,7 +197,7 @@ const templateHTML = `<head>
 <body>
     <div id="graph"></div>
     <script>
-		let data = {{.}};
+		let data = {{.Data}};
         data.links.forEach(link => {
             const a = data.nodes[link.source_idx];
             const b = data.nodes[link.target_idx];
@@ -178,6 +211,10 @@ const templateHTML = `<head>
             a.links.push(link);
             b.links.push(link);
         });
+
+		let scale = function(value) {
+            return 1 + (value - 1) * (20 - 1) / ({{.MaxValue}} - 1)
+        }
 
         const highlightNodes = new Set();
         const highlightLinks = new Set();
@@ -209,10 +246,11 @@ const templateHTML = `<head>
             })
             .linkWidth(link => {
                 if (highlightLinks.has(link)) {
-                    return link.value * 1.5
+                    return scale(link.value) * 1.5
                 }
-                return link.value
+                return scale(link.value)
             })
+			.linkCurvature('curvature')
             .linkLabel('value')
             .autoPauseRedraw(false) // keep redrawing after engine has stopped
             .linkDirectionalParticles(4)
