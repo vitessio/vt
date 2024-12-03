@@ -253,8 +253,20 @@ const templateHTML = `<head>
 			.linkCurvature('curvature')
             .linkLabel('value')
             .autoPauseRedraw(false) // keep redrawing after engine has stopped
-            .linkDirectionalParticles(4)
-            .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 4 : 0)
+            .linkDirectionalParticles(5)
+            .linkDirectionalParticleWidth(link => {
+                if (highlightLinks.has(link)) {
+                    let v = scale(link.value)
+                    if (v <= 4) {
+                        return 4
+                    } else if (v <= 8) {
+                        return v
+                    } else {
+                        return v/1.5
+                    }
+                }
+                return 0
+            })
             .nodeCanvasObject((node, ctx, globalScale) => {
                 const label = node.id;
                 const fontSize = 12/globalScale;
