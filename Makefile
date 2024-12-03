@@ -1,4 +1,4 @@
-.PHONY: all build test tidy clean pretty install-tools lint install-hooks
+.PHONY: all build test tidy clean pretty install install-tools lint install-hooks
 .DEFAULT_GOAL := test_and_build
 
 REQUIRED_GO_VERSION := 1.23
@@ -27,7 +27,8 @@ check_version:
 default: check_version build
 
 build:
-	go build -o vt ./go/vt
+	@echo "Building vt..."
+	@go build -o vt ./go/vt
 
 test:
 	go test -count=1 ./go/...
@@ -76,3 +77,7 @@ install-hooks:
 	@ln -sf ../../git-hooks/pre-commit .git/hooks/pre-commit
 	@chmod +x .git/hooks/pre-commit
 	@echo "Pre-commit hook installed successfully."
+
+install: build
+	@install -m 0755 vt $(GOBIN_DIR)/vt
+	@echo "vt installed successfully to $(GOBIN_DIR)."
