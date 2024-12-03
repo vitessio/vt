@@ -35,6 +35,7 @@ type (
 		Target    string `json:"target"`
 		TargetIdx int    `json:"target_idx"`
 		Value     int    `json:"value"`
+		Type      string `json:"type"`
 	}
 
 	forceGraphData struct {
@@ -48,10 +49,8 @@ func createForceGraphData(s *Summary) forceGraphData {
 
 	idxTableNode := make(map[string]int)
 	for _, table := range s.tables {
-		if len(table.JoinPredicates) > 0 {
-			data.Nodes = append(data.Nodes, node{ID: table.Table})
-			idxTableNode[table.Table] = len(data.Nodes) - 1
-		}
+		data.Nodes = append(data.Nodes, node{ID: table.Table})
+		idxTableNode[table.Table] = len(data.Nodes) - 1
 	}
 	for _, join := range s.joins {
 		data.Links = append(data.Links, link{
@@ -60,9 +59,46 @@ func createForceGraphData(s *Summary) forceGraphData {
 			Target:    join.Tbl2,
 			TargetIdx: idxTableNode[join.Tbl2],
 			Value:     join.Occurrences,
+			Type:      "join",
 		})
 	}
+
+	txTablesMap := make(map[graphKey]int)
+	for _, transaction := range s.transactions {
+		var tables []string
+		for _, query := range transaction.Queries {
+			tables = append(tables, query.Table)
+		}
+		tables = uniquefy(tables)
+
+		for i, ti := range tables {
+			for j, tj := range tables {
+				if j <= i {
+					continue
+				}
+				txTablesMap[createGraphKey(ti, tj)]++
+			}
+		}
+	}
+	for key, val := range txTablesMap {
+		data.Links = append(data.Links, link{
+			Source:    key.Tbl1,
+			SourceIdx: idxTableNode[key.Tbl1],
+			Target:    key.Tbl2,
+			TargetIdx: idxTableNode[key.Tbl2],
+			Value:     val,
+			Type:      "tx",
+		})
+	}
+
 	return data
+}
+
+func createGraphKey(tableA, tableB string) graphKey {
+	if tableA < tableB {
+		return graphKey{Tbl1: tableA, Tbl2: tableB}
+	}
+	return graphKey{Tbl1: tableB, Tbl2: tableA}
 }
 
 func renderQueryGraph(s *Summary) {
@@ -111,6 +147,16 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) {
 	}
 }
 
+/*
+TODO:
+	- New relationship: Add transactions
+	- New relationship: FKs
+	- Curve links
+	- See the join the predicates when hovering the links
+	- Different sizes of nodes and links based on table size and relationship occurrences
+	- Add a legend
+*/
+
 const templateHTML = `<head>
     <style> body { margin: 0; } </style>
     <script src="//unpkg.com/force-graph"></script>
@@ -142,8 +188,6 @@ const templateHTML = `<head>
             .graphData(data)
             .nodeId('id')
             .nodeLabel('id')
-            .linkWidth('value')
-            .linkLabel('value')
             .onLinkHover(link => {
                 highlightNodes.clear();
                 highlightLinks.clear();
@@ -154,8 +198,23 @@ const templateHTML = `<head>
                     highlightNodes.add(link.target);
                 }
             })
+            .linkColor(link => {
+                if (link.type === 'tx') {
+                    return 'rgb(0,255,0)'
+                } else if (link.type === 'join') {
+                    return 'rgb(255,0,0)'
+                } else {
+                    return 'rgb(0,0,255)'
+                }
+            })
+            .linkWidth(link => {
+                if (highlightLinks.has(link)) {
+                    return link.value * 1.5
+                }
+                return link.value
+            })
+            .linkLabel('value')
             .autoPauseRedraw(false) // keep redrawing after engine has stopped
-            .linkWidth(link => highlightLinks.has(link) ? 5 : 1)
             .linkDirectionalParticles(4)
             .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 4 : 0)
             .nodeCanvasObject((node, ctx, globalScale) => {
