@@ -30,13 +30,14 @@ type (
 	}
 
 	link struct {
-		Source    string  `json:"source"`
-		SourceIdx int     `json:"source_idx"`
-		Target    string  `json:"target"`
-		TargetIdx int     `json:"target_idx"`
-		Value     int     `json:"value"`
-		Type      string  `json:"type"`
-		Curvature float64 `json:"curvature"`
+		Source     string   `json:"source"`
+		SourceIdx  int      `json:"source_idx"`
+		Target     string   `json:"target"`
+		TargetIdx  int      `json:"target_idx"`
+		Value      int      `json:"value"`
+		Type       string   `json:"type"`
+		Curvature  float64  `json:"curvature"`
+		Predicates []string `json:"predicates"`
 	}
 
 	data struct {
@@ -59,13 +60,18 @@ func createForceGraphData(s *Summary) forceGraphData {
 		idxTableNode[table.Table] = len(result.Nodes) - 1
 	}
 	for _, join := range s.joins {
+		var preds []string
+		for _, predicate := range join.predicates {
+			preds = append(preds, predicate.String())
+		}
 		result.Links = append(result.Links, link{
-			Source:    join.Tbl1,
-			SourceIdx: idxTableNode[join.Tbl1],
-			Target:    join.Tbl2,
-			TargetIdx: idxTableNode[join.Tbl2],
-			Value:     join.Occurrences,
-			Type:      "join",
+			Source:     join.Tbl1,
+			SourceIdx:  idxTableNode[join.Tbl1],
+			Target:     join.Tbl2,
+			TargetIdx:  idxTableNode[join.Tbl2],
+			Value:      join.Occurrences,
+			Type:       "join",
+			Predicates: preds,
 		})
 	}
 
@@ -183,7 +189,6 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) {
 /*
 TODO:
 	- New relationship: FKs
-	- See the join the predicates when hovering the links
 	- Different sizes of nodes and links based on table size and relationship occurrences
 */
 
@@ -258,7 +263,16 @@ const templateHTML = `<head>
                 return scale(link.value)
             })
             .linkCurvature('curvature')
-            .linkLabel('value')
+            .linkLabel(link => {
+                let s = "<center>" + link.value + "</center>"
+                if (link.predicates === null) {
+                    return s
+                }
+                link.predicates.forEach(pred => {
+                    s = s + "<br>" + pred
+                })
+                return s
+            })
             .autoPauseRedraw(false) // keep redrawing after engine has stopped
             .linkDirectionalParticles(5)
             .linkDirectionalParticleWidth(link => {
@@ -283,8 +297,8 @@ const templateHTML = `<head>
             .nodeCanvasObject((node, ctx, globalScale) => {
                 const label = node.id;
                 let fontSize = 8/(globalScale/2);
-                if (fontSize >= 14) {
-                    fontSize = 14
+                if (fontSize >= 12) {
+                    fontSize = 12
                 }
                 ctx.font = fontSize+'px Sans-Serif';
 
@@ -293,7 +307,13 @@ const templateHTML = `<head>
                     ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
                 }
                 ctx.beginPath();
-                ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI, false);
+                let nodeSize = 6/(globalScale/2);
+                if (nodeSize >= 6) {
+                    nodeSize = 6
+                } else if (nodeSize <= 2) {
+                    nodeSize = 2
+                }
+                ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
                 ctx.fill();
 
                 ctx.textAlign = 'center';
@@ -302,7 +322,7 @@ const templateHTML = `<head>
                 if (highlightNodes.has(node)) {
                     ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
                 }
-                ctx.fillText(label, node.x, node.y+7);
+                ctx.fillText(label, node.x, node.y+nodeSize+1);
 
                 if (highlightNodes.has(node)) {
                     ctx.beginPath();
@@ -312,10 +332,14 @@ const templateHTML = `<head>
             .onNodeHover(node => {
                 highlightNodes.clear();
                 highlightLinks.clear();
-                if (node) {
+                 if (node) {
                     highlightNodes.add(node);
-                    node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
-                    node.links.forEach(link => highlightLinks.add(link));
+                    if (node.neighbors !== undefined) {
+                        node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
+                    }
+                    if (node.links !== undefined) {
+                        node.links.forEach(link => highlightLinks.add(link));
+                    }
                 }
 
                 hoverNode = node || null;
