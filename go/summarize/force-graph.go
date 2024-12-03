@@ -182,9 +182,7 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) {
 
 /*
 TODO:
-	- New relationship: Add transactions
 	- New relationship: FKs
-	- Curve links
 	- See the join the predicates when hovering the links
 	- Different sizes of nodes and links based on table size and relationship occurrences
 	- Add a legend
@@ -220,11 +218,11 @@ const templateHTML = `<head>
         const highlightLinks = new Set();
         let hoverNode = null;
 
-        const Graph = ForceGraph()
+		const Graph = ForceGraph()
         (document.getElementById('graph'))
+            .backgroundColor('#101020')
             .graphData(data)
             .nodeId('id')
-            .nodeLabel('id')
             .onLinkHover(link => {
                 highlightNodes.clear();
                 highlightLinks.clear();
@@ -237,20 +235,20 @@ const templateHTML = `<head>
             })
             .linkColor(link => {
                 if (link.type === 'tx') {
-                    return 'rgb(0,255,0)'
+                    return 'rgb(0,184,0)'
                 } else if (link.type === 'join') {
-                    return 'rgb(255,0,0)'
+                    return 'rgb(184,0,0)'
                 } else {
-                    return 'rgb(0,0,255)'
+                    return 'rgb(0,0,184)'
                 }
             })
             .linkWidth(link => {
                 if (highlightLinks.has(link)) {
-                    return scale(link.value) * 1.5
+                    return scale(link.value) * 1.3
                 }
                 return scale(link.value)
             })
-			.linkCurvature('curvature')
+            .linkCurvature('curvature')
             .linkLabel('value')
             .autoPauseRedraw(false) // keep redrawing after engine has stopped
             .linkDirectionalParticles(5)
@@ -267,25 +265,26 @@ const templateHTML = `<head>
                 }
                 return 0
             })
-            .nodeCanvasObject((node, ctx, globalScale) => {
+            .nodeCanvasObject((node, ctx) => {
                 const label = node.id;
-                const fontSize = 12/globalScale;
+                const fontSize = 2;
                 ctx.font = fontSize+'px Sans-Serif';
-                const textWidth = ctx.measureText(label).width;
-                const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 1); // some padding
 
-                ctx.fillStyle = 'rgb(0,14,71)';
-                ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
-
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
                 ctx.fillStyle = 'rgb(255,255,255)';
                 if (highlightNodes.has(node)) {
-                    ctx.fillStyle = node === hoverNode ? 'red' : 'orange';
+                    ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
                 }
-                ctx.fillText(label, node.x, node.y);
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 4, 0, 2 * Math.PI, false);
+                ctx.fill();
 
-                node.__bckgDimensions = bckgDimensions;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'hanging';
+                ctx.fillStyle = 'rgb(255,255,255)';
+                if (highlightNodes.has(node)) {
+                    ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
+                }
+                ctx.fillText(label, node.x, node.y+6);
 
                 if (highlightNodes.has(node)) {
                     ctx.beginPath();
@@ -304,7 +303,7 @@ const templateHTML = `<head>
                 hoverNode = node || null;
             })
             .d3Force('link').strength(link => {
-                return data.links[link.index].value * 0.2
+                return data.links[link.index].value * 0.05
             });
     </script>
 </body>`
