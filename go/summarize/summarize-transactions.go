@@ -32,6 +32,14 @@ func summarizeTransactions(s *Summary, txs []transactions.Signature) error {
 		if len(joins) == 0 {
 			continue
 		}
+
+		for _, p := range patterns {
+			table := s.GetTable(p.Table)
+			if table == nil {
+				s.AddTable(&TableSummary{Table: p.Table})
+			}
+		}
+
 		s.transactions = append(s.transactions, TransactionSummary{
 			Count:   tx.Count,
 			Queries: patterns,

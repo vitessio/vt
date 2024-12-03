@@ -30,39 +30,106 @@ type (
 	}
 
 	link struct {
-		Source    string `json:"source"`
-		SourceIdx int    `json:"source_idx"`
-		Target    string `json:"target"`
-		TargetIdx int    `json:"target_idx"`
-		Value     int    `json:"value"`
+		Source     string   `json:"source"`
+		SourceIdx  int      `json:"source_idx"`
+		Target     string   `json:"target"`
+		TargetIdx  int      `json:"target_idx"`
+		Value      int      `json:"value"`
+		Type       string   `json:"type"`
+		Curvature  float64  `json:"curvature"`
+		Predicates []string `json:"predicates"`
+	}
+
+	data struct {
+		Nodes []node `json:"nodes"`
+		Links []link `json:"links"`
 	}
 
 	forceGraphData struct {
-		Nodes []node `json:"nodes"`
-		Links []link `json:"links"`
+		maxValue int
+		data
 	}
 )
 
 func createForceGraphData(s *Summary) forceGraphData {
-	var data forceGraphData
+	var result forceGraphData
 
 	idxTableNode := make(map[string]int)
 	for _, table := range s.tables {
-		if len(table.JoinPredicates) > 0 {
-			data.Nodes = append(data.Nodes, node{ID: table.Table})
-			idxTableNode[table.Table] = len(data.Nodes) - 1
-		}
+		result.Nodes = append(result.Nodes, node{ID: table.Table})
+		idxTableNode[table.Table] = len(result.Nodes) - 1
 	}
 	for _, join := range s.joins {
-		data.Links = append(data.Links, link{
-			Source:    join.Tbl1,
-			SourceIdx: idxTableNode[join.Tbl1],
-			Target:    join.Tbl2,
-			TargetIdx: idxTableNode[join.Tbl2],
-			Value:     join.Occurrences,
+		var preds []string
+		for _, predicate := range join.predicates {
+			preds = append(preds, predicate.String())
+		}
+		result.Links = append(result.Links, link{
+			Source:     join.Tbl1,
+			SourceIdx:  idxTableNode[join.Tbl1],
+			Target:     join.Tbl2,
+			TargetIdx:  idxTableNode[join.Tbl2],
+			Value:      join.Occurrences,
+			Type:       "join",
+			Predicates: preds,
 		})
 	}
-	return data
+
+	txTablesMap := make(map[graphKey]int)
+	for _, transaction := range s.transactions {
+		var tables []string
+		for _, query := range transaction.Queries {
+			tables = append(tables, query.Table)
+		}
+		tables = uniquefy(tables)
+
+		for i, ti := range tables {
+			for j, tj := range tables {
+				if j <= i {
+					continue
+				}
+				txTablesMap[createGraphKey(ti, tj)]++
+			}
+		}
+	}
+	for key, val := range txTablesMap {
+		result.Links = append(result.Links, link{
+			Source:    key.Tbl1,
+			SourceIdx: idxTableNode[key.Tbl1],
+			Target:    key.Tbl2,
+			TargetIdx: idxTableNode[key.Tbl2],
+			Value:     val,
+			Type:      "tx",
+		})
+	}
+
+	m := make(map[graphKey][]int)
+
+	for i, l := range result.Links {
+		if l.Value > result.maxValue {
+			result.maxValue = l.Value
+		}
+		m[createGraphKey(l.Source, l.Target)] = append(m[createGraphKey(l.Source, l.Target)], i)
+	}
+	const curvatureMinMax = 0.5
+	for _, links := range m {
+		if len(links) == 1 {
+			continue
+		}
+		delta := 2 * curvatureMinMax / (len(links) - 1)
+		for i, idx := range links {
+			result.Links[idx].Curvature = -curvatureMinMax + float64(i*delta)
+		}
+	}
+
+	return result
+}
+
+func createGraphKey(tableA, tableB string) graphKey {
+	if tableA < tableB {
+		return graphKey{Tbl1: tableA, Tbl2: tableB}
+	}
+	return graphKey{Tbl1: tableB, Tbl2: tableA}
 }
 
 func renderQueryGraph(s *Summary) {
@@ -93,7 +160,7 @@ func renderQueryGraph(s *Summary) {
 
 // Function to dynamically generate and serve index.html
 func serveIndex(w http.ResponseWriter, data forceGraphData) {
-	dataBytes, err := json.Marshal(data)
+	dataBytes, err := json.Marshal(data.data)
 	if err != nil {
 		exit(err.Error())
 	}
@@ -104,12 +171,26 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) {
 		return
 	}
 
-	// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around escaping
-	if err := tmpl.Execute(w, template.JS(dataBytes)); err != nil {
+	d := struct {
+		Data     any
+		MaxValue int
+	}{
+		// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around escaping
+		Data:     template.JS(dataBytes),
+		MaxValue: data.maxValue,
+	}
+
+	if err := tmpl.Execute(w, d); err != nil {
 		http.Error(w, "Failed to execute template", http.StatusInternalServerError)
 		return
 	}
 }
+
+/*
+TODO:
+	- New relationship: FKs
+	- Different sizes of nodes and links based on table size and relationship occurrences
+*/
 
 const templateHTML = `<head>
     <style> body { margin: 0; } </style>
@@ -117,8 +198,18 @@ const templateHTML = `<head>
 </head>
 <body>
     <div id="graph"></div>
+    <div style="position: absolute; top: 50px; right: 50px; font-size: 16px; background-color: white; padding: 10px;">
+        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+            <div style="width: 20px; height: 10px; background-color: rgb(0,184,0); margin-right: 5px;"></div>
+            <span>Transaction</span>
+        </div>
+        <div style="display: flex; align-items: center;">
+            <div style="width: 20px; height: 10px; background-color: rgb(184,0,0); margin-right: 5px;"></div>
+            <span>Join</span>
+        </div>
+    </div>
     <script>
-		let data = {{.}};
+        let data = {{.Data}};
         data.links.forEach(link => {
             const a = data.nodes[link.source_idx];
             const b = data.nodes[link.target_idx];
@@ -133,17 +224,19 @@ const templateHTML = `<head>
             b.links.push(link);
         });
 
+        let scale = function(value) {
+            return 1 + (value - 1) * (12 - 1) / ({{.MaxValue}} - 1)
+        }
+
         const highlightNodes = new Set();
         const highlightLinks = new Set();
         let hoverNode = null;
 
         const Graph = ForceGraph()
         (document.getElementById('graph'))
+            .backgroundColor('#101020')
             .graphData(data)
             .nodeId('id')
-            .nodeLabel('id')
-            .linkWidth('value')
-            .linkLabel('value')
             .onLinkHover(link => {
                 highlightNodes.clear();
                 highlightLinks.clear();
@@ -154,29 +247,85 @@ const templateHTML = `<head>
                     highlightNodes.add(link.target);
                 }
             })
+            .linkColor(link => {
+                if (link.type === 'tx') {
+                    return 'rgb(0,184,0)'
+                } else if (link.type === 'join') {
+                    return 'rgb(184,0,0)'
+                } else {
+                    return 'rgb(0,0,184)'
+                }
+            })
+            .linkWidth(link => {
+                if (highlightLinks.has(link)) {
+                    return scale(link.value) * 1.2
+                }
+                return scale(link.value)
+            })
+            .linkCurvature('curvature')
+            .linkLabel(link => {
+                let s = "<center>" + link.value + "</center>"
+                if (link.predicates === null) {
+                    return s
+                }
+                link.predicates.forEach(pred => {
+                    s = s + "<br>" + pred
+                })
+                return s
+            })
             .autoPauseRedraw(false) // keep redrawing after engine has stopped
-            .linkWidth(link => highlightLinks.has(link) ? 5 : 1)
-            .linkDirectionalParticles(4)
-            .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 4 : 0)
+            .linkDirectionalParticles(5)
+            .linkDirectionalParticleWidth(link => {
+                if (highlightLinks.has(link)) {
+                    // we want to scale the size of the particle according to the size of the link
+                    // the particles and links don't scale the same way in the UI, so to make it more equal between the two
+                    // we use different size modifiers (2.2, 1.8, 1.6, etc) depending on the size of the link
+                    let val = scale(link.value) * 1.2
+                    if (val <= 2) {
+                        return val * 2.2
+                    } else if (val <= 4) {
+                        return val * 1.8
+                    } else if (val <= 6) {
+                        return val * 1.6
+                    } else if (val <= 8) {
+                        return val * 1.35
+                    } else if (val <= 10) {
+                        return val * 1.1
+                    } else {
+                        return val
+                    }
+                }
+                return 0
+            })
             .nodeCanvasObject((node, ctx, globalScale) => {
                 const label = node.id;
-                const fontSize = 12/globalScale;
+                let fontSize = 8/(globalScale/2);
+                if (fontSize >= 12) {
+                    fontSize = 12
+                }
                 ctx.font = fontSize+'px Sans-Serif';
-                const textWidth = ctx.measureText(label).width;
-                const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 1); // some padding
 
-                ctx.fillStyle = 'rgb(0,14,71)';
-                ctx.fillRect(node.x - bckgDimensions[0] / 2, node.y - bckgDimensions[1] / 2, ...bckgDimensions);
-
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
                 ctx.fillStyle = 'rgb(255,255,255)';
                 if (highlightNodes.has(node)) {
-                    ctx.fillStyle = node === hoverNode ? 'red' : 'orange';
+                    ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
                 }
-                ctx.fillText(label, node.x, node.y);
+                ctx.beginPath();
+                let nodeSize = 6/(globalScale/2);
+                if (nodeSize >= 6) {
+                    nodeSize = 6
+                } else if (nodeSize <= 2) {
+                    nodeSize = 2
+                }
+                ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
+                ctx.fill();
 
-                node.__bckgDimensions = bckgDimensions;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'hanging';
+                ctx.fillStyle = 'rgb(255,255,255)';
+                if (highlightNodes.has(node)) {
+                    ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
+                }
+                ctx.fillText(label, node.x, node.y+nodeSize+1);
 
                 if (highlightNodes.has(node)) {
                     ctx.beginPath();
@@ -186,16 +335,20 @@ const templateHTML = `<head>
             .onNodeHover(node => {
                 highlightNodes.clear();
                 highlightLinks.clear();
-                if (node) {
+                 if (node) {
                     highlightNodes.add(node);
-                    node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
-                    node.links.forEach(link => highlightLinks.add(link));
+                    if (node.neighbors !== undefined) {
+                        node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
+                    }
+                    if (node.links !== undefined) {
+                        node.links.forEach(link => highlightLinks.add(link));
+                    }
                 }
 
                 hoverNode = node || null;
             })
-            .d3Force('link').strength(link => {
-                return data.links[link.index].value * 0.2
+            .d3Force('force').strength(link => {
+                return data.links[link.index].value * 0.02
             });
     </script>
 </body>`
