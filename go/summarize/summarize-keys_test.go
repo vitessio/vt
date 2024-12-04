@@ -70,18 +70,23 @@ func TestSummarizeKeysFile(t *testing.T) {
 	sb := &strings.Builder{}
 	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-	fnKeys := readKeysFile("../testdata/keys-log.json")
-	fnSchemaInfo := readDBInfoFile("../testdata/keys-schema-info.json")
+	fnKeys, err := readKeysFile("../testdata/keys-log.json")
+	require.NoError(t, err)
 
-	s := NewSummary("")
+	fnSchemaInfo, err := readDBInfoFile("../testdata/keys-schema-info.json")
+	require.NoError(t, err)
 
-	err := fnKeys(s)
+	s, err := NewSummary("")
+	require.NoError(t, err)
+
+	err = fnKeys(s)
 	require.NoError(t, err)
 
 	err = fnSchemaInfo(s)
 	require.NoError(t, err)
 
-	s.PrintMarkdown(sb, now)
+	err = s.PrintMarkdown(sb, now)
+	require.NoError(t, err)
 
 	expected, err := os.ReadFile("../testdata/keys-summary.md")
 	require.NoError(t, err)
@@ -102,16 +107,19 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 
 	for _, metric := range tests {
 		t.Run(metric, func(t *testing.T) {
-			fn := readKeysFile("../testdata/bigger_slow_query_log.json")
+			fn, err := readKeysFile("../testdata/bigger_slow_query_log.json")
+			require.NoError(t, err)
 			sb := &strings.Builder{}
 			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-			s := NewSummary(metric)
-
-			err := fn(s)
+			s, err := NewSummary(metric)
 			require.NoError(t, err)
 
-			s.PrintMarkdown(sb, now)
+			err = fn(s)
+			require.NoError(t, err)
+
+			err = s.PrintMarkdown(sb, now)
+			require.NoError(t, err)
 
 			expected, err := os.ReadFile(fmt.Sprintf("../testdata/bigger_slow_log_%s.md", metric))
 			require.NoError(t, err)

@@ -18,6 +18,7 @@ package summarize
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -27,10 +28,10 @@ import (
 	"github.com/vitessio/vt/go/transactions"
 )
 
-func readTracedFile(fileName string) traceSummary {
+func readTracedFile(fileName string) (traceSummary, error) {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
-		exit("Error opening file: " + err.Error())
+		return traceSummary{}, fmt.Errorf("error opening file: %w", err)
 	}
 
 	type traceOutput struct {
@@ -40,7 +41,7 @@ func readTracedFile(fileName string) traceSummary {
 	var to traceOutput
 	err = json.Unmarshal(c, &to)
 	if err != nil {
-		exit("Error parsing json: " + err.Error())
+		return traceSummary{}, fmt.Errorf("error parsing json: %w", err)
 	}
 
 	sort.Slice(to.Queries, func(i, j int) bool {
@@ -58,13 +59,15 @@ func readTracedFile(fileName string) traceSummary {
 	return traceSummary{
 		Name:          fileName,
 		TracedQueries: to.Queries,
-	}
+	}, nil
 }
 
-func readTransactionFile(fileName string) func(s *Summary) error {
+type summarizer = func(s *Summary) error
+
+func readTransactionFile(fileName string) (summarizer, error) {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
-		exit("Error opening file: " + err.Error())
+		return nil, fmt.Errorf("error opening file: %w", err)
 	}
 
 	type txOutput struct {
@@ -75,37 +78,36 @@ func readTransactionFile(fileName string) func(s *Summary) error {
 	var to txOutput
 	err = json.Unmarshal(c, &to)
 	if err != nil {
-		exit("Error parsing json: " + err.Error())
+		return nil, fmt.Errorf("error parsing json: %w", err)
 	}
 	return func(s *Summary) error {
 		s.analyzedFiles = append(s.analyzedFiles, fileName)
 		return summarizeTransactions(s, to.Signatures)
-	}
+	}, nil
 }
 
-func readKeysFile(fileName string) func(s *Summary) error {
+func readKeysFile(fileName string) (summarizer, error) {
 	c, err := os.ReadFile(fileName)
 	if err != nil {
-		exit("Error opening file: " + err.Error())
+		return nil, fmt.Errorf("error opening file: %w", err)
 	}
 
 	var ko keys.Output
 	err = json.Unmarshal(c, &ko)
 	if err != nil {
-		exit("Error parsing json: " + err.Error())
+		return nil, fmt.Errorf("error parsing json: %w", err)
 	}
 
 	return func(s *Summary) error {
 		s.analyzedFiles = append(s.analyzedFiles, fileName)
-		summarizeKeysQueries(s, &ko)
-		return nil
-	}
+		return summarizeKeysQueries(s, &ko)
+	}, nil
 }
 
-func readDBInfoFile(fileName string) func(s *Summary) error {
+func readDBInfoFile(fileName string) (summarizer, error) {
 	schemaInfo, err := dbinfo.Load(fileName)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("error parsing dbinfo: %w", err)
 	}
 
 	return func(s *Summary) error {
@@ -120,5 +122,5 @@ func readDBInfoFile(fileName string) func(s *Summary) error {
 			table.RowCount = ti.Rows
 		}
 		return nil
-	}
+	}, nil
 }

@@ -30,14 +30,17 @@ func TestSummarizeTransactionsFile(t *testing.T) {
 	sb := &strings.Builder{}
 	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-	fnTx := readTransactionFile("../testdata/small-slow-query-transactions.json")
-
-	s := NewSummary("")
-
-	err := fnTx(s)
+	fnTx, err := readTransactionFile("../testdata/small-slow-query-transactions.json")
 	require.NoError(t, err)
 
-	s.PrintMarkdown(sb, now)
+	s, err := NewSummary("")
+	require.NoError(t, err)
+
+	err = fnTx(s)
+	require.NoError(t, err)
+
+	err = s.PrintMarkdown(sb, now)
+	require.NoError(t, err)
 
 	expected, err := os.ReadFile("../testdata/transactions-summary.md")
 	require.NoError(t, err)

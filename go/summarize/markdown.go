@@ -80,7 +80,13 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 	}
 }
 
-func renderTableUsage(md *markdown.MarkDown, tableSummaries []*TableSummary, includeRowCount bool) {
+func renderTableUsage(md *markdown.MarkDown, in []*TableSummary, includeRowCount bool) {
+	var tableSummaries []*TableSummary
+	for _, tbl := range in {
+		if !tbl.IsEmpty() {
+			tableSummaries = append(tableSummaries, tbl)
+		}
+	}
 	if len(tableSummaries) == 0 {
 		return
 	}
