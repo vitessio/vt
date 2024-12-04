@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/alecthomas/chroma/quick"
+	"github.com/fatih/color"
 	"golang.org/x/term"
 )
 
@@ -43,9 +44,7 @@ func Run(files []string, hotMetric string, showGraph bool) {
 
 	for _, file := range files {
 		typ, err := getFileType(file)
-		if err != nil {
-			panic(err.Error())
-		}
+		exitIfError(err)
 		var w summarizer
 		var t traceSummary
 		switch typ {
@@ -60,10 +59,7 @@ func Run(files []string, hotMetric string, showGraph bool) {
 		default:
 			err = errors.New("unknown file type")
 		}
-
-		if err != nil {
-			panic(err.Error())
-		}
+		exitIfError(err)
 
 		if w != nil {
 			workers = append(workers, w)
@@ -76,28 +72,32 @@ func Run(files []string, hotMetric string, showGraph bool) {
 	traceCount := len(traces)
 	if traceCount <= 0 {
 		s, err := printSummary(hotMetric, workers)
-		if err != nil {
-			panic(err.Error())
-		}
+		exitIfError(err)
 		if showGraph {
 			err := renderQueryGraph(s)
-			if err != nil {
-				panic(err.Error())
-			}
+			exitIfError(err)
 		}
 		return
 	}
 
 	err := checkTraceConditions(traces, workers, hotMetric)
-	if err != nil {
-		panic(err.Error())
-	}
+	exitIfError(err)
+
 	switch traceCount {
 	case 1:
 		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
 	case 2:
 		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
 	}
+}
+
+func exitIfError(err error) {
+	if err == nil {
+		return
+	}
+	_, _ = color.New(color.FgRed).Fprintln(os.Stderr, err.Error())
+
+	os.Exit(1)
 }
 
 func printSummary(hotMetric string, workers []summaryWorker) (*Summary, error) {

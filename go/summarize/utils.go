@@ -53,7 +53,7 @@ func getFileType(filename string) (fileType, error) {
 
 	token, err := decoder.Token()
 	if err != nil {
-		return unknownFile, fmt.Errorf("error reading token: %v", err)
+		return unknownFile, fmt.Errorf("error reading json token: %v", err)
 	}
 
 	if delim, ok := token.(json.Delim); !ok || delim != '{' {
@@ -66,7 +66,7 @@ func getFileType(filename string) (fileType, error) {
 
 	keyToken, err := decoder.Token()
 	if err != nil {
-		return unknownFile, fmt.Errorf("error reading key token: %v", err)
+		return unknownFile, fmt.Errorf("error reading json key token: %v", err)
 	}
 
 	key, ok := keyToken.(string)
@@ -76,7 +76,7 @@ func getFileType(filename string) (fileType, error) {
 
 	valueToken, err := decoder.Token()
 	if err != nil {
-		return unknownFile, fmt.Errorf("error reading value token: %v", err)
+		return unknownFile, fmt.Errorf("error reading json value token: %v", err)
 	}
 
 	if key == "fileType" {
