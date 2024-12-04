@@ -17,6 +17,7 @@ limitations under the License.
 package summarize
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -45,30 +46,52 @@ func Run(files []string, hotMetric string, showGraph bool) {
 		if err != nil {
 			panic(err.Error())
 		}
+		var w summarizer
+		var t traceSummary
 		switch typ {
 		case dbInfoFile:
-			workers = append(workers, readDBInfoFile(file))
+			w, err = readDBInfoFile(file)
 		case transactionFile:
-			workers = append(workers, readTransactionFile(file))
+			w, err = readTransactionFile(file)
 		case traceFile:
-			traces = append(traces, readTracedFile(file))
+			t, err = readTracedFile(file)
 		case keysFile:
-			workers = append(workers, readKeysFile(file))
+			w, err = readKeysFile(file)
 		default:
-			panic("Unknown file type")
+			err = errors.New("unknown file type")
 		}
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		if w != nil {
+			workers = append(workers, w)
+			continue
+		}
+
+		traces = append(traces, t)
 	}
 
 	traceCount := len(traces)
 	if traceCount <= 0 {
-		s := printSummary(hotMetric, workers)
+		s, err := printSummary(hotMetric, workers)
+		if err != nil {
+			panic(err.Error())
+		}
 		if showGraph {
-			renderQueryGraph(s)
+			err := renderQueryGraph(s)
+			if err != nil {
+				panic(err.Error())
+			}
 		}
 		return
 	}
 
-	checkTraceConditions(traces, workers, hotMetric)
+	err := checkTraceConditions(traces, workers, hotMetric)
+	if err != nil {
+		panic(err.Error())
+	}
 	switch traceCount {
 	case 1:
 		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
@@ -77,33 +100,35 @@ func Run(files []string, hotMetric string, showGraph bool) {
 	}
 }
 
-func printSummary(hotMetric string, workers []summaryWorker) *Summary {
-	s := NewSummary(hotMetric)
+func printSummary(hotMetric string, workers []summaryWorker) (*Summary, error) {
+	s, err := NewSummary(hotMetric)
+	if err != nil {
+		return nil, err
+	}
 	for _, worker := range workers {
 		err := worker(s)
 		if err != nil {
-			exit(err.Error())
+			return nil, err
 		}
 	}
-	s.PrintMarkdown(os.Stdout, time.Now())
-	return s
+	err = s.PrintMarkdown(os.Stdout, time.Now())
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 
-func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) {
+func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) error {
 	if len(workers) > 0 {
-		panic("Trace files cannot be mixed with other file types")
+		return errors.New("trace files cannot be mixed with other file types")
 	}
 	if len(traces) > 2 {
-		panic("Can only summarize up to two trace files at once")
+		return errors.New("can only summarize up to two trace files at once")
 	}
 	if hotMetric != "" {
-		exit("hotMetric flag is only supported for 'vt keys' output")
+		return errors.New("hotMetric flag is only supported for 'vt keys' output")
 	}
-}
-
-func exit(msg string) {
-	fmt.Println(msg)
-	os.Exit(1)
+	return nil
 }
 
 const queryPrefix = "Query: "

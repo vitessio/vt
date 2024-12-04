@@ -20,9 +20,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReadTransaction(t *testing.T) {
-	file := readTransactionFile("../testdata/small-slow-query-transactions.json")
+	file, err := readTransactionFile("../testdata/small-slow-query-transactions.json")
+	require.NoError(t, err)
 	assert.NotNil(t, file)
 }
