@@ -38,6 +38,10 @@
         return 1 + (value - 1) * (12 - 1) / ({{.MaxValue}} - 1)
     }
 
+    let nodeSizeScale = function(value) {
+        return 6 + (value - 1) * (20 - 6) / ({{.MaxNumRows}} - 1)
+    }
+
     const highlightNodes = new Set();
     const highlightLinks = new Set();
     let hoverNode = null;
@@ -122,11 +126,11 @@
                 ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
             }
             ctx.beginPath();
-            let nodeSize = 6/(globalScale/2);
-            if (nodeSize >= 6) {
-                nodeSize = 6
-            } else if (nodeSize <= 2) {
-                nodeSize = 2
+            let nodeSize = nodeSizeScale(node.size)/(globalScale/2);
+            if (nodeSize >= 10) {
+                nodeSize = 10
+            } else if (nodeSize <= 1) {
+                nodeSize = 1
             }
             ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
             ctx.fill();

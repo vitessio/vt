@@ -27,7 +27,8 @@ import (
 
 type (
 	node struct {
-		ID string `json:"id"`
+		ID       string `json:"id"`
+		RowCount int    `json:"size"`
 	}
 
 	link struct {
@@ -47,7 +48,8 @@ type (
 	}
 
 	forceGraphData struct {
-		maxValue int
+		maxValue   int
+		maxNumRows int
 		data
 	}
 )
@@ -56,9 +58,13 @@ func createForceGraphData(s *Summary) forceGraphData {
 	result := &forceGraphData{}
 
 	idxTableNode := make(map[string]int)
+	result.maxNumRows = 0
 	for _, table := range s.tables {
-		result.Nodes = append(result.Nodes, node{ID: table.Table})
+		result.Nodes = append(result.Nodes, node{ID: table.Table, RowCount: table.RowCount})
 		idxTableNode[table.Table] = len(result.Nodes) - 1
+		if table.RowCount > result.maxNumRows {
+			result.maxNumRows = table.RowCount
+		}
 	}
 
 	addJoins(s, result, idxTableNode)
@@ -208,12 +214,14 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) {
 	}
 
 	d := struct {
-		Data     any
-		MaxValue int
+		Data       any
+		MaxValue   int
+		MaxNumRows int
 	}{
 		// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around escaping
-		Data:     template.JS(dataBytes),
-		MaxValue: data.maxValue,
+		Data:       template.JS(dataBytes),
+		MaxValue:   data.maxValue,
+		MaxNumRows: data.maxNumRows,
 	}
 
 	if err := tmpl.Execute(w, d); err != nil {
