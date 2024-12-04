@@ -17,6 +17,7 @@ limitations under the License.
 package summarize
 
 import (
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -69,14 +70,19 @@ type (
 	}
 )
 
-func NewSummary(hotMetric string) *Summary {
+func NewSummary(hotMetric string) (*Summary, error) {
+	hotness, err := getMetricForHotness(hotMetric)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Summary{
 		queryGraph: make(queryGraph),
-		hotQueryFn: getMetricForHotness(hotMetric),
-	}
+		hotQueryFn: hotness,
+	}, nil
 }
 
-func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) {
+func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
 	md := &markdown.MarkDown{}
 	filePlural := ""
 	msg := `# Query Analysis Report
@@ -100,8 +106,9 @@ func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) {
 
 	_, err := md.WriteTo(out)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("error writing markdown: %w", err)
 	}
+	return nil
 }
 
 func (s *Summary) GetTable(name string) *TableSummary {
@@ -115,4 +122,8 @@ func (s *Summary) GetTable(name string) *TableSummary {
 
 func (s *Summary) AddTable(table *TableSummary) {
 	s.tables = append(s.tables, table)
+}
+
+func (ts TableSummary) IsEmpty() bool {
+	return ts.ReadQueryCount == 0 && ts.WriteQueryCount == 0 && len(ts.ColumnUses) == 0 && ts.RowCount == 0
 }

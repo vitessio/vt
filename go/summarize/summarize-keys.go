@@ -86,7 +86,7 @@ func (p Position) String() string {
 		return "GROUP"
 	}
 
-	panic("unknown Position")
+	return "UNKNOWN"
 }
 
 func (ci ColumnInformation) String() string {
@@ -140,31 +140,30 @@ func (ts TableSummary) UseCount() int {
 
 type getMetric = func(q keys.QueryAnalysisResult) float64
 
-func getMetricForHotness(metric string) getMetric {
+func getMetricForHotness(metric string) (getMetric, error) {
 	switch metric {
 	case "usage-count":
 		return func(q keys.QueryAnalysisResult) float64 {
 			return float64(q.UsageCount)
-		}
+		}, nil
 	case "total-rows-examined":
 		return func(q keys.QueryAnalysisResult) float64 {
 			return float64(q.RowsExamined)
-		}
+		}, nil
 	case "avg-rows-examined":
 		return func(q keys.QueryAnalysisResult) float64 {
 			return float64(q.RowsExamined) / float64(q.UsageCount)
-		}
+		}, nil
 	case "total-time", "":
 		return func(q keys.QueryAnalysisResult) float64 {
 			return q.QueryTime
-		}
+		}, nil
 	case "avg-time":
 		return func(q keys.QueryAnalysisResult) float64 {
 			return q.QueryTime / float64(q.UsageCount)
-		}
+		}, nil
 	default:
-		exit(fmt.Sprintf("unknown metric: %s", metric))
-		panic("unreachable")
+		return nil, fmt.Errorf("unknown metric: %s", metric)
 	}
 }
 
@@ -188,7 +187,7 @@ func makeKey(lhs, rhs operators.Column) graphKey {
 	return graphKey{rhsTable, lhsTable}
 }
 
-func summarizeKeysQueries(summary *Summary, queries *keys.Output) {
+func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {
 	tableSummaries := make(map[string]*TableSummary)
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
@@ -221,11 +220,11 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) {
 		table.ReadQueryCount = tblSummary.ReadQueryCount
 		table.WriteQueryCount = tblSummary.WriteQueryCount
 		if table.ColumnUses != nil {
-			panic("ColumnUses already set for table" + tblSummary.Table)
+			return fmt.Errorf("ColumnUses already set for table %s", tblSummary.Table)
 		}
 		table.ColumnUses = tblSummary.ColumnUses
 		if table.JoinPredicates != nil {
-			panic("JoinPredicates already set for table" + tblSummary.Table)
+			return fmt.Errorf("JoinPredicates already set for table %s", tblSummary.Table)
 		}
 		table.JoinPredicates = tblSummary.JoinPredicates
 	}
@@ -272,6 +271,7 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) {
 		}
 		return summary.joins[i].Tbl2 < summary.joins[j].Tbl2
 	})
+	return nil
 }
 
 func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult, metricReader getMetric) {

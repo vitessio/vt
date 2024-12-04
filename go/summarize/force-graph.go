@@ -19,6 +19,7 @@ package summarize
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net"
@@ -171,46 +172,46 @@ func createGraphKey(tableA, tableB string) graphKey {
 	return graphKey{Tbl1: tableB, Tbl2: tableA}
 }
 
-func renderQueryGraph(s *Summary) {
+func renderQueryGraph(s *Summary) error {
 	data := createForceGraphData(s)
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("could not create a listener: %w", err)
 	}
 	defer listener.Close()
 
 	// Get the assigned port
 	addr, ok := listener.Addr().(*net.TCPAddr)
 	if !ok {
-		exit("could not create a listener")
+		return errors.New("could not create a listener")
 	}
 	fmt.Printf("Server started at http://localhost:%d\nExit the program with CTRL+C\n", addr.Port)
 
 	// Start the server
 	// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around timeouts
-	err = http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		serveIndex(w, data)
+	return http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		err := serveIndex(w, data)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	}))
-	if err != nil {
-		exit(err.Error())
-	}
 }
 
 //go:embed graph-template.gohtml
 var templateHTML string
 
 // Function to dynamically generate and serve index.html
-func serveIndex(w http.ResponseWriter, data forceGraphData) {
+func serveIndex(w http.ResponseWriter, data forceGraphData) error {
 	dataBytes, err := json.Marshal(data.data)
 	if err != nil {
-		exit(err.Error())
+		return fmt.Errorf("could not marshal data: %w", err)
 	}
 
 	tmpl, err := template.New("index").Parse(templateHTML)
 	if err != nil {
 		http.Error(w, "Failed to parse template", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	d := struct {
@@ -226,8 +227,10 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) {
 
 	if err := tmpl.Execute(w, d); err != nil {
 		http.Error(w, "Failed to execute template", http.StatusInternalServerError)
-		return
+		return err
 	}
+
+	return nil
 }
 
 /*
