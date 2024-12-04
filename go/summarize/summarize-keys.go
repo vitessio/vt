@@ -22,6 +22,7 @@ import (
 	"maps"
 	"slices"
 	"sort"
+	"strings"
 
 	"vitess.io/vitess/go/slice"
 	"vitess.io/vitess/go/vt/sqlparser"
@@ -177,11 +178,13 @@ func (g queryGraph) AddJoinPredicate(key graphKey, pred operators.JoinPredicate)
 
 // makeKey creates a graph key from two columns. The key is always sorted in ascending order.
 func makeKey(lhs, rhs operators.Column) graphKey {
-	if lhs.Table < rhs.Table {
-		return graphKey{lhs.Table, rhs.Table}
+	lhsTable := strings.Trim(lhs.Table, "`")
+	rhsTable := strings.Trim(rhs.Table, "`")
+	if lhsTable < rhsTable {
+		return graphKey{lhsTable, rhsTable}
 	}
 
-	return graphKey{rhs.Table, lhs.Table}
+	return graphKey{rhsTable, lhsTable}
 }
 
 func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {

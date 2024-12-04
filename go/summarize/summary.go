@@ -24,6 +24,7 @@ import (
 
 	"vitess.io/vitess/go/vt/vtgate/planbuilder/operators"
 
+	"github.com/vitessio/vt/go/dbinfo"
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
 )
@@ -42,13 +43,14 @@ type (
 	}
 
 	TableSummary struct {
-		Table           string
-		ReadQueryCount  int
-		WriteQueryCount int
-		ColumnUses      map[ColumnInformation]ColumnUsage
-		JoinPredicates  []operators.JoinPredicate
-		Failed          bool
-		RowCount        int
+		Table            string
+		ReadQueryCount   int
+		WriteQueryCount  int
+		ColumnUses       map[ColumnInformation]ColumnUsage
+		JoinPredicates   []operators.JoinPredicate
+		Failed           bool
+		RowCount         int
+		ReferencedTables []*dbinfo.ForeignKey
 	}
 
 	TransactionSummary struct {

@@ -17,6 +17,7 @@ limitations under the License.
 package summarize
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,7 +28,8 @@ import (
 
 type (
 	node struct {
-		ID string `json:"id"`
+		ID       string `json:"id"`
+		RowCount int    `json:"size"`
 	}
 
 	link struct {
@@ -47,35 +49,75 @@ type (
 	}
 
 	forceGraphData struct {
-		maxValue int
+		maxValue   int
+		maxNumRows int
 		data
 	}
 )
 
 func createForceGraphData(s *Summary) forceGraphData {
-	var result forceGraphData
+	result := &forceGraphData{}
 
 	idxTableNode := make(map[string]int)
+	result.maxNumRows = 0
 	for _, table := range s.tables {
-		result.Nodes = append(result.Nodes, node{ID: table.Table})
+		result.Nodes = append(result.Nodes, node{ID: table.Table, RowCount: table.RowCount})
 		idxTableNode[table.Table] = len(result.Nodes) - 1
-	}
-	for _, join := range s.joins {
-		var preds []string
-		for _, predicate := range join.predicates {
-			preds = append(preds, predicate.String())
+		if table.RowCount > result.maxNumRows {
+			result.maxNumRows = table.RowCount
 		}
-		result.Links = append(result.Links, link{
-			Source:     join.Tbl1,
-			SourceIdx:  idxTableNode[join.Tbl1],
-			Target:     join.Tbl2,
-			TargetIdx:  idxTableNode[join.Tbl2],
-			Value:      join.Occurrences,
-			Type:       "join",
-			Predicates: preds,
-		})
 	}
 
+	addJoins(s, result, idxTableNode)
+
+	addTransactions(s, result, idxTableNode)
+
+	addForeignKeys(s, result, idxTableNode)
+
+	m := make(map[graphKey][]int)
+
+	for i, l := range result.Links {
+		if l.Value > result.maxValue {
+			result.maxValue = l.Value
+		}
+		m[createGraphKey(l.Source, l.Target)] = append(m[createGraphKey(l.Source, l.Target)], i)
+	}
+	const curvatureMinMax = 0.5
+	for _, links := range m {
+		if len(links) == 1 {
+			continue
+		}
+		delta := 2 * curvatureMinMax / (len(links) - 1)
+		for i, idx := range links {
+			result.Links[idx].Curvature = -curvatureMinMax + float64(i*delta)
+		}
+	}
+
+	return *result
+}
+
+func addForeignKeys(s *Summary, result *forceGraphData, idxTableNode map[string]int) {
+	for _, ts := range s.tables {
+		for _, fk := range ts.ReferencedTables {
+			if t := s.GetTable(ts.Table); t == nil {
+				s.AddTable(&TableSummary{Table: ts.Table})
+			}
+			if t := s.GetTable(fk.ReferencedTableName); t == nil {
+				s.AddTable(&TableSummary{Table: fk.ReferencedTableName})
+			}
+			result.Links = append(result.Links, link{
+				Source:    ts.Table,
+				SourceIdx: idxTableNode[ts.Table],
+				Target:    fk.ReferencedTableName,
+				TargetIdx: idxTableNode[fk.ReferencedTableName],
+				Value:     1,
+				Type:      "fk",
+			})
+		}
+	}
+}
+
+func addTransactions(s *Summary, result *forceGraphData, idxTableNode map[string]int) {
 	txTablesMap := make(map[graphKey]int)
 	for _, transaction := range s.transactions {
 		var tables []string
@@ -103,27 +145,24 @@ func createForceGraphData(s *Summary) forceGraphData {
 			Type:      "tx",
 		})
 	}
+}
 
-	m := make(map[graphKey][]int)
-
-	for i, l := range result.Links {
-		if l.Value > result.maxValue {
-			result.maxValue = l.Value
+func addJoins(s *Summary, result *forceGraphData, idxTableNode map[string]int) {
+	for _, join := range s.joins {
+		var preds []string
+		for _, predicate := range join.predicates {
+			preds = append(preds, predicate.String())
 		}
-		m[createGraphKey(l.Source, l.Target)] = append(m[createGraphKey(l.Source, l.Target)], i)
+		result.Links = append(result.Links, link{
+			Source:     join.Tbl1,
+			SourceIdx:  idxTableNode[join.Tbl1],
+			Target:     join.Tbl2,
+			TargetIdx:  idxTableNode[join.Tbl2],
+			Value:      join.Occurrences,
+			Type:       "join",
+			Predicates: preds,
+		})
 	}
-	const curvatureMinMax = 0.5
-	for _, links := range m {
-		if len(links) == 1 {
-			continue
-		}
-		delta := 2 * curvatureMinMax / (len(links) - 1)
-		for i, idx := range links {
-			result.Links[idx].Curvature = -curvatureMinMax + float64(i*delta)
-		}
-	}
-
-	return result
 }
 
 func createGraphKey(tableA, tableB string) graphKey {
@@ -159,6 +198,9 @@ func renderQueryGraph(s *Summary) error {
 	}))
 }
 
+//go:embed graph-template.gohtml
+var templateHTML string
+
 // Function to dynamically generate and serve index.html
 func serveIndex(w http.ResponseWriter, data forceGraphData) error {
 	dataBytes, err := json.Marshal(data.data)
@@ -173,12 +215,14 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) error {
 	}
 
 	d := struct {
-		Data     any
-		MaxValue int
+		Data       any
+		MaxValue   int
+		MaxNumRows int
 	}{
 		// nolint: gosec,nolintlint // this is all ran locally so no need to care about vulnerabilities around escaping
-		Data:     template.JS(dataBytes),
-		MaxValue: data.maxValue,
+		Data:       template.JS(dataBytes),
+		MaxValue:   data.maxValue,
+		MaxNumRows: data.maxNumRows,
 	}
 
 	if err := tmpl.Execute(w, d); err != nil {
@@ -194,164 +238,3 @@ TODO:
 	- New relationship: FKs
 	- Different sizes of nodes and links based on table size and relationship occurrences
 */
-
-const templateHTML = `<head>
-    <style> body { margin: 0; } </style>
-    <script src="//unpkg.com/force-graph"></script>
-</head>
-<body>
-    <div id="graph"></div>
-    <div style="position: absolute; top: 50px; right: 50px; font-size: 16px; background-color: white; padding: 10px;">
-        <div style="display: flex; align-items: center; margin-bottom: 5px;">
-            <div style="width: 20px; height: 10px; background-color: rgb(0,184,0); margin-right: 5px;"></div>
-            <span>Transaction</span>
-        </div>
-        <div style="display: flex; align-items: center;">
-            <div style="width: 20px; height: 10px; background-color: rgb(184,0,0); margin-right: 5px;"></div>
-            <span>Join</span>
-        </div>
-    </div>
-    <script>
-        let data = {{.Data}};
-        data.links.forEach(link => {
-            const a = data.nodes[link.source_idx];
-            const b = data.nodes[link.target_idx];
-            !a.neighbors && (a.neighbors = []);
-            !b.neighbors && (b.neighbors = []);
-            a.neighbors.push(b);
-            b.neighbors.push(a);
-
-            !a.links && (a.links = []);
-            !b.links && (b.links = []);
-            a.links.push(link);
-            b.links.push(link);
-        });
-
-        let scale = function(value) {
-            return 1 + (value - 1) * (12 - 1) / ({{.MaxValue}} - 1)
-        }
-
-        const highlightNodes = new Set();
-        const highlightLinks = new Set();
-        let hoverNode = null;
-
-        const Graph = ForceGraph()
-        (document.getElementById('graph'))
-            .backgroundColor('#101020')
-            .graphData(data)
-            .nodeId('id')
-            .onLinkHover(link => {
-                highlightNodes.clear();
-                highlightLinks.clear();
-
-                if (link) {
-                    highlightLinks.add(link);
-                    highlightNodes.add(link.source);
-                    highlightNodes.add(link.target);
-                }
-            })
-            .linkColor(link => {
-                if (link.type === 'tx') {
-                    return 'rgb(0,184,0)'
-                } else if (link.type === 'join') {
-                    return 'rgb(184,0,0)'
-                } else {
-                    return 'rgb(0,0,184)'
-                }
-            })
-            .linkWidth(link => {
-                if (highlightLinks.has(link)) {
-                    return scale(link.value) * 1.2
-                }
-                return scale(link.value)
-            })
-            .linkCurvature('curvature')
-            .linkLabel(link => {
-                let s = "<center>" + link.value + "</center>"
-                if (link.predicates === null) {
-                    return s
-                }
-                link.predicates.forEach(pred => {
-                    s = s + "<br>" + pred
-                })
-                return s
-            })
-            .autoPauseRedraw(false) // keep redrawing after engine has stopped
-            .linkDirectionalParticles(5)
-            .linkDirectionalParticleWidth(link => {
-                if (highlightLinks.has(link)) {
-                    // we want to scale the size of the particle according to the size of the link
-                    // the particles and links don't scale the same way in the UI, so to make it more equal between the two
-                    // we use different size modifiers (2.2, 1.8, 1.6, etc) depending on the size of the link
-                    let val = scale(link.value) * 1.2
-                    if (val <= 2) {
-                        return val * 2.2
-                    } else if (val <= 4) {
-                        return val * 1.8
-                    } else if (val <= 6) {
-                        return val * 1.6
-                    } else if (val <= 8) {
-                        return val * 1.35
-                    } else if (val <= 10) {
-                        return val * 1.1
-                    } else {
-                        return val
-                    }
-                }
-                return 0
-            })
-            .nodeCanvasObject((node, ctx, globalScale) => {
-                const label = node.id;
-                let fontSize = 8/(globalScale/2);
-                if (fontSize >= 12) {
-                    fontSize = 12
-                }
-                ctx.font = fontSize+'px Sans-Serif';
-
-                ctx.fillStyle = 'rgb(255,255,255)';
-                if (highlightNodes.has(node)) {
-                    ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
-                }
-                ctx.beginPath();
-                let nodeSize = 6/(globalScale/2);
-                if (nodeSize >= 6) {
-                    nodeSize = 6
-                } else if (nodeSize <= 2) {
-                    nodeSize = 2
-                }
-                ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
-                ctx.fill();
-
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'hanging';
-                ctx.fillStyle = 'rgb(255,255,255)';
-                if (highlightNodes.has(node)) {
-                    ctx.fillStyle = node === hoverNode ? 'rgb(151,62,0)' : 'orange';
-                }
-                ctx.fillText(label, node.x, node.y+nodeSize+1);
-
-                if (highlightNodes.has(node)) {
-                    ctx.beginPath();
-                    ctx.fill();
-                }
-            })
-            .onNodeHover(node => {
-                highlightNodes.clear();
-                highlightLinks.clear();
-                 if (node) {
-                    highlightNodes.add(node);
-                    if (node.neighbors !== undefined) {
-                        node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
-                    }
-                    if (node.links !== undefined) {
-                        node.links.forEach(link => highlightLinks.add(link));
-                    }
-                }
-
-                hoverNode = node || null;
-            })
-            .d3Force('force').strength(link => {
-                return data.links[link.index].value * 0.02
-            });
-    </script>
-</body>`
