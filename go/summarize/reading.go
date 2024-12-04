@@ -118,6 +118,7 @@ func readDBInfoFile(fileName string) func(s *Summary) error {
 				s.AddTable(table)
 			}
 			table.RowCount = ti.Rows
+			table.ReferencedTables = ti.ForeignKeys
 		}
 		return nil
 	}
