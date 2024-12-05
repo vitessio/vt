@@ -28,6 +28,7 @@ import (
 func testerCmd() *cobra.Command {
 	var cfg vttester.Config
 	var inputType string
+	csvConfig := data.NewEmptyCSVConfig(false, -1)
 
 	cmd := &cobra.Command{
 		Aliases: []string{"test"},
@@ -38,7 +39,7 @@ func testerCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg.Tests = args
 			cfg.Compare = true
-			loader, err := configureLoader(inputType, true, data.CSVConfig{})
+			loader, err := configureLoader(inputType, true, csvConfig)
 			if err != nil {
 				return err
 			}
@@ -53,6 +54,7 @@ func testerCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.OLAP, "olap", false, "Use OLAP to run the queries.")
 	cmd.Flags().BoolVar(&cfg.XUnit, "xunit", false, "Get output in an xml file instead of errors directory")
 	addInputTypeFlag(cmd, &inputType)
+	addCSVConfigFlag(cmd, &csvConfig)
 
 	return cmd
 }
@@ -60,6 +62,7 @@ func testerCmd() *cobra.Command {
 func tracerCmd() *cobra.Command {
 	var cfg vttester.Config
 	var inputType string
+	csvConfig := data.NewEmptyCSVConfig(false, -1)
 
 	cmd := &cobra.Command{
 		Use:   "trace ",
@@ -71,7 +74,7 @@ func tracerCmd() *cobra.Command {
 			}
 			cfg.Tests = args
 			cfg.Compare = false
-			loader, err := configureLoader(inputType, true, data.CSVConfig{})
+			loader, err := configureLoader(inputType, true, csvConfig)
 			if err != nil {
 				return err
 			}
@@ -83,6 +86,7 @@ func tracerCmd() *cobra.Command {
 
 	commonFlags(cmd, &cfg)
 	addInputTypeFlag(cmd, &inputType)
+	addCSVConfigFlag(cmd, &csvConfig)
 
 	return cmd
 }
