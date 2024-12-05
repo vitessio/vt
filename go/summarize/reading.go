@@ -87,15 +87,9 @@ func readTransactionFile(fileName string) (summarizer, error) {
 }
 
 func readKeysFile(fileName string) (summarizer, error) {
-	c, err := os.ReadFile(fileName)
+	ko, err := keys.ReadKeysFile(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("error opening file: %w", err)
-	}
-
-	var ko keys.Output
-	err = json.Unmarshal(c, &ko)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing json: %w", err)
+		return nil, err
 	}
 
 	return func(s *Summary) error {
