@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -27,6 +28,7 @@ import (
 
 func keysCmd() *cobra.Command {
 	var inputType string
+	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
 		Use:     "keys ",
@@ -38,7 +40,7 @@ func keysCmd() *cobra.Command {
 				FileName: args[0],
 			}
 
-			loader, err := configureLoader(inputType, false)
+			loader, err := configureLoader(inputType, false, csvConfig)
 			if err != nil {
 				return err
 			}
@@ -49,18 +51,30 @@ func keysCmd() *cobra.Command {
 	}
 
 	addInputTypeFlag(cmd, &inputType)
+	addCSVConfigFlag(cmd, &csvConfig)
 
 	return cmd
 }
 
-const allowedInputTypes = "'sql', 'mysql-log' or 'vtgate-log'"
+const allowedInputTypes = "'sql', 'mysql-log', 'vtgate-log', 'csv'"
 
 func addInputTypeFlag(cmd *cobra.Command, s *string) {
 	*s = "sql"
 	cmd.Flags().StringVar(s, "input-type", "sql", fmt.Sprintf("Specifies the type of input file: %s", allowedInputTypes))
 }
 
-func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) {
+func addCSVConfigFlag(cmd *cobra.Command, c *data.CSVConfig) {
+	cmd.Flags().BoolVar(&c.Header, "csv-header", false, "Indicates that the CSV file has a header row")
+	cmd.Flags().IntVar(&c.QueryField, "csv-query-field", -1, "Column index or name for the query field (required)")
+	cmd.Flags().IntVar(&c.ConnectionIDField, "csv-connection-id-field", -1, "Column index or name for the connection ID field")
+	cmd.Flags().IntVar(&c.QueryTimeField, "csv-query-time-field", -1, "Column index or name for the query time field")
+	cmd.Flags().IntVar(&c.LockTimeField, "csv-lock-time-field", -1, "Column index or name for the lock time field")
+	cmd.Flags().IntVar(&c.RowsSentField, "csv-rows-sent-field", -1, "Column index or name for the rows sent field")
+	cmd.Flags().IntVar(&c.RowsExaminedField, "csv-rows-examined-field", -1, "Column index or name for the rows examined field")
+	cmd.Flags().IntVar(&c.TimestampField, "csv-timestamp-field", -1, "Column index or name for the timestamp field")
+}
+
+func configureLoader(inputType string, needsBindVars bool, csvConfig data.CSVConfig) (data.Loader, error) {
 	switch inputType {
 	case "sql":
 		return data.SlowQueryLogLoader{}, nil
@@ -68,6 +82,11 @@ func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) 
 		return data.MySQLLogLoader{}, nil
 	case "vtgate-log":
 		return data.VtGateLogLoader{NeedsBindVars: needsBindVars}, nil
+	case "csv":
+		if csvConfig.QueryField == -1 {
+			return nil, errors.New("must specify query field for CSV loader")
+		}
+		return data.CSVLogLoader{Config: csvConfig}, nil
 	default:
 		return nil, fmt.Errorf("invalid input type: must be %s", allowedInputTypes)
 	}

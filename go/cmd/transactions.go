@@ -19,6 +19,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/transactions"
 )
 
@@ -36,7 +37,7 @@ func transactionsCmd() *cobra.Command {
 				FileName: args[0],
 			}
 
-			loader, err := configureLoader(inputType, false)
+			loader, err := configureLoader(inputType, false, data.CSVConfig{})
 			if err != nil {
 				return err
 			}

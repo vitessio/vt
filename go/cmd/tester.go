@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/vitessio/vt/go/data"
 	vttester "github.com/vitessio/vt/go/tester"
 )
 
@@ -37,7 +38,7 @@ func testerCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg.Tests = args
 			cfg.Compare = true
-			loader, err := configureLoader(inputType, true)
+			loader, err := configureLoader(inputType, true, data.CSVConfig{})
 			if err != nil {
 				return err
 			}
@@ -70,7 +71,7 @@ func tracerCmd() *cobra.Command {
 			}
 			cfg.Tests = args
 			cfg.Compare = false
-			loader, err := configureLoader(inputType, true)
+			loader, err := configureLoader(inputType, true, data.CSVConfig{})
 			if err != nil {
 				return err
 			}
