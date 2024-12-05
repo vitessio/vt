@@ -232,9 +232,3 @@ func serveIndex(w http.ResponseWriter, data forceGraphData) error {
 
 	return nil
 }
-
-/*
-TODO:
-	- New relationship: FKs
-	- Different sizes of nodes and links based on table size and relationship occurrences
-*/
