@@ -28,7 +28,7 @@ import (
 
 func keysCmd() *cobra.Command {
 	var inputType string
-	var csvConfig data.CSVConfig
+	csvConfig := data.NewEmptyCSVConfig(false, -1)
 
 	cmd := &cobra.Command{
 		Use:     "keys ",
@@ -64,14 +64,14 @@ func addInputTypeFlag(cmd *cobra.Command, s *string) {
 }
 
 func addCSVConfigFlag(cmd *cobra.Command, c *data.CSVConfig) {
-	cmd.Flags().BoolVar(&c.Header, "csv-header", false, "Indicates that the CSV file has a header row")
-	cmd.Flags().IntVar(&c.QueryField, "csv-query-field", -1, "Column index or name for the query field (required)")
-	cmd.Flags().IntVar(&c.ConnectionIDField, "csv-connection-id-field", -1, "Column index or name for the connection ID field")
-	cmd.Flags().IntVar(&c.QueryTimeField, "csv-query-time-field", -1, "Column index or name for the query time field")
-	cmd.Flags().IntVar(&c.LockTimeField, "csv-lock-time-field", -1, "Column index or name for the lock time field")
-	cmd.Flags().IntVar(&c.RowsSentField, "csv-rows-sent-field", -1, "Column index or name for the rows sent field")
-	cmd.Flags().IntVar(&c.RowsExaminedField, "csv-rows-examined-field", -1, "Column index or name for the rows examined field")
-	cmd.Flags().IntVar(&c.TimestampField, "csv-timestamp-field", -1, "Column index or name for the timestamp field")
+	cmd.Flags().BoolVar(&c.Header, "csv-header", c.Header, "Indicates that the CSV file has a header row")
+	cmd.Flags().IntVar(&c.QueryField, "csv-query-field", c.QueryField, "Column index or name for the query field (required)")
+	cmd.Flags().IntVar(&c.ConnectionIDField, "csv-connection-id-field", c.ConnectionIDField, "Column index or name for the connection ID field")
+	cmd.Flags().IntVar(&c.QueryTimeField, "csv-query-time-field", c.QueryTimeField, "Column index or name for the query time field")
+	cmd.Flags().IntVar(&c.LockTimeField, "csv-lock-time-field", c.LockTimeField, "Column index or name for the lock time field")
+	cmd.Flags().IntVar(&c.RowsSentField, "csv-rows-sent-field", c.RowsSentField, "Column index or name for the rows sent field")
+	cmd.Flags().IntVar(&c.RowsExaminedField, "csv-rows-examined-field", c.RowsExaminedField, "Column index or name for the rows examined field")
+	cmd.Flags().IntVar(&c.TimestampField, "csv-timestamp-field", c.TimestampField, "Column index or name for the timestamp field")
 }
 
 func configureLoader(inputType string, needsBindVars bool, csvConfig data.CSVConfig) (data.Loader, error) {

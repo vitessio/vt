@@ -50,6 +50,20 @@ type (
 	}
 )
 
+func NewEmptyCSVConfig(header bool, queryField int) CSVConfig {
+	return CSVConfig{
+		Header:     header,
+		QueryField: queryField,
+
+		ConnectionIDField: -1,
+		QueryTimeField:    -1,
+		LockTimeField:     -1,
+		RowsSentField:     -1,
+		RowsExaminedField: -1,
+		TimestampField:    -1,
+	}
+}
+
 func (c CSVLogLoader) Load(fileName string) IteratorLoader {
 	fd, err := os.OpenFile(fileName, os.O_RDONLY, 0)
 	if err != nil {
