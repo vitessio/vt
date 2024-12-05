@@ -1,0 +1,83 @@
+
+/* General Styles */
+html, body {
+    height: 100%; /* Ensure the entire viewport is used */
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    overflow: hidden; /* Prevent scrollbars for the whole page if not needed */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+a {
+    text-decoration: none;
+    color: #007BFF;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Header Styles */
+header {
+    background-color: black;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px; /* Fixed height */
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+header nav a {
+    margin-left: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+}
+
+header nav a:hover {
+    color: #FFD700;
+}
+
+/* Main Content Styles */
+main {
+    height: calc(100% - 150px); /* Adjusted for header and footer heights */
+    overflow-y: auto; /* Enable vertical scrolling if content overflows */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    padding: 20px;
+    background: white;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+/* Footer Styles */
+footer {
+    background-color: orange;
+    color: black;
+    text-align: center;
+    height: 40px; /* Fixed height */
+    line-height: 40px; /* Vertically center content */
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+
+footer p {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+}
