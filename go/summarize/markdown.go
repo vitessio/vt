@@ -155,7 +155,7 @@ func renderColumnUsageTable(md *markdown.MarkDown, summary *TableSummary) {
 }
 
 func renderTablesJoined(md *markdown.MarkDown, summary *Summary) {
-	if len(summary.joins) == 0 {
+	if len(summary.Joins) == 0 {
 		return
 	}
 
@@ -164,7 +164,7 @@ func renderTablesJoined(md *markdown.MarkDown, summary *Summary) {
 	}
 
 	md.Println("```")
-	for _, join := range summary.joins {
+	for _, join := range summary.Joins {
 		md.Printf("%s ↔ %s (Occurrences: %d)\n", join.Tbl1, join.Tbl2, join.Occurrences)
 		for i, pred := range join.predicates {
 			var s string

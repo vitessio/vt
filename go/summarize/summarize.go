@@ -17,10 +17,12 @@ limitations under the License.
 package summarize
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -115,10 +117,45 @@ func printSummary(hotMetric string, workers []summaryWorker) (*Summary, error) {
 			return nil, err
 		}
 	}
-	err = s.PrintMarkdown(os.Stdout, time.Now())
-	if err != nil {
-		return nil, err
+	useWebSummary := true
+	//nolint:nestif // This is a temporary solution to avoid breaking the code
+	if useWebSummary {
+		// html, err := web.RenderFile("summarize.html", s)
+		// fmt.Printf("Summary: %v\n", s)
+		fmt.Println("Sending summary to server")
+		summaryJSON, err := json.Marshal(s)
+		if err != nil {
+			fmt.Println("Error marshalling summary:", err)
+			return nil, err
+		}
+		fmt.Printf("Summary JSON: %s\n", summaryJSON)
+		tmpFile, err := os.CreateTemp("/tmp/", "vt-summary-*.json")
+		if err != nil {
+			fmt.Println("Error creating temp file:", err)
+			return nil, err
+		}
+		_, err = tmpFile.WriteString(string(summaryJSON))
+		if err != nil {
+			fmt.Println("Error writing to temp file:", err)
+			return nil, err
+		}
+		tmpFile.Close()
+
+		url := "http://localhost:8080/summarize?file=" + tmpFile.Name()
+		err = exec.Command("open", url).Start()
+		if err != nil {
+			fmt.Println("Error launching browser:", err)
+			return nil, err
+		}
+		fmt.Println("URL launched in default browser:", url)
+	} else {
+		// Print the response
+		err = s.PrintMarkdown(os.Stdout, time.Now())
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	return s, nil
 }
 

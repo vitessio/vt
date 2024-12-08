@@ -2,6 +2,7 @@ package web
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -10,9 +11,21 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/vitessio/vt/go/summarize"
 )
 
-func renderFile(fileName string, c *gin.Context) {
+func RenderFileToGin(fileName string, data any, c *gin.Context) {
+	buf, err := RenderFile(fileName, data)
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.Data(http.StatusOK, "text/html; charset=utf-8", buf.Bytes())
+}
+
+func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
+	_ = data
 	tmpl := template.Must(template.ParseFiles(
 		"go/web/templates/layout.html",
 		"go/web/templates/footer.html",
@@ -21,14 +34,11 @@ func renderFile(fileName string, c *gin.Context) {
 	))
 
 	var buf bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&buf, "layout.html", nil); err != nil {
-		// Return an error response if template execution fails
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	err := tmpl.ExecuteTemplate(&buf, "layout.html", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render template: %v", err)
 	}
-
-	// Set the Content-Type to text/html and write the rendered content
-	c.Data(http.StatusOK, "text/html; charset=utf-8", buf.Bytes())
+	return &buf, nil
 }
 
 func Run() {
@@ -41,89 +51,33 @@ func Run() {
 	r.Static("/images", "go/web/templates/images")
 
 	r.GET("/", func(c *gin.Context) {
-		renderFile("index.html", c)
+		RenderFileToGin("index.html", nil, c)
 	})
 
 	r.GET("/about", func(c *gin.Context) {
-		renderFile("about.html", c)
+		RenderFileToGin("about.html", nil, c)
 	})
 
-	r.GET("/render", func(c *gin.Context) {
-		action := c.Query("action")
-		param := c.Query("param")
-
-		// Call the handler to process the action
-		tmpl := template.Must(template.ParseFiles("go/web/templates/layout.html", "go/web/templates/index.html", "go/web/templates/footer.html", "go/web/templates/header.html"))
-
-		data, err := handleRenderAction(tmpl, action, param)
+	r.GET("/summarize", func(c *gin.Context) {
+		filePath := c.Query("file")
+		data, err := os.ReadFile(filePath)
 		if err != nil {
-			c.String(http.StatusBadRequest, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-
-		// Return the rendered HTML
-		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
-	})
-
-	r.POST("/render", func(c *gin.Context) {
-		var input struct {
-			Action string `json:"action"`
-			Param  string `json:"param"`
-		}
-
-		if err := c.ShouldBindJSON(&input); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		tmpl := template.Must(template.ParseFiles("go/web/templates/layout.html", "go/web/templates/index.html", "go/web/templates/footer.html", "go/web/templates/header.html"))
-
-		data, err := handleRenderAction(tmpl, input.Action, input.Param)
+		var summary summarize.Summary
+		err = json.Unmarshal(data, &summary)
 		if err != nil {
-			c.String(http.StatusBadRequest, err.Error())
+			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-
-		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+		RenderFileToGin("summarize.html", summary, c)
 	})
+
 	if os.WriteFile("/dev/stderr", []byte("Starting web server on http://localhost:8080\n"), 0o600) != nil {
 		panic("Failed to write to /dev/stderr")
 	}
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-}
-
-func handleRenderAction(tmpl *template.Template, action, param string) ([]byte, error) {
-	var data struct {
-		Title string
-		Body  string
-	}
-
-	switch action {
-	case "home":
-		data.Title = "Home Page"
-		data.Body = "Welcome to the homepage!"
-	case "about":
-		data.Title = "About Page"
-		data.Body = fmt.Sprintf("About us: %s", param)
-	case "dynamic":
-		data.Title = "Dynamic Content"
-		data.Body = generateDynamicContent(param)
-	default:
-		return nil, fmt.Errorf("invalid action: %s", action)
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&buf, "layout", data); err != nil {
-		return nil, fmt.Errorf("failed to render template: %v", err)
-	}
-
-	return buf.Bytes(), nil
-}
-
-func generateDynamicContent(param string) string {
-	if param == "" {
-		return "No parameter provided for dynamic content."
-	}
-	return fmt.Sprintf("Generated dynamic content with param: %s", param)
 }
