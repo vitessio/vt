@@ -40,7 +40,7 @@ func summarizeTransactions(s *Summary, txs []transactions.Signature) error {
 			}
 		}
 
-		s.transactions = append(s.transactions, TransactionSummary{
+		s.Transactions = append(s.Transactions, TransactionSummary{
 			Count:   tx.Count,
 			Queries: patterns,
 			Joins:   joins,

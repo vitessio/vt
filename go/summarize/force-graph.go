@@ -60,7 +60,7 @@ func createForceGraphData(s *Summary) forceGraphData {
 
 	idxTableNode := make(map[string]int)
 	result.maxNumRows = 0
-	for _, table := range s.tables {
+	for _, table := range s.Tables {
 		result.Nodes = append(result.Nodes, node{ID: table.Table, RowCount: table.RowCount})
 		idxTableNode[table.Table] = len(result.Nodes) - 1
 		if table.RowCount > result.maxNumRows {
@@ -97,7 +97,7 @@ func createForceGraphData(s *Summary) forceGraphData {
 }
 
 func addForeignKeys(s *Summary, result *forceGraphData, idxTableNode map[string]int) {
-	for _, ts := range s.tables {
+	for _, ts := range s.Tables {
 		for _, fk := range ts.ReferencedTables {
 			if t := s.GetTable(ts.Table); t == nil {
 				s.AddTable(&TableSummary{Table: ts.Table})
@@ -119,7 +119,7 @@ func addForeignKeys(s *Summary, result *forceGraphData, idxTableNode map[string]
 
 func addTransactions(s *Summary, result *forceGraphData, idxTableNode map[string]int) {
 	txTablesMap := make(map[graphKey]int)
-	for _, transaction := range s.transactions {
+	for _, transaction := range s.Transactions {
 		var tables []string
 		for _, query := range transaction.Queries {
 			tables = append(tables, query.Table)
@@ -148,7 +148,7 @@ func addTransactions(s *Summary, result *forceGraphData, idxTableNode map[string
 }
 
 func addJoins(s *Summary, result *forceGraphData, idxTableNode map[string]int) {
-	for _, join := range s.joins {
+	for _, join := range s.Joins {
 		var preds []string
 		for _, predicate := range join.predicates {
 			preds = append(preds, predicate.String())

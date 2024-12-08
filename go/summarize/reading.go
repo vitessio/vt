@@ -81,7 +81,7 @@ func readTransactionFile(fileName string) (summarizer, error) {
 		return nil, fmt.Errorf("error parsing json: %w", err)
 	}
 	return func(s *Summary) error {
-		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		s.AnalyzedFiles = append(s.AnalyzedFiles, fileName)
 		return summarizeTransactions(s, to.Signatures)
 	}, nil
 }
@@ -99,7 +99,7 @@ func readKeysFile(fileName string) (summarizer, error) {
 	}
 
 	return func(s *Summary) error {
-		s.analyzedFiles = append(s.analyzedFiles, fileName)
+		s.AnalyzedFiles = append(s.AnalyzedFiles, fileName)
 		return summarizeKeysQueries(s, &ko)
 	}, nil
 }
@@ -111,8 +111,8 @@ func readDBInfoFile(fileName string) (summarizer, error) {
 	}
 
 	return func(s *Summary) error {
-		s.analyzedFiles = append(s.analyzedFiles, fileName)
-		s.hasRowCount = true
+		s.AnalyzedFiles = append(s.AnalyzedFiles, fileName)
+		s.HasRowCount = true
 		for _, ti := range schemaInfo.Tables {
 			table := s.GetTable(ti.Name)
 			if table == nil {
