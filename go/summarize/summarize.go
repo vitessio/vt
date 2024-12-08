@@ -123,12 +123,12 @@ func printSummary(hotMetric string, workers []summaryWorker) (*Summary, error) {
 		// html, err := web.RenderFile("summarize.html", s)
 		// fmt.Printf("Summary: %v\n", s)
 		fmt.Println("Sending summary to server")
-		summaryJSON, err := json.Marshal(s)
+		summaryJSON, err := json.Marshal(*s)
 		if err != nil {
 			fmt.Println("Error marshalling summary:", err)
 			return nil, err
 		}
-		fmt.Printf("Summary JSON: %s\n", summaryJSON)
+		// fmt.Printf("Summary JSON: %s\n", summaryJSON)
 		tmpFile, err := os.CreateTemp("/tmp/", "vt-summary-*.json")
 		if err != nil {
 			fmt.Println("Error creating temp file:", err)

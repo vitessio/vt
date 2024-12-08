@@ -1,0 +1,129 @@
+{{define "content"}}
+<h1>Query Analysis Report</h1>
+<p><strong>Date of Analysis:</strong> {{.DateOfAnalysis}}</p>
+<p><strong>Analyzed Files:</strong> {{range .AnalyzedFiles}}<code>{{.}}</code>{{end}}</p>
+
+<h2>Top Queries</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Query ID</th>
+        <th>Usage Count</th>
+        <th>Total Query Time (ms)</th>
+        <th>Avg Query Time (ms)</th>
+        <th>Total Rows Examined</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .HotQueries}}
+    <tr>
+        <td>{{.QueryID}}</td>
+        <td>{{.UsageCount}}</td>
+        <td>{{.TotalQueryTime}}</td>
+        <td>{{.AvgQueryTime}}</td>
+        <td>{{.TotalRowsExamined}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+
+<h3>Query Details</h3>
+{{range .HotQueries}}
+<h4>{{.QueryID}}</h4>
+<pre><code>{{.QueryStructure}}</code></pre>
+{{end}}
+
+<h2>Tables</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Table Name</th>
+        <th>Reads</th>
+        <th>Writes</th>
+        {{if .IncludeRowCount}}<th>Number of Rows</th>{{end}}
+    </tr>
+    </thead>
+    <tbody>
+    {{range .Tables}}
+    <tr>
+        <td>{{.Table}}</td>
+        <td>{{.ReadQueryCount}}</td>
+        <td>{{.WriteQueryCount}}</td>
+        {{if $.IncludeRowCount}}<td>{{.RowCount}}</td>{{end}}
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+
+<h3>Column Usage</h3>
+{{range .Tables}}
+<h4>Table: <code>{{.Table}}</code> ({{.ReadQueryCount}} reads and {{.WriteQueryCount}} writes)</h4>
+<table>
+    <thead>
+    <tr>
+        <th>Column</th>
+        <th>Position</th>
+        <th>Used %</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .ColumnUses}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Pos}}</td>
+        <td>{{.Percentage}}%</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+{{end}}
+
+<h2>Tables Joined</h2>
+<pre>
+    {{range .Joins}}
+    {{.Tbl1}} ↔ {{.Tbl2}} (Occurrences: {{.Occurrences}})
+    {{range .Predicates}}
+    {{.}}
+    {{end}}
+    {{end}}
+    </pre>
+
+<h2>Failures</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Error</th>
+        <th>Count</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .Failures}}
+    <tr>
+        <td>{{.Error}}</td>
+        <td>{{.Count}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+
+<h2>Transaction Patterns</h2>
+{{range .Transactions}}
+<h3>Pattern {{.Index}} (Observed {{.Count}} times)</h3>
+<p><strong>Tables Involved:</strong> {{range .Tables}}{{.}}, {{end}}</p>
+<h4>Query Patterns</h4>
+{{range .Queries}}
+<p>{{.Index}}. <strong>{{.Type}}</strong> on <code>{{.Table}}</code></p>
+<p>Predicates: {{range .Predicates}}{{.}} AND {{end}}</p>
+{{end}}
+<h4>Shared Predicate Values</h4>
+{{range .Joins}}
+<p>Value {{.Index}} applied to:</p>
+<ul>
+    {{range .}}
+    <li>{{.}}</li>
+    {{end}}
+</ul>
+{{end}}
+{{end}}
+{{end}}
+`

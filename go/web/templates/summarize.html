@@ -1,0 +1,27 @@
+{{define "content"}}
+<h1 class="fixed-header">Query Analysis Report</h1>
+<br><br>
+<h2>Tables</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Table Name</th>
+        <th>Reads</th>
+        <th>Writes</th>
+        <th>Number of Rows</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{range .Tables}}
+    <tr>
+        <td>{{.Table}}</td>
+        <td>{{.ReadQueryCount}}</td>
+        <td>{{.WriteQueryCount}}</td>
+        <td>{{.RowCount}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+</table>
+
+{{end}}
+`

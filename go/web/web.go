@@ -25,7 +25,6 @@ func RenderFileToGin(fileName string, data any, c *gin.Context) {
 }
 
 func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
-	_ = data
 	tmpl := template.Must(template.ParseFiles(
 		"go/web/templates/layout.html",
 		"go/web/templates/footer.html",
@@ -34,7 +33,7 @@ func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
 	))
 
 	var buf bytes.Buffer
-	err := tmpl.ExecuteTemplate(&buf, "layout.html", nil)
+	err := tmpl.ExecuteTemplate(&buf, "layout.html", data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render template: %v", err)
 	}
@@ -60,18 +59,31 @@ func Run() {
 
 	r.GET("/summarize", func(c *gin.Context) {
 		filePath := c.Query("file")
+		fmt.Printf("Reading file: %s\n", filePath)
 		data, err := os.ReadFile(filePath)
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
+		fmt.Printf("Data: %d\n\n", len(data))
 		var summary summarize.Summary
+		fmt.Printf("Unmarshalling summary\n")
 		err = json.Unmarshal(data, &summary)
 		if err != nil {
+			fmt.Printf("Error unmarshalling summary: %v\n", err)
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		RenderFileToGin("summarize.html", summary, c)
+		pretty, err := json.MarshalIndent(summary, "", "  ")
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+		if err := os.WriteFile("web.json", pretty, 0o600); err != nil {
+			panic(err)
+		}
+		fmt.Printf("")
+		RenderFileToGin("summarize.html", &summary, c)
 	})
 
 	if os.WriteFile("/dev/stderr", []byte("Starting web server on http://localhost:8080\n"), 0o600) != nil {
