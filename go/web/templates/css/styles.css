@@ -1,13 +1,12 @@
 
-/* General Styles */
 html, body {
-    height: 100%; /* Ensure the entire viewport is used */
+    height: 100%;
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
     background-color: #f9f9f9;
     color: #333;
-    overflow: hidden; /* Prevent scrollbars for the whole page if not needed */
+    overflow:auto;
     width: 100%;
     box-sizing: border-box;
 }
@@ -21,7 +20,6 @@ a:hover {
     text-decoration: underline;
 }
 
-/* Header Styles */
 header {
     background-color: black;
     color: white;
@@ -51,7 +49,6 @@ header nav a:hover {
     color: #FFD700;
 }
 
-/* Main Content Styles */
 main {
     height: calc(100% - 150px); /* Adjusted for header and footer heights */
     overflow-y: auto; /* Enable vertical scrolling if content overflows */
@@ -81,3 +78,43 @@ footer p {
     padding: 0;
     font-size: 14px;
 }
+
+h1, h2, h3, h4 {
+    color: #333;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+table {
+    width: 80%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+th {
+    background-color: orange;
+    text-align: center;
+}
+
+td {
+    text-align: right;
+}
+
+.fixed-header {
+    top: 60px;
+    position: fixed;
+    width: 100%;
+    background-color: white;
+    z-index: 1000;
+    text-align: center;
+    margin-bottom: 200px;
+    border-bottom: 1px solid #ddd;
+}
+
