@@ -19,18 +19,38 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/vitessio/vt/go/web"
 )
+
+//nolint:gochecknoglobals // FIXME
+var wg sync.WaitGroup
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	// rootCmd represents the base command when called without any subcommands
+	var port int64
+	webserverStarted := false
 	root := &cobra.Command{
 		Use:   "vt",
 		Short: "Utils tools for testing, running and benchmarking Vitess.",
+		RunE: func(_ *cobra.Command, _ []string) error {
+			// Do something with port here
+			if port > 0 {
+				wg.Add(1)
+				webserverStarted = true
+				go startWebServer(port)
+				time.Sleep(2 * time.Second)
+			}
+			return nil
+		},
 	}
+	root.PersistentFlags().Int64VarP(&port, "port", "p", 8080, "Port to run the web server on")
 
 	root.CompletionOptions.HiddenDefaultCmd = true
 
@@ -42,9 +62,35 @@ func Execute() {
 	root.AddCommand(transactionsCmd())
 	root.AddCommand(planalyzeCmd())
 
+	if !webserverStarted && port > 0 {
+		wg.Add(1)
+		go startWebServer(port)
+		time.Sleep(2 * time.Second)
+	}
 	err := root.Execute()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
+	}
+	wg.Wait()
+}
+
+func launchWebServer(ch chan int, port int64) {
+	go func() {
+		web.Run(port)
+		ch <- 1
+	}()
+}
+
+func startWebServer(port int64) {
+	defer wg.Done()
+	if port > 0 && port != 8080 {
+		panic("(FIXME: make port configurable) Port is not 8080")
+	}
+	ch := make(chan int, 2)
+	launchWebServer(ch, port)
+	time.Sleep(5 * time.Second)
+	if os.WriteFile("/dev/stderr", []byte("Web server is running, use Ctrl-C to exit\n"), 0o600) != nil {
+		panic("Failed to write to /dev/stderr")
 	}
 }

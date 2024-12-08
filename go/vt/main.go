@@ -17,25 +17,9 @@ limitations under the License.
 package main
 
 import (
-	"os"
-
 	"github.com/vitessio/vt/go/cmd"
-	web2 "github.com/vitessio/vt/go/web"
 )
 
 func main() {
-	ch := make(chan int, 2)
-	launchWebServer(ch)
 	cmd.Execute()
-	if os.WriteFile("/dev/stderr", []byte("Command executed, web server is still running, use Ctrl-C to exit\n"), 0o600) != nil {
-		panic("Failed to write to /dev/stderr")
-	}
-	<-ch
-}
-
-func launchWebServer(ch chan int) {
-	go func() {
-		web2.Run()
-		ch <- 1
-	}()
 }

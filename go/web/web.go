@@ -40,7 +40,7 @@ func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
 	return &buf, nil
 }
 
-func Run() {
+func Run(port int64) {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard // Disable logging
 	r := gin.Default()
@@ -59,15 +59,12 @@ func Run() {
 
 	r.GET("/summarize", func(c *gin.Context) {
 		filePath := c.Query("file")
-		fmt.Printf("Reading file: %s\n", filePath)
 		data, err := os.ReadFile(filePath)
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		fmt.Printf("Data: %d\n\n", len(data))
 		var summary summarize.Summary
-		fmt.Printf("Unmarshalling summary\n")
 		err = json.Unmarshal(data, &summary)
 		if err != nil {
 			fmt.Printf("Error unmarshalling summary: %v\n", err)
@@ -82,11 +79,10 @@ func Run() {
 		if err := os.WriteFile("web.json", pretty, 0o600); err != nil {
 			panic(err)
 		}
-		fmt.Printf("")
 		RenderFileToGin("summarize.html", &summary, c)
 	})
 
-	if os.WriteFile("/dev/stderr", []byte("Starting web server on http://localhost:8080\n"), 0o600) != nil {
+	if os.WriteFile("/dev/stderr", []byte(fmt.Sprintf("Starting web server on http://localhost:%d\n", port)), 0o600) != nil {
 		panic("Failed to write to /dev/stderr")
 	}
 	if err := r.Run(":8080"); err != nil {
