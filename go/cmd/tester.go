@@ -21,12 +21,15 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/vitessio/vt/go/data"
 	vttester "github.com/vitessio/vt/go/tester"
 )
 
 func testerCmd() *cobra.Command {
 	var cfg vttester.Config
 	var inputType string
+	flags := new(csvFlags)
+	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
 		Aliases: []string{"test"},
@@ -34,10 +37,13 @@ func testerCmd() *cobra.Command {
 		Short:   "Test the given workload against both Vitess and MySQL.",
 		Example: "vt tester ",
 		Args:    cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			csvConfig = csvFlagsToConfig(cmd, *flags)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg.Tests = args
 			cfg.Compare = true
-			loader, err := configureLoader(inputType, true)
+			loader, err := configureLoader(inputType, true, csvConfig)
 			if err != nil {
 				return err
 			}
@@ -52,6 +58,7 @@ func testerCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.OLAP, "olap", false, "Use OLAP to run the queries.")
 	cmd.Flags().BoolVar(&cfg.XUnit, "xunit", false, "Get output in an xml file instead of errors directory")
 	addInputTypeFlag(cmd, &inputType)
+	addCSVConfigFlag(cmd, flags)
 
 	return cmd
 }
@@ -59,18 +66,23 @@ func testerCmd() *cobra.Command {
 func tracerCmd() *cobra.Command {
 	var cfg vttester.Config
 	var inputType string
+	flags := new(csvFlags)
+	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
 		Use:   "trace ",
 		Short: "Runs the given workload and does a `vexplain trace` on all queries.",
 		Args:  cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			csvConfig = csvFlagsToConfig(cmd, *flags)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cfg.TraceFile == "" {
 				return errors.New("flag --trace-file is required when tracing")
 			}
 			cfg.Tests = args
 			cfg.Compare = false
-			loader, err := configureLoader(inputType, true)
+			loader, err := configureLoader(inputType, true, csvConfig)
 			if err != nil {
 				return err
 			}
@@ -82,6 +94,7 @@ func tracerCmd() *cobra.Command {
 
 	commonFlags(cmd, &cfg)
 	addInputTypeFlag(cmd, &inputType)
+	addCSVConfigFlag(cmd, flags)
 
 	return cmd
 }

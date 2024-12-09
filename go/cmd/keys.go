@@ -17,8 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/vitessio/vt/go/data"
@@ -27,18 +25,22 @@ import (
 
 func keysCmd() *cobra.Command {
 	var inputType string
-
+	flags := new(csvFlags)
+	var csvConfig data.CSVConfig
 	cmd := &cobra.Command{
 		Use:     "keys ",
 		Short:   "Runs vexplain keys on all queries of the test file",
 		Example: "vt keys file.test",
 		Args:    cobra.ExactArgs(1),
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			csvConfig = csvFlagsToConfig(cmd, *flags)
+		},
 		RunE: func(_ *cobra.Command, args []string) error {
 			cfg := keys.Config{
 				FileName: args[0],
 			}
 
-			loader, err := configureLoader(inputType, false)
+			loader, err := configureLoader(inputType, false, csvConfig)
 			if err != nil {
 				return err
 			}
@@ -49,26 +51,7 @@ func keysCmd() *cobra.Command {
 	}
 
 	addInputTypeFlag(cmd, &inputType)
+	addCSVConfigFlag(cmd, flags)
 
 	return cmd
-}
-
-const allowedInputTypes = "'sql', 'mysql-log' or 'vtgate-log'"
-
-func addInputTypeFlag(cmd *cobra.Command, s *string) {
-	*s = "sql"
-	cmd.Flags().StringVar(s, "input-type", "sql", fmt.Sprintf("Specifies the type of input file: %s", allowedInputTypes))
-}
-
-func configureLoader(inputType string, needsBindVars bool) (data.Loader, error) {
-	switch inputType {
-	case "sql":
-		return data.SlowQueryLogLoader{}, nil
-	case "mysql-log":
-		return data.MySQLLogLoader{}, nil
-	case "vtgate-log":
-		return data.VtGateLogLoader{NeedsBindVars: needsBindVars}, nil
-	default:
-		return nil, fmt.Errorf("invalid input type: must be %s", allowedInputTypes)
-	}
 }

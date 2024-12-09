@@ -19,11 +19,14 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/transactions"
 )
 
 func transactionsCmd() *cobra.Command {
 	var inputType string
+	flags := new(csvFlags)
+	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
 		Use:     "transactions ",
@@ -31,12 +34,15 @@ func transactionsCmd() *cobra.Command {
 		Short:   "Analyze transactions on a query log",
 		Example: "vt transactions file.log",
 		Args:    cobra.ExactArgs(1),
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			csvConfig = csvFlagsToConfig(cmd, *flags)
+		},
 		RunE: func(_ *cobra.Command, args []string) error {
 			cfg := transactions.Config{
 				FileName: args[0],
 			}
 
-			loader, err := configureLoader(inputType, false)
+			loader, err := configureLoader(inputType, false, csvConfig)
 			if err != nil {
 				return err
 			}
@@ -48,6 +54,7 @@ func transactionsCmd() *cobra.Command {
 	}
 
 	addInputTypeFlag(cmd, &inputType)
+	addCSVConfigFlag(cmd, flags)
 
 	return cmd
 }
