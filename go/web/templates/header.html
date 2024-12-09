@@ -14,6 +14,17 @@
       });
     }
   });
+
+  document.addEventListener("DOMContentLoaded", function() {
+    var columnUsages = document.getElementsByClassName("columnUsage");
+    for (var i = 0; i < columnUsages.length; i++) {
+      if (i % 2 === 0) {
+        columnUsages[i].classList.add("even");
+      } else {
+        columnUsages[i].classList.add("odd");
+      }
+    }
+  });
 </script>
 <header>
   <img style="height:48px" src="images/vitess-logo.png" alt="VT Logo">

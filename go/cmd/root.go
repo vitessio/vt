@@ -43,9 +43,12 @@ func Execute() {
 			// Do something with port here
 			if port > 0 {
 				wg.Add(1)
+				if webserverStarted {
+					return nil
+				}
 				webserverStarted = true
 				go startWebServer(port)
-				time.Sleep(2 * time.Second)
+				time.Sleep(1 * time.Hour)
 			}
 			return nil
 		},
@@ -64,8 +67,8 @@ func Execute() {
 
 	if !webserverStarted && port > 0 {
 		wg.Add(1)
+		webserverStarted = true
 		go startWebServer(port)
-		time.Sleep(2 * time.Second)
 	}
 	err := root.Execute()
 	if err != nil {
@@ -89,7 +92,6 @@ func startWebServer(port int64) {
 	}
 	ch := make(chan int, 2)
 	launchWebServer(ch, port)
-	time.Sleep(5 * time.Second)
 	if os.WriteFile("/dev/stderr", []byte("Web server is running, use Ctrl-C to exit\n"), 0o600) != nil {
 		panic("Failed to write to /dev/stderr")
 	}

@@ -26,7 +26,7 @@ func RenderFileToGin(fileName string, data any, c *gin.Context) {
 }
 
 func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
-	tmpl := template.Must(template.New("summarize2.html").Funcs(funcMap).ParseFiles(
+	tmpl := template.Must(template.New("summarize2.html").Funcs(getFuncMap()).ParseFiles(
 		"go/web/templates/layout.html",
 		"go/web/templates/footer.html",
 		"go/web/templates/header.html",
@@ -46,40 +46,42 @@ type SummaryOutput struct {
 	DateOfAnalysis string
 }
 
-var funcMap = template.FuncMap{
-	"add": func(a, b int) int { return a + b },
-	"divide": func(a, b any) float64 {
-		if b == 0 || b == nil {
-			return 0 // Handle division by zero or nil
-		}
+func getFuncMap() template.FuncMap {
+	return template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+		"divide": func(a, b any) float64 {
+			if b == 0 || b == nil {
+				return 0 // Handle division by zero or nil
+			}
 
-		// Convert `a` and `b` to float64
-		var aFloat, bFloat float64
+			// Convert `a` and `b` to float64
+			var aFloat, bFloat float64
 
-		switch v := a.(type) {
-		case int:
-			aFloat = float64(v)
-		case float64:
-			aFloat = v
-		default:
-			return 0 // Invalid type, return 0
-		}
+			switch v := a.(type) {
+			case int:
+				aFloat = float64(v)
+			case float64:
+				aFloat = v
+			default:
+				return 0 // Invalid type, return 0
+			}
 
-		switch v := b.(type) {
-		case int:
-			bFloat = float64(v)
-		case float64:
-			bFloat = v
-		default:
-			return 0 // Invalid type, return 0
-		}
+			switch v := b.(type) {
+			case int:
+				bFloat = float64(v)
+			case float64:
+				bFloat = v
+			default:
+				return 0 // Invalid type, return 0
+			}
 
-		return aFloat / bFloat
-	},
+			return aFloat / bFloat
+		},
+	}
 }
 
 func addFuncMap(r *gin.Engine) {
-	r.SetFuncMap(funcMap)
+	r.SetFuncMap(getFuncMap())
 }
 
 func Run(port int64) {
@@ -117,11 +119,11 @@ func Run(port int64) {
 
 		summarizeOutput := SummaryOutput{
 			Summary:        summary,
-			DateOfAnalysis: time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC).Format(time.DateTime),
+			DateOfAnalysis: time.Now().Format(time.DateTime),
 		}
 
 		{
-			//FIXME: remove before merging, for debugging only
+			// FIXME: remove before merging, for debugging only
 			pretty, err := json.MarshalIndent(summarizeOutput, "", "  ")
 			if err != nil {
 				fmt.Println("Error:", err)

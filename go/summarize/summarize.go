@@ -42,7 +42,7 @@ type (
 
 type summaryWorker = func(s *Summary) error
 
-func Run(files []string, hotMetric string, showGraph bool) {
+func Run(files []string, hotMetric string, showGraph bool, outputFormat string) {
 	var traces []traceSummary
 	var workers []summaryWorker
 
@@ -77,7 +77,7 @@ func Run(files []string, hotMetric string, showGraph bool) {
 
 	traceCount := len(traces)
 	if traceCount <= 0 {
-		s, err := printSummary(hotMetric, workers)
+		s, err := printSummary(hotMetric, workers, outputFormat)
 		exitIfError(err)
 		if showGraph {
 			err := renderQueryGraph(s)
@@ -106,7 +106,7 @@ func exitIfError(err error) {
 	os.Exit(1)
 }
 
-func printSummary(hotMetric string, workers []summaryWorker) (*Summary, error) {
+func printSummary(hotMetric string, workers []summaryWorker, outputFormat string) (*Summary, error) {
 	s, err := NewSummary(hotMetric)
 	if err != nil {
 		return nil, err
@@ -117,42 +117,61 @@ func printSummary(hotMetric string, workers []summaryWorker) (*Summary, error) {
 			return nil, err
 		}
 	}
-	useWebSummary := true
-	//nolint:nestif // This is a temporary solution to avoid breaking the code
-	if useWebSummary {
+	outputFormat = strings.ToLower(outputFormat)
+	switch outputFormat {
+	case "html":
 		summaryJSON, err := json.Marshal(*s)
 		if err != nil {
 			fmt.Println("Error marshalling summary:", err)
 			return nil, err
 		}
-		tmpFile, err := os.CreateTemp("/tmp/", "vt-summary-*.json")
+		tmpFile, err := writeToTempFile(summaryJSON)
 		if err != nil {
-			fmt.Println("Error creating temp file:", err)
-			return nil, err
+			return s, err
 		}
-		_, err = tmpFile.WriteString(string(summaryJSON))
+		err = launchInBrowser(tmpFile)
 		if err != nil {
-			fmt.Println("Error writing to temp file:", err)
-			return nil, err
+			return s, err
 		}
-		tmpFile.Close()
-		port := int64(8080) // FIXME: take this from flags
-		url := fmt.Sprintf("http://localhost:%d/summarize?file=", port) + tmpFile.Name()
-		err = exec.Command("open", url).Start()
-		if err != nil {
-			fmt.Println("Error launching browser:", err)
-			return nil, err
-		}
-		fmt.Println("URL launched in default browser:", url)
-	} else {
+	case "markdown":
 		// Print the response
 		err = s.PrintMarkdown(os.Stdout, time.Now())
 		if err != nil {
 			return nil, err
 		}
+	default:
+		return nil, errors.New("unknown output format")
+	}
+	return s, nil
+}
+
+func launchInBrowser(tmpFile *os.File) error {
+	port := int64(8080) // FIXME: take this from flags
+	url := fmt.Sprintf("http://localhost:%d/summarize?file=", port) + tmpFile.Name()
+	err := exec.Command("open", url).Start()
+	if err != nil {
+		fmt.Println("Error launching browser:", err)
+		return err
+	}
+	fmt.Println("URL launched in default browser:", url)
+	return nil
+}
+
+func writeToTempFile(summaryJSON []byte) (*os.File, error) {
+	tmpFile, err := os.CreateTemp("/tmp/", "vt-summary-*.json")
+	if err != nil {
+		fmt.Println("Error creating temp file:", err)
+		return nil, err
+	}
+	defer tmpFile.Close()
+
+	_, err = tmpFile.WriteString(string(summaryJSON))
+	if err != nil {
+		fmt.Println("Error writing to temp file:", err)
+		return nil, err
 	}
 
-	return s, nil
+	return tmpFile, err
 }
 
 func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) error {
