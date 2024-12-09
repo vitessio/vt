@@ -40,7 +40,7 @@ type (
 		Value      int      `json:"value"`
 		Type       string   `json:"type"`
 		Curvature  float64  `json:"curvature"`
-		Predicates []string `json:"predicates"`
+		Predicates []string `json:"Predicates"`
 	}
 
 	graphData struct {
@@ -150,7 +150,7 @@ func addTransactions(s *Summary, result *forceGraphData, idxTableNode map[string
 func addJoins(s *Summary, result *forceGraphData, idxTableNode map[string]int) {
 	for _, join := range s.Joins {
 		var preds []string
-		for _, predicate := range join.predicates {
+		for _, predicate := range join.Predicates {
 			preds = append(preds, predicate.String())
 		}
 		result.Links = append(result.Links, link{

@@ -93,4 +93,5 @@ func startWebServer(port int64) {
 	if os.WriteFile("/dev/stderr", []byte("Web server is running, use Ctrl-C to exit\n"), 0o600) != nil {
 		panic("Failed to write to /dev/stderr")
 	}
+	<-ch
 }
