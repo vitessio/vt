@@ -41,10 +41,22 @@
 
 <button class="collapsible">Query Details</button>
 <div class="content">
-    {{range $index, $query := .HotQueries}}
-    <h4>{{$index | add 1}}</h4>
-    <pre><code>{{.QueryStructure}}</code></pre>
-    {{end}}
+    <table>
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Query Structure</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range $index, $query := .HotQueries}}
+        <tr>
+            <td style="text-align: right">{{$index | add 1}}</td>
+            <td style="text-align: left"><code>{{.QueryStructure}}</code></td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
 </div>
 
 <button class="collapsible">Tables</button>
@@ -72,8 +84,9 @@
 </div>
 
 <button class="collapsible">Column Usage</button>
-<div class="content">
+<div class="content" style="margin-bottom: 10px">
     {{range .Tables}}
+    <div class="columnUsage">
     <h4>Table: <code>{{.Table}}</code> ({{.ReadQueryCount}} reads and {{.WriteQueryCount}} writes)</h4>
     <table>
         <thead>
@@ -93,19 +106,36 @@
         {{end}}
         </tbody>
     </table>
+    </div>
     {{end}}
 </div>
 
 <button class="collapsible">Tables Joined</button>
 <div class="content">
-    <pre>
-    {{range .Joins}}
-    {{.Tbl1}} ↔ {{.Tbl2}} (Occurrences: {{.Occurrences}})
-    {{range .Predicates}}
-    {{.}}
-    {{end}}
-    {{end}}
-    </pre>
+    <table>
+        <thead>
+        <tr>
+            <th>Table 1</th>
+            <th>Table 2</th>
+            <th>Occurrences</th>
+            <th>Predicates</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Joins}}
+        <tr>
+            <td><pre>{{.Tbl1}}</pre></td>
+            <td><pre>{{.Tbl2}}</pre></td>
+            <td>{{.Occurrences}}</td>
+            <td style="text-align: left">
+                    {{range .Predicates}}
+                    <pre>{{.}}</pre>
+                    {{end}}
+            </td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
 </div>
 
 <button class="collapsible">Failures</button>

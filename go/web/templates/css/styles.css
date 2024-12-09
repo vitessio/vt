@@ -153,3 +153,17 @@ td {
     background-color: #f9f9f9;
     padding: 0 18px;
 }
+
+.columnUsage {
+    padding-top:10px;
+    padding-bottom:10px;
+}
+
+.columnUsage.odd {
+    background-color: #ddd; /* Background color for odd divs */
+}
+
+.columnUsage.even {
+    background-color: #eee; /* Background color for even divs */
+}
+
