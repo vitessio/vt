@@ -41,21 +41,21 @@ func TestKeys(t *testing.T) {
 		},
 		{
 			cfg: Config{
-				FileName: "../testdata/vtgate.query.log",
+				FileName: "../testdata/query-logs/vtgate.query.log",
 				Loader:   data.VtGateLogLoader{NeedsBindVars: false},
 			},
 			expectedFile: "keys-log-vtgate.json",
 		},
 		{
 			cfg: Config{
-				FileName: "../testdata/slow_query_log",
+				FileName: "../testdata/query-logs/slow_query_log",
 				Loader:   data.SlowQueryLogLoader{},
 			},
 			expectedFile: "slow-query-log.json",
 		},
 		{
 			cfg: Config{
-				FileName: "../testdata/bigger_slow_query_log.log",
+				FileName: "../testdata/query-logs/bigger_slow_query_log.log",
 				Loader:   data.SlowQueryLogLoader{},
 			},
 			expectedFile: "bigger_slow_query_log.json",
@@ -68,7 +68,7 @@ func TestKeys(t *testing.T) {
 			err := run(sb, tcase.cfg)
 			require.NoError(t, err)
 
-			out, err := os.ReadFile("../testdata/" + tcase.expectedFile)
+			out, err := os.ReadFile("../testdata/keys-output/" + tcase.expectedFile)
 			require.NoError(t, err)
 
 			assert.Equal(t, string(out), sb.String())

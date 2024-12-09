@@ -1,26 +1,26 @@
 # Query Analysis Report
 
 **Date of Analysis**: 2024-01-01 01:02:03  
-**Analyzed File**: `../testdata/bigger_slow_query_log.json`
+**Analyzed File**: `../testdata/keys-output/bigger_slow_query_log.json`
 
 ## Top Queries
 |Query ID|Usage Count|Total Query Time (ms)|Avg Query Time (ms)|Total Rows Examined|
 |---|---|---|---|---|
-|Q1|2|0.40|0.20|20,000|
+|Q1|3|0.58|0.19|17,000|
 |Q2|3|0.61|0.20|30,000|
-|Q3|1|0.22|0.22|8,000|
+|Q3|2|0.21|0.11|3,000|
 |Q4|2|0.37|0.19|16,000|
-|Q5|2|0.37|0.19|16,000|
-|Q6|2|0.49|0.25|16,000|
-|Q7|2|0.31|0.16|15,000|
-|Q8|1|0.20|0.20|6,500|
-|Q9|3|0.58|0.19|17,000|
-|Q10|2|0.34|0.17|8,500|
+|Q5|2|0.31|0.16|15,000|
+|Q6|2|0.40|0.20|20,000|
+|Q7|2|0.34|0.17|8,500|
+|Q8|2|0.33|0.17|6,000|
+|Q9|2|0.37|0.19|16,000|
+|Q10|2|0.49|0.25|16,000|
 
 ### Query Details
 #### Q1
 ```sql
-SELECT `c`.`name`, sum(`oi`.`price` * `oi`.`quantity`) AS `total_sales` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` GROUP BY `c`.`id` ORDER BY sum(`oi`.`price` * `oi`.`quantity`) DESC LIMIT :1 /* INT64 */
+SELECT `u`.`username`, sum(`o`.`total_amount`) AS `total_spent` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`created_at` BETWEEN :1 /* VARCHAR */ AND :2 /* VARCHAR */ GROUP BY `u`.`id` HAVING sum(`o`.`total_amount`) > :_total_spent /* INT64 */
 ```
 
 #### Q2
@@ -30,7 +30,7 @@ SELECT `m`.`sender_id`, COUNT(DISTINCT `m`.`receiver_id`) AS `unique_receivers` 
 
 #### Q3
 ```sql
-SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` JOIN `reviews` AS `r` ON `u`.`id` = `r`.`user_id` WHERE `o`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month) AND `r`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month)
+SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :1 /* INT64 */
 ```
 
 #### Q4
@@ -40,32 +40,32 @@ SELECT `c`.`name`, COUNT(`o`.`id`) AS `order_count` FROM `categories` AS `c` JOI
 
 #### Q5
 ```sql
-SELECT DATE(`o`.`created_at`) AS `order_date`, count(*) AS `order_count` FROM `orders` AS `o` WHERE `o`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ day) GROUP BY DATE(`o`.`created_at`)
+SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` < :_i_stock_level /* INT64 */
 ```
 
 #### Q6
 ```sql
-SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` LEFT JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`id` IS NULL
+SELECT `c`.`name`, sum(`oi`.`price` * `oi`.`quantity`) AS `total_sales` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` GROUP BY `c`.`id` ORDER BY sum(`oi`.`price` * `oi`.`quantity`) DESC LIMIT :1 /* INT64 */
 ```
 
 #### Q7
 ```sql
-SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` < :_i_stock_level /* INT64 */
+SELECT `o`.`id`, `o`.`created_at` FROM `orders` AS `o` LEFT JOIN `shipments` AS `s` ON `o`.`id` = `s`.`order_id` WHERE `s`.`shipped_date` IS NULL AND `o`.`created_at` < DATE_SUB(now(), INTERVAL :1 /* INT64 */ day)
 ```
 
 #### Q8
 ```sql
-SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` BETWEEN :1 /* INT64 */ AND :2 /* INT64 */
+SELECT `p`.`payment_method`, avg(`o`.`total_amount`) AS `avg_order_value` FROM `payments` AS `p` JOIN `orders` AS `o` ON `p`.`order_id` = `o`.`id` GROUP BY `p`.`payment_method`
 ```
 
 #### Q9
 ```sql
-SELECT `u`.`username`, sum(`o`.`total_amount`) AS `total_spent` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`created_at` BETWEEN :1 /* VARCHAR */ AND :2 /* VARCHAR */ GROUP BY `u`.`id` HAVING sum(`o`.`total_amount`) > :_total_spent /* INT64 */
+SELECT DATE(`o`.`created_at`) AS `order_date`, count(*) AS `order_count` FROM `orders` AS `o` WHERE `o`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ day) GROUP BY DATE(`o`.`created_at`)
 ```
 
 #### Q10
 ```sql
-SELECT `o`.`id`, `o`.`created_at` FROM `orders` AS `o` LEFT JOIN `shipments` AS `s` ON `o`.`id` = `s`.`order_id` WHERE `s`.`shipped_date` IS NULL AND `o`.`created_at` < DATE_SUB(now(), INTERVAL :1 /* INT64 */ day)
+SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` LEFT JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`id` IS NULL
 ```
 
 ## Tables

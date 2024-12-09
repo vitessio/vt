@@ -18,11 +18,14 @@ package dbinfo
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"sort"
 
 	"vitess.io/vitess/go/mysql"
+
+	"github.com/vitessio/vt/go/data"
 )
 
 type Config struct {
@@ -211,6 +214,14 @@ func Get(cfg Config) (*Info, error) {
 }
 
 func Load(fileName string) (*Info, error) {
+	typ, err := data.GetFileType(fileName)
+	if err != nil {
+		return nil, err
+	}
+	if typ != data.DBInfoFile {
+		return nil, errors.New("file is not a dbinfo file")
+	}
+
 	b, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, err

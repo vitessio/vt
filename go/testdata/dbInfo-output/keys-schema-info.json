@@ -1,0 +1,37 @@
+{
+  "fileType": "dbinfo",
+  "tables": [
+    {
+      "name": "region",
+      "rows": 20
+    },
+    {
+      "name": "nation",
+      "rows": 150
+    },
+    {
+      "name": "supplier",
+      "rows": 318
+    },
+    {
+      "name": "part",
+      "rows": 2761
+    },
+    {
+      "name": "partsupp",
+      "rows": 32381
+    },
+    {
+      "name": "customer",
+      "rows": 280000
+    },
+    {
+      "name": "orders",
+      "rows": 12047555
+    },
+    {
+      "name": "lineitem",
+      "rows": 42047555
+    }
+  ]
+}

@@ -70,10 +70,10 @@ func TestSummarizeKeysFile(t *testing.T) {
 	sb := &strings.Builder{}
 	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-	fnKeys, err := readKeysFile("../testdata/keys-log.json")
+	fnKeys, err := readKeysFile("../testdata/keys-output/keys-log.json")
 	require.NoError(t, err)
 
-	fnSchemaInfo, err := readDBInfoFile("../testdata/keys-schema-info.json")
+	fnSchemaInfo, err := readDBInfoFile("../testdata/dbinfo-output/keys-schema-info.json")
 	require.NoError(t, err)
 
 	s, err := NewSummary("")
@@ -88,7 +88,7 @@ func TestSummarizeKeysFile(t *testing.T) {
 	err = s.PrintMarkdown(sb, now)
 	require.NoError(t, err)
 
-	expected, err := os.ReadFile("../testdata/keys-summary.md")
+	expected, err := os.ReadFile("../testdata/summarize-output/keys-summary.md")
 	require.NoError(t, err)
 	assert.Equal(t, string(expected), sb.String())
 	if t.Failed() {
@@ -107,7 +107,7 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 
 	for _, metric := range tests {
 		t.Run(metric, func(t *testing.T) {
-			fn, err := readKeysFile("../testdata/bigger_slow_query_log.json")
+			fn, err := readKeysFile("../testdata/keys-output/bigger_slow_query_log.json")
 			require.NoError(t, err)
 			sb := &strings.Builder{}
 			now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
@@ -121,7 +121,7 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 			err = s.PrintMarkdown(sb, now)
 			require.NoError(t, err)
 
-			expected, err := os.ReadFile(fmt.Sprintf("../testdata/bigger_slow_log_%s.md", metric))
+			expected, err := os.ReadFile(fmt.Sprintf("../testdata/summarize-output/bigger_slow_log_%s.md", metric))
 			require.NoError(t, err)
 			assert.Equal(t, string(expected), sb.String())
 			if t.Failed() {

@@ -1,7 +1,7 @@
 # Query Analysis Report
 
 **Date of Analysis**: 2024-01-01 01:02:03  
-**Analyzed File**: `../testdata/small-slow-query-transactions.json`
+**Analyzed File**: `../testdata/transactions-output/small-slow-query-transactions.json`
 
 ## Transaction Patterns
 

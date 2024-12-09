@@ -24,7 +24,7 @@ import (
 )
 
 func TestReadTransaction(t *testing.T) {
-	file, err := readTransactionFile("../testdata/small-slow-query-transactions.json")
+	file, err := readTransactionFile("../testdata/transactions-output/small-slow-query-transactions.json")
 	require.NoError(t, err)
 	assert.NotNil(t, file)
 }

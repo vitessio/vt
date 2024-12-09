@@ -37,11 +37,11 @@ func TestRun(t *testing.T) {
 		txs:    newTxSignatureMap(),
 	}
 	s.run(sb, Config{
-		FileName: "../testdata/small-slow-query-log",
+		FileName: "../testdata/query-logs/small-slow-query-log",
 		Loader:   data.SlowQueryLogLoader{},
 	})
 
-	out, err := os.ReadFile("../testdata/small-slow-query-transactions.json")
+	out, err := os.ReadFile("../testdata/transactions-output/small-slow-query-transactions.json")
 	require.NoError(t, err)
 
 	assert.Equal(t, string(out), sb.String())
