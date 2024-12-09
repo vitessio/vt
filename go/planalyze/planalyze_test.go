@@ -20,7 +20,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,16 +30,15 @@ func TestRun(t *testing.T) {
 	cfg := Config{
 		VSchemaFile: "../testdata/planalyze-vschema.json",
 	}
-	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-	err := run(sb, cfg, "../testdata/keys-output/bigger_slow_query_log.json", now)
+	err := run(sb, cfg, "../testdata/keys-output/bigger_slow_query_log.json")
 	require.NoError(t, err)
 
-	out, err := os.ReadFile("../testdata/planalyze-output/bigger_slow_query_plan_report.md")
+	out, err := os.ReadFile("../testdata/planalyze-output/bigger_slow_query_plan_report.json")
 	require.NoError(t, err)
 
 	assert.Equal(t, string(out), sb.String())
 	if t.Failed() {
-		_ = os.WriteFile("../testdata/expected/bigger_slow_query_plan_report.md", []byte(sb.String()), 0o644)
+		_ = os.WriteFile("../testdata/expected/bigger_slow_query_plan_report.json", []byte(sb.String()), 0o644)
 	}
 }

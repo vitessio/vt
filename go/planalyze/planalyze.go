@@ -20,11 +20,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	"strconv"
-	"time"
 
 	"vitess.io/vitess/go/test/vschemawrapper"
 	"vitess.io/vitess/go/vt/vtenv"
@@ -33,7 +30,6 @@ import (
 
 	"github.com/vitessio/vt/go/data"
 	"github.com/vitessio/vt/go/keys"
-	"github.com/vitessio/vt/go/markdown"
 )
 
 type (
@@ -49,22 +45,21 @@ type (
 
 	AnalyzedQuery struct {
 		QueryStructure string
-		FirstQueryRow  int
-		Result         planResult
-		PlanOutput     string
+		Complexity     planComplexity
+		PlanOutput     json.RawMessage
 	}
 
-	planResult int
+	planComplexity int
 )
 
 const (
-	PassThrough planResult = iota
+	PassThrough planComplexity = iota
 	SimpleRouted
 	Complex
 	Unplannable
 )
 
-func (p planResult) String() string {
+func (p planComplexity) String() string {
 	switch p {
 	case PassThrough:
 		return "Pass-through"
@@ -79,10 +74,10 @@ func (p planResult) String() string {
 }
 
 func Run(cfg Config, logFile string) error {
-	return run(os.Stdout, cfg, logFile, time.Now())
+	return run(os.Stdout, cfg, logFile)
 }
 
-func run(out io.Writer, cfg Config, logFile string, now time.Time) error {
+func run(out io.Writer, cfg Config, logFile string) error {
 	a := cfg.VSchemaFile != ""
 	b := cfg.VtExplainVschemaFile != ""
 	if a == b {
@@ -122,54 +117,75 @@ func run(out io.Writer, cfg Config, logFile string, now time.Time) error {
 		}
 		planalyzer.Queries[res] = append(planalyzer.Queries[res], AnalyzedQuery{
 			QueryStructure: query.QueryStructure,
-			FirstQueryRow:  query.LineNumbers[0],
-			Result:         res,
-			PlanOutput:     b.String(),
+			Complexity:     res,
+			PlanOutput:     json.RawMessage(b.String()),
 		})
 	}
 
-	return planalyzer.printMarkdown(out, now, logFile)
-}
-
-func (planalyzer *Planalyze) printMarkdown(out io.Writer, now time.Time, logFile string) error {
-	md := &markdown.MarkDown{}
-	msg := `# Query Planning Report
-
-**Date of Analysis**: %s  
-**Analyzed File**: ` + "%s" + `
-
-`
-	md.Printf(msg, now.Format(time.DateTime), logFile)
-	headers := []string{"Plan Complexity", "Count"}
-	var rows [][]string
-	total := 0
-	for _, i := range []planResult{PassThrough, SimpleRouted, Complex, Unplannable} {
-		count := len(planalyzer.Queries[i])
-		rows = append(rows, []string{i.String(), strconv.Itoa(count)})
-		total += count
+	type jsonOutput struct {
+		PassThrough  []AnalyzedQuery
+		SimpleRouted []AnalyzedQuery
+		Complex      []AnalyzedQuery
+		Unplannable  []AnalyzedQuery
 	}
-	rows = append(rows, []string{"Total", strconv.Itoa(total)})
-	md.PrintTable(headers, rows)
-	md.NewLine()
-	for _, typ := range []planResult{SimpleRouted, Complex} {
-		for i, query := range planalyzer.Queries[typ] {
-			if i == 0 {
-				md.Printf("# %s Queries\n\n", typ.String())
-			}
-			md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
-			md.Printf("## Plan\n\n```json\n%s\n```\n\n", query.PlanOutput)
-			md.NewLine()
-		}
+	res := jsonOutput{
+		PassThrough:  planalyzer.Queries[PassThrough],
+		SimpleRouted: planalyzer.Queries[SimpleRouted],
+		Complex:      planalyzer.Queries[Complex],
+		Unplannable:  planalyzer.Queries[Unplannable],
 	}
 
-	_, err := md.WriteTo(out)
+	jsonData, err := json.MarshalIndent(res, "  ", "  ")
 	if err != nil {
-		return fmt.Errorf("error writing markdown: %w", err)
+		return err
 	}
+	_, err = out.Write(jsonData)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func getPlanRes(err error, plan *engine.Plan) planResult {
+// func (planalyzer *Planalyze) printMarkdown(out io.Writer, now time.Time, logFile string) error {
+// 	md := &markdown.MarkDown{}
+// 	msg := `# Query Planning Report
+//
+// **Date of Analysis**: %s
+// **Analyzed File**: ` + "%s" + `
+//
+// `
+// 	md.Printf(msg, now.Format(time.DateTime), logFile)
+// 	headers := []string{"Plan Complexity", "Count"}
+// 	var rows [][]string
+// 	total := 0
+// 	for _, i := range []planComplexity{PassThrough, SimpleRouted, Complex, Unplannable} {
+// 		count := len(planalyzer.Queries[i])
+// 		rows = append(rows, []string{i.String(), strconv.Itoa(count)})
+// 		total += count
+// 	}
+// 	rows = append(rows, []string{"Total", strconv.Itoa(total)})
+// 	md.PrintTable(headers, rows)
+// 	md.NewLine()
+// 	for _, typ := range []planComplexity{SimpleRouted, Complex} {
+// 		for i, query := range planalyzer.Queries[typ] {
+// 			if i == 0 {
+// 				md.Printf("# %s Queries\n\n", typ.String())
+// 			}
+// 			md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
+// 			md.Printf("## Plan\n\n```json\n%s\n```\n\n", query.PlanOutput)
+// 			md.NewLine()
+// 		}
+// 	}
+//
+// 	_, err := md.WriteTo(out)
+// 	if err != nil {
+// 		return fmt.Errorf("error writing markdown: %w", err)
+// 	}
+// 	return nil
+// }
+
+func getPlanRes(err error, plan *engine.Plan) planComplexity {
 	if err != nil {
 		return Unplannable
 	}
