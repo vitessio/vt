@@ -25,7 +25,8 @@ import (
 
 func transactionsCmd() *cobra.Command {
 	var inputType string
-	csvConfig := data.NewEmptyCSVConfig(false, -1)
+	flags := new(csvFlags)
+	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
 		Use:     "transactions ",
@@ -33,6 +34,9 @@ func transactionsCmd() *cobra.Command {
 		Short:   "Analyze transactions on a query log",
 		Example: "vt transactions file.log",
 		Args:    cobra.ExactArgs(1),
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			csvConfig = csvFlagsToConfig(cmd, *flags)
+		},
 		RunE: func(_ *cobra.Command, args []string) error {
 			cfg := transactions.Config{
 				FileName: args[0],
@@ -50,7 +54,7 @@ func transactionsCmd() *cobra.Command {
 	}
 
 	addInputTypeFlag(cmd, &inputType)
-	addCSVConfigFlag(cmd, &csvConfig)
+	addCSVConfigFlag(cmd, flags)
 
 	return cmd
 }

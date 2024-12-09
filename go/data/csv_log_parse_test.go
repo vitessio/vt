@@ -26,10 +26,16 @@ import (
 )
 
 func TestParseCSVQueryLog(t *testing.T) {
-	cfg := NewEmptyCSVConfig(true, 2)
-	cfg.TimestampField = 1
-	cfg.QueryTimeField = 0
-	cfg.ConnectionIDField = 3
+	one := 1
+	zero := 0
+	three := 3
+	cfg := CSVConfig{
+		Header:            true,
+		QueryField:        2,
+		TimestampField:    &one,
+		QueryTimeField:    &zero,
+		ConnectionIDField: &three,
+	}
 
 	loader := CSVLogLoader{Config: cfg}.Load("../testdata/csv.query.log")
 	gotQueries, err := makeSlice(loader)

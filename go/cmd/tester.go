@@ -28,7 +28,8 @@ import (
 func testerCmd() *cobra.Command {
 	var cfg vttester.Config
 	var inputType string
-	csvConfig := data.NewEmptyCSVConfig(false, -1)
+	flags := new(csvFlags)
+	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
 		Aliases: []string{"test"},
@@ -36,6 +37,9 @@ func testerCmd() *cobra.Command {
 		Short:   "Test the given workload against both Vitess and MySQL.",
 		Example: "vt tester ",
 		Args:    cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			csvConfig = csvFlagsToConfig(cmd, *flags)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg.Tests = args
 			cfg.Compare = true
@@ -54,7 +58,7 @@ func testerCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.OLAP, "olap", false, "Use OLAP to run the queries.")
 	cmd.Flags().BoolVar(&cfg.XUnit, "xunit", false, "Get output in an xml file instead of errors directory")
 	addInputTypeFlag(cmd, &inputType)
-	addCSVConfigFlag(cmd, &csvConfig)
+	addCSVConfigFlag(cmd, flags)
 
 	return cmd
 }
@@ -62,12 +66,16 @@ func testerCmd() *cobra.Command {
 func tracerCmd() *cobra.Command {
 	var cfg vttester.Config
 	var inputType string
-	csvConfig := data.NewEmptyCSVConfig(false, -1)
+	flags := new(csvFlags)
+	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
 		Use:   "trace ",
 		Short: "Runs the given workload and does a `vexplain trace` on all queries.",
 		Args:  cobra.MinimumNArgs(1),
+		PreRun: func(cmd *cobra.Command, _ []string) {
+			csvConfig = csvFlagsToConfig(cmd, *flags)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cfg.TraceFile == "" {
 				return errors.New("flag --trace-file is required when tracing")
@@ -86,7 +94,7 @@ func tracerCmd() *cobra.Command {
 
 	commonFlags(cmd, &cfg)
 	addInputTypeFlag(cmd, &inputType)
-	addCSVConfigFlag(cmd, &csvConfig)
+	addCSVConfigFlag(cmd, flags)
 
 	return cmd
 }
