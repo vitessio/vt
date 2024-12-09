@@ -102,7 +102,8 @@ func NewTester(name string, reporter Reporter, info ClusterInfo, olap bool, vsch
 		createTableHandler = func(*sqlparser.CreateTable) func() { return func() {} }
 	}
 	t.qr = factory.NewQueryRunner(reporter, createTableHandler, mcmp, info.clusterInstance, vschema)
-
+	t.MySQLConn = mcmp.MySQLConn
+	t.VtConn = mcmp.VtConn
 	return t
 }
 
