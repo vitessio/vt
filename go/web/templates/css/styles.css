@@ -118,3 +118,38 @@ td {
     border-bottom: 1px solid #ddd;
 }
 
+/* Collapsible section styles */
+.collapsible {
+    cursor: pointer;
+    padding: 10px;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 18px;
+    background-color: #e1bc98;
+    margin-top: 20px;
+}
+
+.collapsible.active {
+    background-color: orange; /* Color when expanded */
+}
+
+.collapsible:after {
+    content: '\002B'; /* Unicode character for "plus" sign */
+    font-size: 13px;
+    color: #777;
+    float: right;
+    margin-left: 5px;
+}
+
+.collapsible.active:after {
+    content: "\2212"; /* Unicode character for "minus" sign */
+}
+
+.content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease-out;
+    background-color: #f9f9f9;
+    padding: 0 18px;
+}

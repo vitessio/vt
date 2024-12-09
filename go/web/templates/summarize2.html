@@ -13,83 +13,92 @@
     </thead>
 </table>
 
-<h2>Top Queries</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Query ID</th>
-        <th>Usage Count</th>
-        <th>Total Query Time (ms)</th>
-        <th>Avg Query Time (ms)</th>
-        <th>Total Rows Examined</th>
-    </tr>
-    </thead>
-    <tbody>
+<button class="collapsible">Top Queries</button>
+<div class="content">
+    <table>
+        <thead>
+        <tr>
+            <th>Query ID</th>
+            <th>Usage Count</th>
+            <th>Total Query Time (ms)</th>
+            <th>Avg Query Time (ms)</th>
+            <th>Total Rows Examined</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range $index, $query := .HotQueries}}
+        <tr>
+            <td>{{$index | add 1}}</td> <!-- Add 1 to start numbering from 1 -->
+            <td>{{$query.UsageCount}}</td>
+            <td>{{$query.QueryTime}}</td>
+            <td>{{divide .QueryTime .UsageCount}}</td>
+            <td>{{$query.RowsExamined}}</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
+
+<button class="collapsible">Query Details</button>
+<div class="content">
     {{range $index, $query := .HotQueries}}
-    <tr>
-        <td>{{$index | add 1}}</td> <!-- Add 1 to start numbering from 1 -->
-        <td>{{$query.UsageCount}}</td>
-        <td>{{$query.QueryTime}}</td>
-        <td>{{divide .QueryTime .UsageCount}}</td>
-        <td>{{$query.RowsExamined}}</td>
-    </tr>
+    <h4>{{$index | add 1}}</h4>
+    <pre><code>{{.QueryStructure}}</code></pre>
     {{end}}
-    </tbody>
-</table>
+</div>
 
-<h3>Query Details</h3>
-{{range $index, $query := .HotQueries}}
-<h4>{{$index | add 1}}</h4>
-<pre><code>{{.QueryStructure}}</code></pre>
-{{end}}
+<button class="collapsible">Tables</button>
+<div class="content">
+    <table>
+        <thead>
+        <tr>
+            <th>Table Name</th>
+            <th>Reads</th>
+            <th>Writes</th>
+            <th>Number of Rows</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Tables}}
+        <tr>
+            <td>{{.Table}}</td>
+            <td>{{.ReadQueryCount}}</td>
+            <td>{{.WriteQueryCount}}</td>
+            <td>{{.RowCount}}</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
 
-<h2>Tables</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Table Name</th>
-        <th>Reads</th>
-        <th>Writes</th>
-        <th>Number of Rows</th>
-    </tr>
-    </thead>
-    <tbody>
+<button class="collapsible">Column Usage</button>
+<div class="content">
     {{range .Tables}}
-    <tr>
-        <td>{{.Table}}</td>
-        <td>{{.ReadQueryCount}}</td>
-        <td>{{.WriteQueryCount}}</td>
-        <td>{{.RowCount}}</td>
-    </tr>
+    <h4>Table: <code>{{.Table}}</code> ({{.ReadQueryCount}} reads and {{.WriteQueryCount}} writes)</h4>
+    <table>
+        <thead>
+        <tr>
+            <th>Column</th>
+            <th>Position</th>
+            <th>Used %</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .GetColumnsSlice}}
+        <tr>
+            <td>{{.ColInfo.Name}}</td>
+            <td>{{.ColInfo.Pos}}</td>
+            <td>{{.Usage.Percentage}}%</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
     {{end}}
-    </tbody>
-</table>
+</div>
 
-<h3>Column Usage</h3>
-{{range .Tables}}
-<h4>Table: <code>{{.Table}}</code> ({{.ReadQueryCount}} reads and {{.WriteQueryCount}} writes)</h4>
-<table>
-    <thead>
-    <tr>
-        <th>Column</th>
-        <th>Position</th>
-        <th>Used %</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{range .GetColumnsSlice}}
-    <tr>
-        <td>{{.ColInfo.Name}}</td>
-        <td>{{.ColInfo.Pos}}</td>
-        <td>{{.Usage.Percentage}}%</td>
-    </tr>
-    {{end}}
-    </tbody>
-</table>
-{{end}}
-
-<h2>Tables Joined</h2>
-<pre>
+<button class="collapsible">Tables Joined</button>
+<div class="content">
+    <pre>
     {{range .Joins}}
     {{.Tbl1}} ↔ {{.Tbl2}} (Occurrences: {{.Occurrences}})
     {{range .Predicates}}
@@ -97,43 +106,47 @@
     {{end}}
     {{end}}
     </pre>
+</div>
 
-<h2>Failures</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Error</th>
-        <th>Count</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{range .Failures}}
-    <tr>
-        <td>{{.Error}}</td>
-        <td>{{.Count}}</td>
-    </tr>
-    {{end}}
-    </tbody>
-</table>
+<button class="collapsible">Failures</button>
+<div class="content">
+    <table>
+        <thead>
+        <tr>
+            <th>Error</th>
+            <th>Count</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Failures}}
+        <tr>
+            <td>{{.Error}}</td>
+            <td>{{.Count}}</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
 
-<h2>Transaction Patterns</h2>
-{{range .Transactions}}
-<h3>Pattern {{.Index}} (Observed {{.Count}} times)</h3>
-<p><strong>Tables Involved:</strong> {{range .Tables}}{{.}}, {{end}}</p>
-<h4>Query Patterns</h4>
-{{range .Queries}}
-<p>{{.Index}}. <strong>{{.Type}}</strong> on <code>{{.Table}}</code></p>
-<p>Predicates: {{range .Predicates}}{{.}} AND {{end}}</p>
-{{end}}
-<h4>Shared Predicate Values</h4>
-{{range .Joins}}
-<p>Value {{.Index}} applied to:</p>
-<ul>
-    {{range .}}
-    <li>{{.}}</li>
+<button class="collapsible">Transaction Patterns</button>
+<div class="content">
+    {{range .Transactions}}
+    <h3>Pattern {{.Index}} (Observed {{.Count}} times)</h3>
+    <p><strong>Tables Involved:</strong> {{range .Tables}}{{.}}, {{end}}</p>
+    <h4>Query Patterns</h4>
+    {{range .Queries}}
+    <p>{{.Index}}. <strong>{{.Type}}</strong> on <code>{{.Table}}</code></p>
+    <p>Predicates: {{range .Predicates}}{{.}} AND {{end}}</p>
     {{end}}
-</ul>
+    <h4>Shared Predicate Values</h4>
+    {{range .Joins}}
+    <p>Value {{.Index}} applied to:</p>
+    <ul>
+        {{range .}}
+        <li>{{.}}</li>
+        {{end}}
+    </ul>
+    {{end}}
+    {{end}}
+</div>
 {{end}}
-{{end}}
-{{end}}
-`
