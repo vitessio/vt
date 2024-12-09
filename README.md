@@ -19,10 +19,10 @@ and query analysis.
   attributes and relevant subset of global variables.
 - **`vt planalyze`**: A tool that uses `vt keys` output plus a suggested VSchema to analyze potential query plans without
   bringing up a cluster. Queries are classified as:
-  - **Perfect**: Single-shard queries.
-  - **Good**: Single-route plans, no expensive multi-shard operations.
-  - **Valid**: Plans requiring vtgate-level work. Acceptable if rarely used, but potentially slow for frequent queries.
-  - **Unsupported**: These queries currently not supported by Vitess.
+  - **Pass-through**: Single-shard queries.
+  - **Simple routed**: Single-route plans, no expensive multi-shard operations.
+  - **Complex routed**: Plans requiring vtgate-level work. Acceptable if rarely used, but potentially slow for frequent queries.
+  - **Unplanable**: These queries currently not supported by Vitess.
 
 ## Installation
 
