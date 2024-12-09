@@ -1,4 +1,20 @@
 {{define "header"}}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var coll = document.getElementsByClassName("collapsible");
+    for (var i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.maxHeight) {
+          content.style.maxHeight = null;
+        } else {
+          content.style.maxHeight = content.scrollHeight + "px";
+        }
+      });
+    }
+  });
+</script>
 <header>
   <img style="height:48px" src="images/vitess-logo.png" alt="VT Logo">
   <h1 style="display: inline;color:orange;font-size: xx-large">Vitess vt utilities</h1>
