@@ -28,7 +28,7 @@ import (
 )
 
 func TestDBInfoLoad(t *testing.T) {
-	si, err := Load("../testdata/sakila-dbinfo.json")
+	si, err := Load("../testdata/dbinfo-output/sakila-dbinfo.json")
 	require.NoError(t, err)
 	require.NotNil(t, si)
 
@@ -72,11 +72,11 @@ func TestDBInfoGet(t *testing.T) {
 	err := clusterInstance.StartTopo()
 	require.NoError(t, err)
 
-	schemaFile := "../testdata/sakila-schema-ddls.sql"
+	schemaFile := "../testdata/query-logs/sakila-schema-ddls.sql"
 	schemaBytes, err := os.ReadFile(schemaFile)
 	require.NoError(t, err)
 
-	dataFile := "../testdata/sakila-data.sql"
+	dataFile := "../testdata/query-logs/sakila-data.sql"
 	dataBytes, err := os.ReadFile(dataFile)
 	require.NoError(t, err)
 

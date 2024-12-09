@@ -24,7 +24,7 @@ import (
 )
 
 func TestParseMySQLQueryLog(t *testing.T) {
-	loader := MySQLLogLoader{}.Load("../testdata/mysql.query.log")
+	loader := MySQLLogLoader{}.Load("../testdata/query-logs/mysql.query.log")
 	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
 	for _, query := range gotQueries {
@@ -34,7 +34,7 @@ func TestParseMySQLQueryLog(t *testing.T) {
 }
 
 func TestSmallSnippet(t *testing.T) {
-	loader := MySQLLogLoader{}.Load("../testdata/mysql.small-query.log")
+	loader := MySQLLogLoader{}.Load("../testdata/query-logs/mysql.small-query.log")
 	gotQueries, err := makeSlice(loader)
 	require.NoError(t, err)
 	expected := []Query{

@@ -23,7 +23,7 @@ import (
 )
 
 func TestLoadSlowQueryLogWithMetadata(t *testing.T) {
-	loader := SlowQueryLogLoader{}.Load("../testdata/slow_query_log")
+	loader := SlowQueryLogLoader{}.Load("../testdata/query-logs/slow_query_log")
 	queries, err := makeSlice(loader)
 	require.NoError(t, err)
 

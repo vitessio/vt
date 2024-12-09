@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package summarize
+package data
 
 import (
 	"testing"
@@ -27,27 +27,23 @@ import (
 func TestGetFileType(t *testing.T) {
 	type testCase struct {
 		filename      string
-		expectedType  fileType
+		expectedType  FileType
 		expectedError string
 	}
-	testCases := []testCase{
-		{
-			filename:     "../testdata/keys-log.json",
-			expectedType: keysFile,
-		},
-		{
-			filename:     "../testdata/sakila-dbinfo.json",
-			expectedType: dbInfoFile,
-		},
-		{
-			filename:      "../testdata/mysql.query.log",
-			expectedType:  unknownFile,
-			expectedError: "error reading token: invalid character '/' looking for beginning of value",
-		},
-	}
+	testCases := []testCase{{
+		filename:     "../testdata/keys-output/keys-log.json",
+		expectedType: KeysFile,
+	}, {
+		filename:     "../testdata/dbinfo-output/sakila-dbinfo.json",
+		expectedType: DBInfoFile,
+	}, {
+		filename:      "../testdata/query-logs/mysql.query.log",
+		expectedType:  UnknownFile,
+		expectedError: "'/' looking for beginning of value",
+	}}
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
-			ft, err := getFileType(tc.filename)
+			ft, err := GetFileType(tc.filename)
 			if tc.expectedError != "" {
 				require.ErrorContains(t, err, tc.expectedError)
 			}

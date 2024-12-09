@@ -192,7 +192,7 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {
 	tableUsageWriteCounts := make(map[string]int)
 	tableUsageReadCounts := make(map[string]int)
 
-	// First pass: collect all data and count occurrences
+	// First pass: collect all graphData and count occurrences
 	for _, query := range queries.Queries {
 		gatherTableInfo(query, tableSummaries, tableUsageWriteCounts, tableUsageReadCounts)
 		checkQueryForHotness(&summary.hotQueries, query, summary.hotQueryFn)

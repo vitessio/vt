@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package summarize
+package data
 
 import (
 	"encoding/json"
@@ -23,29 +23,29 @@ import (
 	"os"
 )
 
-type fileType int
+type FileType int
 
 const (
-	unknownFile fileType = iota
-	traceFile
-	keysFile
-	dbInfoFile
-	transactionFile
+	UnknownFile FileType = iota
+	TraceFile
+	KeysFile
+	DBInfoFile
+	TransactionFile
 )
 
-var fileTypeMap = map[string]fileType{ //nolint:gochecknoglobals // this is instead of a const
-	"trace":        traceFile,
-	"keys":         keysFile,
-	"dbinfo":       dbInfoFile,
-	"transactions": transactionFile,
+var fileTypeMap = map[string]FileType{ //nolint:gochecknoglobals // this is instead of a const
+	"trace":        TraceFile,
+	"keys":         KeysFile,
+	"dbinfo":       DBInfoFile,
+	"transactions": TransactionFile,
 }
 
-// getFileType reads the first key-value pair from a JSON file and returns the type of the file
+// GetFileType reads the first key-value pair from a JSON file and returns the type of the file
 // Note:
-func getFileType(filename string) (fileType, error) {
+func GetFileType(filename string) (FileType, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return unknownFile, fmt.Errorf("error opening file: %v", err)
+		return UnknownFile, fmt.Errorf("error opening file: %v", err)
 	}
 	defer file.Close()
 
@@ -53,42 +53,42 @@ func getFileType(filename string) (fileType, error) {
 
 	token, err := decoder.Token()
 	if err != nil {
-		return unknownFile, fmt.Errorf("error reading json token: %v", err)
+		return UnknownFile, fmt.Errorf("error reading json token: %v", err)
 	}
 
 	if delim, ok := token.(json.Delim); !ok || delim != '{' {
-		return unknownFile, errors.New("expected start of object '{'")
+		return UnknownFile, errors.New("expected start of object '{'")
 	}
 
 	if !decoder.More() {
-		return unknownFile, nil
+		return UnknownFile, nil
 	}
 
 	keyToken, err := decoder.Token()
 	if err != nil {
-		return unknownFile, fmt.Errorf("error reading json key token: %v", err)
+		return UnknownFile, fmt.Errorf("error reading json key token: %v", err)
 	}
 
 	key, ok := keyToken.(string)
 	if !ok {
-		return unknownFile, fmt.Errorf("expected key to be a string: %s", keyToken)
+		return UnknownFile, fmt.Errorf("expected key to be a string: %s", keyToken)
 	}
 
 	valueToken, err := decoder.Token()
 	if err != nil {
-		return unknownFile, fmt.Errorf("error reading json value token: %v", err)
+		return UnknownFile, fmt.Errorf("error reading json value token: %v", err)
 	}
 
 	if key == "fileType" {
 		s, ok := valueToken.(string)
 		if !ok {
-			return unknownFile, fmt.Errorf("expected value to be a string: %s", valueToken)
+			return UnknownFile, fmt.Errorf("expected value to be a string: %s", valueToken)
 		}
 		if fileType, ok := fileTypeMap[s]; ok {
 			return fileType, nil
 		}
-		return unknownFile, fmt.Errorf("unknown FileType: %s", valueToken)
+		return UnknownFile, fmt.Errorf("unknown FileType: %s", valueToken)
 	}
 
-	return unknownFile, nil
+	return UnknownFile, nil
 }

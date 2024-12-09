@@ -43,7 +43,7 @@ type (
 		Predicates []string `json:"predicates"`
 	}
 
-	data struct {
+	graphData struct {
 		Nodes []node `json:"nodes"`
 		Links []link `json:"links"`
 	}
@@ -51,7 +51,7 @@ type (
 	forceGraphData struct {
 		maxValue   int
 		maxNumRows int
-		data
+		graphData
 	}
 )
 
@@ -203,9 +203,9 @@ var templateHTML string
 
 // Function to dynamically generate and serve index.html
 func serveIndex(w http.ResponseWriter, data forceGraphData) error {
-	dataBytes, err := json.Marshal(data.data)
+	dataBytes, err := json.Marshal(data.graphData)
 	if err != nil {
-		return fmt.Errorf("could not marshal data: %w", err)
+		return fmt.Errorf("could not marshal graphData: %w", err)
 	}
 
 	tmpl, err := template.New("index").Parse(templateHTML)

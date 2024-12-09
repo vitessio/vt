@@ -27,6 +27,8 @@ import (
 	"github.com/alecthomas/chroma/quick"
 	"github.com/fatih/color"
 	"golang.org/x/term"
+
+	"github.com/vitessio/vt/go/data"
 )
 
 type (
@@ -43,18 +45,18 @@ func Run(files []string, hotMetric string, showGraph bool) {
 	var workers []summaryWorker
 
 	for _, file := range files {
-		typ, err := getFileType(file)
+		typ, err := data.GetFileType(file)
 		exitIfError(err)
 		var w summarizer
 		var t traceSummary
 		switch typ {
-		case dbInfoFile:
+		case data.DBInfoFile:
 			w, err = readDBInfoFile(file)
-		case transactionFile:
+		case data.TransactionFile:
 			w, err = readTransactionFile(file)
-		case traceFile:
+		case data.TraceFile:
 			t, err = readTracedFile(file)
-		case keysFile:
+		case data.KeysFile:
 			w, err = readKeysFile(file)
 		default:
 			err = errors.New("unknown file type")
