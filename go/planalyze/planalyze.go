@@ -17,44 +17,56 @@ limitations under the License.
 package planalyze
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 
-	"github.com/vitessio/vt/go/data"
-	"github.com/vitessio/vt/go/keys"
 	"vitess.io/vitess/go/test/vschemawrapper"
 	"vitess.io/vitess/go/vt/vtenv"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder"
+
+	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/keys"
 )
 
 type Config struct {
-	logFile     string
-	vcshemaFile string
+	VSchemaFile          string
+	VtExplainVschemaFile string
 }
 
-func Run(cfg Config) error {
-	return run(os.Stdout, cfg)
+func Run(cfg Config, logFile string) error {
+	return run(os.Stdout, cfg, logFile)
 }
 
-func run(out io.Writer, cfg Config) error {
-	ko, err := keys.ReadKeysFile(cfg.logFile)
+func run(out io.Writer, cfg Config, logFile string) error {
+	a := cfg.VSchemaFile != ""
+	b := cfg.VtExplainVschemaFile != ""
+	if a == b {
+		return errors.New("specify exactly one of the following flags: -vschema, -vtexplain-vschema, -sharded")
+	}
+
+	_, vschema, err := data.GetKeyspaces(cfg.VSchemaFile, cfg.VtExplainVschemaFile, "main", false)
 	if err != nil {
 		return err
 	}
 
-	_, vschema, err := data.ReadVschema(cfg.vcshemaFile, false)
+	ko, err := keys.ReadKeysFile(logFile)
 	if err != nil {
 		return err
 	}
+
 	vw, err := vschemawrapper.NewVschemaWrapper(vtenv.NewTestEnv(), vschema, nil)
 	if err != nil {
 		return err
 	}
 	for _, query := range ko.Queries {
 		_, err = planbuilder.TestBuilder(query.QueryStructure, vw, "")
+		res := "PASS"
 		if err != nil {
-			return err
+			res = "FAIL"
 		}
+		_, _ = fmt.Fprintf(out, "%s Query: %s\n", res, query.QueryStructure)
 	}
 
 	return nil

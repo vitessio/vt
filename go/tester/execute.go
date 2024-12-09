@@ -18,16 +18,15 @@ package tester
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/vitessio/vt/go/data"
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
-	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
+
+	"github.com/vitessio/vt/go/data"
 )
 
 const (
@@ -41,7 +40,7 @@ func ExecuteTests(
 	s Suite,
 	factory QueryRunnerFactory,
 ) (failed bool) {
-	vschemaF := cfg.VschemaFile
+	vschemaF := cfg.VSchemaFile
 	if vschemaF == "" {
 		vschemaF = cfg.VtExplainVschemaFile
 	}
@@ -94,7 +93,8 @@ func SetupCluster(cfg Config) (_ ClusterInfo, err error) {
 	}
 
 	var ksNames []string
-	keyspaces, vschema := getKeyspaces(cfg.VschemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
+	keyspaces, vschema, err := data.GetKeyspaces(cfg.VSchemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
+	exitIf(err, "failed to get keyspaces")
 	for _, keyspace := range keyspaces {
 		ksNames = append(ksNames, keyspace.Name)
 		err := startKeyspace(cfg, vschema, keyspace, clusterInstance)
@@ -225,66 +225,4 @@ func generateShardRanges(numberOfShards int) []string {
 	}
 
 	return ranges
-}
-
-func defaultVschema(defaultKeyspaceName string) *vindexes.VSchema {
-	return &vindexes.VSchema{
-		Keyspaces: map[string]*vindexes.KeyspaceSchema{
-			defaultKeyspaceName: {
-				Keyspace: &vindexes.Keyspace{},
-				Tables:   map[string]*vindexes.Table{},
-				Vindexes: map[string]vindexes.Vindex{
-					"xxhash": &hashVindex{Type: "xxhash"},
-				},
-				Views: map[string]sqlparser.SelectStatement{},
-			},
-		},
-	}
-}
-
-func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharded bool) (keyspaces []*cluster.Keyspace, vschema *vindexes.VSchema) {
-	var err error
-	ksRaw := data.RawKeyspaceVindex{
-		Keyspaces: map[string]interface{}{},
-	}
-
-	switch {
-	case vschemaFile != "":
-		ksRaw, vschema, err = data.ReadVschema(vschemaFile, false)
-		exitIf(err, "reading vschema")
-	case vtexplainVschemaFile != "":
-		ksRaw, vschema, err = data.ReadVschema(vtexplainVschemaFile, true)
-		exitIf(err, "reading vtexplain vschema")
-	default:
-		// auto-vschema
-		vschema = defaultVschema(keyspaceName)
-		vschema.Keyspaces[keyspaceName].Keyspace.Sharded = sharded
-		ksSchema, err := json.Marshal(vschema.Keyspaces[keyspaceName])
-		exitIf(err, "marshalling vschema")
-		ksRaw.Keyspaces[keyspaceName] = ksSchema
-	}
-
-	for key, value := range ksRaw.Keyspaces {
-		var ksSchema string
-		valueRaw, ok := value.([]uint8)
-		if !ok {
-			valueRaw, err = json.Marshal(value)
-			exitIf(err, "marshalling keyspace schema")
-		}
-		ksSchema = string(valueRaw)
-		keyspaces = append(keyspaces, &cluster.Keyspace{
-			Name:    key,
-			VSchema: ksSchema,
-		})
-	}
-	return keyspaces, vschema
-}
-
-type hashVindex struct {
-	vindexes.Hash
-	Type string `json:"type"`
-}
-
-func (hv hashVindex) String() string {
-	return "xxhash"
 }
