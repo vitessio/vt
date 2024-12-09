@@ -31,6 +31,7 @@ const (
 	KeysFile
 	DBInfoFile
 	TransactionFile
+	PlanalyzeFile
 )
 
 var fileTypeMap = map[string]FileType{ //nolint:gochecknoglobals // this is instead of a const
@@ -38,6 +39,7 @@ var fileTypeMap = map[string]FileType{ //nolint:gochecknoglobals // this is inst
 	"keys":         KeysFile,
 	"dbinfo":       DBInfoFile,
 	"transactions": TransactionFile,
+	"planalyze":    PlanalyzeFile,
 }
 
 // GetFileType reads the first key-value pair from a JSON file and returns the type of the file

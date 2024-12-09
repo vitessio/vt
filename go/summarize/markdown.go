@@ -27,6 +27,7 @@ import (
 
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
+	"github.com/vitessio/vt/go/planalyze"
 )
 
 func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult, metricReader getMetric) {
@@ -223,6 +224,44 @@ func renderTransactions(md *markdown.MarkDown, transactions []TransactionSummary
 		if i != len(transactions)-1 {
 			md.Printf("---\n")
 		}
+	}
+}
+
+func renderPlans(md *markdown.MarkDown, analysis PlanAnalysis) {
+	sum := analysis.PassThrough + analysis.SimpleRouted + analysis.Complex + analysis.Unplannable
+	if sum == 0 {
+		return
+	}
+
+	md.PrintHeader("Query Planning Report", 2)
+
+	headers := []string{"Plan Complexity", "Count"}
+	rows := [][]string{
+		{planalyze.PassThrough.String(), strconv.Itoa(analysis.PassThrough)},
+		{planalyze.SimpleRouted.String(), strconv.Itoa(analysis.SimpleRouted)},
+		{planalyze.Complex.String(), strconv.Itoa(analysis.Complex)},
+		{planalyze.Unplannable.String(), strconv.Itoa(analysis.Unplannable)},
+		{"Total", strconv.Itoa(sum)},
+	}
+	md.PrintTable(headers, rows)
+	md.NewLine()
+
+	for i, query := range analysis.simpleRouted {
+		if i == 0 {
+			md.Printf("# %s Queries\n\n", planalyze.SimpleRouted.String())
+		}
+		md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
+		md.Printf("## Plan\n\n```json\n%s\n```\n\n", query.PlanOutput)
+		md.NewLine()
+	}
+
+	for i, query := range analysis.complex {
+		if i == 0 {
+			md.Printf("# %s Queries\n\n", planalyze.Complex.String())
+		}
+		md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
+		md.Printf("## Plan\n\n```json\n%s\n```\n\n", query.PlanOutput)
+		md.NewLine()
 	}
 }
 

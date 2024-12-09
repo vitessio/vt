@@ -27,6 +27,7 @@ import (
 	"github.com/vitessio/vt/go/dbinfo"
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
+	"github.com/vitessio/vt/go/planalyze"
 )
 
 type (
@@ -34,6 +35,7 @@ type (
 		tables        []*TableSummary
 		failures      []FailuresSummary
 		transactions  []TransactionSummary
+		planAnalysis  PlanAnalysis
 		hotQueries    []keys.QueryAnalysisResult
 		hotQueryFn    getMetric
 		analyzedFiles []string
@@ -68,6 +70,16 @@ type (
 		Predicates     []string
 		UpdatedColumns []string
 	}
+
+	PlanAnalysis struct {
+		PassThrough  int
+		SimpleRouted int
+		Complex      int
+		Unplannable  int
+
+		simpleRouted []planalyze.AnalyzedQuery
+		complex      []planalyze.AnalyzedQuery
+	}
 )
 
 func NewSummary(hotMetric string) (*Summary, error) {
@@ -98,6 +110,7 @@ func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
 		s.analyzedFiles[i] = "`" + file + "`"
 	}
 	md.Printf(msg, now.Format(time.DateTime), filePlural, strings.Join(s.analyzedFiles, ", "))
+	renderPlans(md, s.planAnalysis)
 	renderHotQueries(md, s.hotQueries, s.hotQueryFn)
 	renderTableUsage(md, s.tables, s.hasRowCount)
 	renderTablesJoined(md, s)

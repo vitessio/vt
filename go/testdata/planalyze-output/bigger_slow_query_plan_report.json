@@ -1,6 +1,7 @@
 {
-    "PassThrough": null,
-    "SimpleRouted": [
+    "fileType": "planalyze",
+    "passThrough": [],
+    "simpleRouted": [
       {
         "QueryStructure": "SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` \u003c :_i_stock_level /* INT64 */",
         "Complexity": 1,
@@ -32,7 +33,7 @@
         }
       }
     ],
-    "Complex": [
+    "complex": [
       {
         "QueryStructure": "SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :1 /* INT64 */",
         "Complexity": 2,
@@ -687,5 +688,5 @@
         }
       }
     ],
-    "Unplannable": null
+    "unplannable": []
   }

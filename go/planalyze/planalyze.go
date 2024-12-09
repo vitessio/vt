@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -38,28 +39,37 @@ type (
 		VtExplainVschemaFile string
 	}
 
-	// Planalyze is the main struct for the planalyze tool
+	// Planalyze is the main struct for the planalyze tool.
+	// It is a size four slice as we have four different types of analyzed queries
 	Planalyze struct {
 		Queries [4][]AnalyzedQuery
 	}
 
+	Output struct {
+		FileType     string          `json:"fileType"`
+		PassThrough  []AnalyzedQuery `json:"passThrough"`
+		SimpleRouted []AnalyzedQuery `json:"simpleRouted"`
+		Complex      []AnalyzedQuery `json:"complex"`
+		Unplannable  []AnalyzedQuery `json:"unplannable"`
+	}
+
 	AnalyzedQuery struct {
 		QueryStructure string
-		Complexity     planComplexity
+		Complexity     PlanComplexity
 		PlanOutput     json.RawMessage
 	}
 
-	planComplexity int
+	PlanComplexity int
 )
 
 const (
-	PassThrough planComplexity = iota
+	PassThrough PlanComplexity = iota
 	SimpleRouted
 	Complex
 	Unplannable
 )
 
-func (p planComplexity) String() string {
+func (p PlanComplexity) String() string {
 	switch p {
 	case PassThrough:
 		return "Pass-through"
@@ -99,7 +109,14 @@ func run(out io.Writer, cfg Config, logFile string) error {
 		return err
 	}
 
-	planalyzer := &Planalyze{}
+	planalyzer := &Planalyze{
+		Queries: [4][]AnalyzedQuery{
+			{},
+			{},
+			{},
+			{},
+		},
+	}
 
 	for _, query := range ko.Queries {
 		var plan *engine.Plan
@@ -123,12 +140,14 @@ func run(out io.Writer, cfg Config, logFile string) error {
 	}
 
 	type jsonOutput struct {
-		PassThrough  []AnalyzedQuery
-		SimpleRouted []AnalyzedQuery
-		Complex      []AnalyzedQuery
-		Unplannable  []AnalyzedQuery
+		FileType     string          `json:"fileType"`
+		PassThrough  []AnalyzedQuery `json:"passThrough"`
+		SimpleRouted []AnalyzedQuery `json:"simpleRouted"`
+		Complex      []AnalyzedQuery `json:"complex"`
+		Unplannable  []AnalyzedQuery `json:"unplannable"`
 	}
 	res := jsonOutput{
+		FileType:     "planalyze",
 		PassThrough:  planalyzer.Queries[PassThrough],
 		SimpleRouted: planalyzer.Queries[SimpleRouted],
 		Complex:      planalyzer.Queries[Complex],
@@ -147,45 +166,7 @@ func run(out io.Writer, cfg Config, logFile string) error {
 	return nil
 }
 
-// func (planalyzer *Planalyze) printMarkdown(out io.Writer, now time.Time, logFile string) error {
-// 	md := &markdown.MarkDown{}
-// 	msg := `# Query Planning Report
-//
-// **Date of Analysis**: %s
-// **Analyzed File**: ` + "%s" + `
-//
-// `
-// 	md.Printf(msg, now.Format(time.DateTime), logFile)
-// 	headers := []string{"Plan Complexity", "Count"}
-// 	var rows [][]string
-// 	total := 0
-// 	for _, i := range []planComplexity{PassThrough, SimpleRouted, Complex, Unplannable} {
-// 		count := len(planalyzer.Queries[i])
-// 		rows = append(rows, []string{i.String(), strconv.Itoa(count)})
-// 		total += count
-// 	}
-// 	rows = append(rows, []string{"Total", strconv.Itoa(total)})
-// 	md.PrintTable(headers, rows)
-// 	md.NewLine()
-// 	for _, typ := range []planComplexity{SimpleRouted, Complex} {
-// 		for i, query := range planalyzer.Queries[typ] {
-// 			if i == 0 {
-// 				md.Printf("# %s Queries\n\n", typ.String())
-// 			}
-// 			md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
-// 			md.Printf("## Plan\n\n```json\n%s\n```\n\n", query.PlanOutput)
-// 			md.NewLine()
-// 		}
-// 	}
-//
-// 	_, err := md.WriteTo(out)
-// 	if err != nil {
-// 		return fmt.Errorf("error writing markdown: %w", err)
-// 	}
-// 	return nil
-// }
-
-func getPlanRes(err error, plan *engine.Plan) planComplexity {
+func getPlanRes(err error, plan *engine.Plan) PlanComplexity {
 	if err != nil {
 		return Unplannable
 	}
@@ -199,4 +180,17 @@ func getPlanRes(err error, plan *engine.Plan) planComplexity {
 	}
 
 	return SimpleRouted
+}
+
+func ReadPlanalyzeFile(filename string) (p Output, err error) {
+	c, err := os.ReadFile(filename)
+	if err != nil {
+		return p, fmt.Errorf("error opening file: %w", err)
+	}
+
+	err = json.Unmarshal(c, &p)
+	if err != nil {
+		return p, fmt.Errorf("error parsing json: %w", err)
+	}
+	return p, nil
 }

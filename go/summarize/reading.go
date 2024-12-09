@@ -25,6 +25,7 @@ import (
 
 	"github.com/vitessio/vt/go/dbinfo"
 	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/planalyze"
 	"github.com/vitessio/vt/go/transactions"
 )
 
@@ -117,5 +118,17 @@ func readDBInfoFile(fileName string) (summarizer, error) {
 			table.ReferencedTables = ti.ForeignKeys
 		}
 		return nil
+	}, nil
+}
+
+func readPlanalyzeFile(filename string) (summarizer, error) {
+	p, err := planalyze.ReadPlanalyzeFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, filename)
+		return summarizePlanAnalyze(s, p)
 	}, nil
 }
