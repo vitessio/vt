@@ -1,7 +1,17 @@
 {{define "content"}}
 <h1>Query Analysis Report</h1>
-<p><strong>Date of Analysis:</strong> {{.DateOfAnalysis}}</p>
-<p><strong>Analyzed Files:</strong> {{range .AnalyzedFiles}}<code>{{.}}</code>{{end}}</p>
+<table>
+    <thead>
+    <tr>
+        <th> Date of Analysis</th>
+        <th>Analyzed Files</th>
+    </tr>
+    <tr>
+        <td style="text-align: center">{{.DateOfAnalysis}}</td>
+        <td style="text-align: center;font-size: larger">{{range .AnalyzedFiles}}<code>{{.}}</code>{{end}}</td>
+    </tr>
+    </thead>
+</table>
 
 <h2>Top Queries</h2>
 <table>
@@ -15,21 +25,21 @@
     </tr>
     </thead>
     <tbody>
-    {{range .HotQueries}}
+    {{range $index, $query := .HotQueries}}
     <tr>
-        <td>{{.QueryID}}</td>
-        <td>{{.UsageCount}}</td>
-        <td>{{.TotalQueryTime}}</td>
-        <td>{{.AvgQueryTime}}</td>
-        <td>{{.TotalRowsExamined}}</td>
+        <td>{{$index | add 1}}</td> <!-- Add 1 to start numbering from 1 -->
+        <td>{{$query.UsageCount}}</td>
+        <td>{{$query.QueryTime}}</td>
+        <td>{{divide .QueryTime .UsageCount}}</td>
+        <td>{{$query.RowsExamined}}</td>
     </tr>
     {{end}}
     </tbody>
 </table>
 
 <h3>Query Details</h3>
-{{range .HotQueries}}
-<h4>{{.QueryID}}</h4>
+{{range $index, $query := .HotQueries}}
+<h4>{{$index | add 1}}</h4>
 <pre><code>{{.QueryStructure}}</code></pre>
 {{end}}
 
@@ -40,7 +50,7 @@
         <th>Table Name</th>
         <th>Reads</th>
         <th>Writes</th>
-        {{if .IncludeRowCount}}<th>Number of Rows</th>{{end}}
+        <th>Number of Rows</th>
     </tr>
     </thead>
     <tbody>
@@ -49,7 +59,7 @@
         <td>{{.Table}}</td>
         <td>{{.ReadQueryCount}}</td>
         <td>{{.WriteQueryCount}}</td>
-        {{if $.IncludeRowCount}}<td>{{.RowCount}}</td>{{end}}
+        <td>{{.RowCount}}</td>
     </tr>
     {{end}}
     </tbody>
@@ -67,11 +77,11 @@
     </tr>
     </thead>
     <tbody>
-    {{range .ColumnUses}}
+    {{range .GetColumnsSlice}}
     <tr>
-        <td>{{.Name}}</td>
-        <td>{{.Pos}}</td>
-        <td>{{.Percentage}}%</td>
+        <td>{{.ColInfo.Name}}</td>
+        <td>{{.ColInfo.Pos}}</td>
+        <td>{{.Usage.Percentage}}%</td>
     </tr>
     {{end}}
     </tbody>

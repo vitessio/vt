@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -25,7 +26,7 @@ func RenderFileToGin(fileName string, data any, c *gin.Context) {
 }
 
 func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
-	tmpl := template.Must(template.ParseFiles(
+	tmpl := template.Must(template.New("summarize2.html").Funcs(funcMap).ParseFiles(
 		"go/web/templates/layout.html",
 		"go/web/templates/footer.html",
 		"go/web/templates/header.html",
@@ -40,10 +41,52 @@ func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
 	return &buf, nil
 }
 
+type SummaryOutput struct {
+	summarize.Summary
+	DateOfAnalysis string
+}
+
+var funcMap = template.FuncMap{
+	"add": func(a, b int) int { return a + b },
+	"divide": func(a, b any) float64 {
+		if b == 0 || b == nil {
+			return 0 // Handle division by zero or nil
+		}
+
+		// Convert `a` and `b` to float64
+		var aFloat, bFloat float64
+
+		switch v := a.(type) {
+		case int:
+			aFloat = float64(v)
+		case float64:
+			aFloat = v
+		default:
+			return 0 // Invalid type, return 0
+		}
+
+		switch v := b.(type) {
+		case int:
+			bFloat = float64(v)
+		case float64:
+			bFloat = v
+		default:
+			return 0 // Invalid type, return 0
+		}
+
+		return aFloat / bFloat
+	},
+}
+
+func addFuncMap(r *gin.Engine) {
+	r.SetFuncMap(funcMap)
+}
+
 func Run(port int64) {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard // Disable logging
 	r := gin.Default()
+	addFuncMap(r)
 
 	r.LoadHTMLGlob("go/web/templates/*.html")
 	r.Static("/css", "go/web/templates/css")
@@ -71,15 +114,25 @@ func Run(port int64) {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		pretty, err := json.MarshalIndent(summary, "", "  ")
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
+
+		summarizeOutput := SummaryOutput{
+			Summary:        summary,
+			DateOfAnalysis: time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC).Format(time.DateTime),
 		}
-		if err := os.WriteFile("web.json", pretty, 0o600); err != nil {
-			panic(err)
+
+		{
+			//FIXME: remove before merging, for debugging only
+			pretty, err := json.MarshalIndent(summarizeOutput, "", "  ")
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			if err := os.WriteFile("web.json", pretty, 0o600); err != nil {
+				panic(err)
+			}
 		}
-		RenderFileToGin("summarize.html", &summary, c)
+
+		RenderFileToGin("summarize2.html", &summarizeOutput, c)
 	})
 
 	if os.WriteFile("/dev/stderr", []byte(fmt.Sprintf("Starting web server on http://localhost:%d\n", port)), 0o600) != nil {

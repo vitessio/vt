@@ -58,7 +58,7 @@ type (
 	joinDetails struct {
 		Tbl1, Tbl2  string
 		Occurrences int
-		predicates  []operators.JoinPredicate
+		Predicates  []operators.JoinPredicate
 	}
 
 	queryGraph map[graphKey]map[operators.JoinPredicate]int
@@ -123,6 +123,23 @@ func PositionFromString(s string) (Position, error) {
 	}
 
 	return 0, fmt.Errorf("invalid position: %s", s)
+}
+
+type TemplateColumn struct {
+	ColInfo ColumnInformation
+	Usage   ColumnUsage
+}
+
+func (ts TableSummary) GetColumnsSlice() []TemplateColumn {
+	columns := make([]TemplateColumn, 0, len(ts.ColumnUses))
+	for colInfoKey, usage := range ts.ColumnUses {
+		colInfo, err := ColumnInfoFromString(colInfoKey)
+		if err != nil {
+			panic(err)
+		}
+		columns = append(columns, TemplateColumn{ColInfo: *colInfo, Usage: usage})
+	}
+	return columns
 }
 
 func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
@@ -295,7 +312,7 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {
 			Tbl1:        tables.Tbl1,
 			Tbl2:        tables.Tbl2,
 			Occurrences: occurrences,
-			predicates:  joinPredicates,
+			Predicates:  joinPredicates,
 		})
 	}
 	sort.Slice(summary.Joins, func(i, j int) bool {
