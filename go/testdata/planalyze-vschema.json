@@ -62,7 +62,7 @@
           "column_vindexes": [
             {
               "columns": [
-                "id"
+                "product_id"
               ],
               "name": "xxhash"
             }

@@ -24,6 +24,7 @@ import (
 
 	"vitess.io/vitess/go/test/vschemawrapper"
 	"vitess.io/vitess/go/vt/vtenv"
+	"vitess.io/vitess/go/vt/vtgate/engine"
 	"vitess.io/vitess/go/vt/vtgate/planbuilder"
 
 	"github.com/vitessio/vt/go/data"
@@ -61,13 +62,30 @@ func run(out io.Writer, cfg Config, logFile string) error {
 		return err
 	}
 	for _, query := range ko.Queries {
-		_, err = planbuilder.TestBuilder(query.QueryStructure, vw, "")
-		res := "PASS"
-		if err != nil {
-			res = "FAIL"
-		}
+		var plan *engine.Plan
+		plan, err = planbuilder.TestBuilder(query.QueryStructure, vw, "")
+
+		res := getPlanRes(err, plan)
 		_, _ = fmt.Fprintf(out, "%s Query: %s\n", res, query.QueryStructure)
 	}
 
 	return nil
+}
+
+func getPlanRes(err error, plan *engine.Plan) string {
+	var res string
+	if err != nil {
+		res = "FAIL"
+	} else {
+		rb, ok := plan.Instructions.(*engine.Route)
+		switch {
+		case !ok:
+			res = "VALID"
+		case rb.Opcode.IsSingleShard():
+			res = "PERFECT"
+		default:
+			res = "GOOD"
+		}
+	}
+	return res
 }

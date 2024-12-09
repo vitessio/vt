@@ -22,6 +22,7 @@ and query analysis.
   - **Perfect**: Single-shard queries.
   - **Good**: Single-route plans, no expensive multi-shard operations.
   - **Valid**: Plans requiring vtgate-level work. Acceptable if rarely used, but potentially slow for frequent queries.
+  - **Unsupported**: These queries currently not supported by Vitess.
 
 ## Installation
 
