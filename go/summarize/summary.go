@@ -110,14 +110,17 @@ func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
 		s.analyzedFiles[i] = "`" + file + "`"
 	}
 	md.Printf(msg, now.Format(time.DateTime), filePlural, strings.Join(s.analyzedFiles, ", "))
-	renderPlans(md, s.planAnalysis)
+	err := renderPlansSection(md, s.planAnalysis)
+	if err != nil {
+		return err
+	}
 	renderHotQueries(md, s.hotQueries, s.hotQueryFn)
 	renderTableUsage(md, s.tables, s.hasRowCount)
 	renderTablesJoined(md, s)
 	renderTransactions(md, s.transactions)
 	renderFailures(md, s.failures)
 
-	_, err := md.WriteTo(out)
+	_, err = md.WriteTo(out)
 	if err != nil {
 		return fmt.Errorf("error writing markdown: %w", err)
 	}
