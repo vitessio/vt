@@ -37,7 +37,6 @@ func Execute() {
 		Use:   "vt",
 		Short: "Utils tools for testing, running and benchmarking Vitess.",
 		RunE: func(_ *cobra.Command, _ []string) error {
-			// Do something with port here
 			if port > 0 {
 				if webserverStarted {
 					return nil
@@ -66,6 +65,7 @@ func Execute() {
 	} else {
 		ch <- 1
 	}
+
 	// FIXME: add sync b/w webserver and root command, for now just add a wait to make sure webserver is running
 	time.Sleep(2 * time.Second)
 	err := root.Execute()

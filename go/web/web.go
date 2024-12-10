@@ -26,7 +26,7 @@ func RenderFileToGin(fileName string, data any, c *gin.Context) {
 }
 
 func RenderFile(fileName string, data any) (*bytes.Buffer, error) {
-	tmpl := template.Must(template.New("summarize2.html").Funcs(getFuncMap()).ParseFiles(
+	tmpl := template.Must(template.New("summarize.html").Funcs(getFuncMap()).ParseFiles(
 		"go/web/templates/layout.html",
 		"go/web/templates/footer.html",
 		"go/web/templates/header.html",
@@ -134,13 +134,13 @@ func Run(port int64) {
 			}
 		}
 
-		RenderFileToGin("summarize2.html", &summarizeOutput, c)
+		RenderFileToGin("summarize.html", &summarizeOutput, c)
 	})
 
 	if os.WriteFile("/dev/stderr", []byte(fmt.Sprintf("Starting web server on http://localhost:%d\n", port)), 0o600) != nil {
 		panic("Failed to write to /dev/stderr")
 	}
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run(fmt.Sprintf(":%d", port)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

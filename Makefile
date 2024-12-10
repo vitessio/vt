@@ -26,10 +26,6 @@ check_version:
 
 default: check_version build
 
-vt: clean
-	@echo "Building vt..."
-	@go build -o vt ./go/vt
-
 build:
 	@echo "Building vt..."
 	@go build -o vt ./go/vt
