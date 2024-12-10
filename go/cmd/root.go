@@ -39,6 +39,7 @@ func Execute() {
 	root.AddCommand(keysCmd())
 	root.AddCommand(dbinfoCmd())
 	root.AddCommand(transactionsCmd())
+	root.AddCommand(planalyzeCmd())
 
 	err := root.Execute()
 	if err != nil {

@@ -17,6 +17,8 @@ limitations under the License.
 package summarize
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"sort"
@@ -27,6 +29,7 @@ import (
 
 	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
+	"github.com/vitessio/vt/go/planalyze"
 )
 
 func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult, metricReader getMetric) {
@@ -224,6 +227,56 @@ func renderTransactions(md *markdown.MarkDown, transactions []TransactionSummary
 			md.Printf("---\n")
 		}
 	}
+}
+
+func renderPlansSection(md *markdown.MarkDown, analysis PlanAnalysis) error {
+	sum := analysis.PassThrough + analysis.SimpleRouted + analysis.Complex + analysis.Unplannable
+	if sum == 0 {
+		return nil
+	}
+
+	md.PrintHeader("Query Planning Report", 2)
+
+	headers := []string{"Plan Complexity", "Count"}
+	rows := [][]string{
+		{planalyze.PassThrough.String(), strconv.Itoa(analysis.PassThrough)},
+		{planalyze.SimpleRouted.String(), strconv.Itoa(analysis.SimpleRouted)},
+		{planalyze.Complex.String(), strconv.Itoa(analysis.Complex)},
+		{planalyze.Unplannable.String(), strconv.Itoa(analysis.Unplannable)},
+		{"Total", strconv.Itoa(sum)},
+	}
+	md.PrintTable(headers, rows)
+	md.NewLine()
+
+	err := renderQueryPlans(md, analysis.simpleRouted, planalyze.SimpleRouted.String())
+	if err != nil {
+		return err
+	}
+	return renderQueryPlans(md, analysis.complex, planalyze.Complex.String())
+}
+
+func renderQueryPlans(md *markdown.MarkDown, queries []planalyze.AnalyzedQuery, title string) error {
+	for i, query := range queries {
+		if i == 0 {
+			md.Printf("# %s Queries\n\n", title)
+		}
+		md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
+		md.Println("## Plan\n\n```json")
+
+		// Indent the JSON output. If we don't do this, the json will be indented all wrong
+		var buf bytes.Buffer
+		if err := json.Indent(&buf, query.PlanOutput, "", "  "); err != nil {
+			return err
+		}
+
+		if _, err := md.Write(buf.Bytes()); err != nil {
+			return err
+		}
+		md.NewLine()
+		md.Println("```")
+		md.NewLine()
+	}
+	return nil
 }
 
 func uniquefy(s []string) []string {

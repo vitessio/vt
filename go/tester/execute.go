@@ -18,22 +18,16 @@ package tester
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 
 	"vitess.io/vitess/go/mysql"
 	"vitess.io/vitess/go/test/endtoend/cluster"
 	"vitess.io/vitess/go/test/endtoend/utils"
-	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
-	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
-)
 
-type RawKeyspaceVindex struct {
-	Keyspaces map[string]interface{} `json:"keyspaces"`
-}
+	"github.com/vitessio/vt/go/data"
+)
 
 const (
 	defaultKeyspaceName = "mysqltest"
@@ -46,7 +40,7 @@ func ExecuteTests(
 	s Suite,
 	factory QueryRunnerFactory,
 ) (failed bool) {
-	vschemaF := cfg.VschemaFile
+	vschemaF := cfg.VSchemaFile
 	if vschemaF == "" {
 		vschemaF = cfg.VtExplainVschemaFile
 	}
@@ -99,7 +93,8 @@ func SetupCluster(cfg Config) (_ ClusterInfo, err error) {
 	}
 
 	var ksNames []string
-	keyspaces, vschema := getKeyspaces(cfg.VschemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
+	keyspaces, vschema, err := data.GetKeyspaces(cfg.VSchemaFile, cfg.VtExplainVschemaFile, defaultKeyspaceName, cfg.Sharded)
+	exitIf(err, "failed to get keyspaces")
 	for _, keyspace := range keyspaces {
 		ksNames = append(ksNames, keyspace.Name)
 		err := startKeyspace(cfg, vschema, keyspace, clusterInstance)
@@ -230,103 +225,4 @@ func generateShardRanges(numberOfShards int) []string {
 	}
 
 	return ranges
-}
-
-func defaultVschema(defaultKeyspaceName string) *vindexes.VSchema {
-	return &vindexes.VSchema{
-		Keyspaces: map[string]*vindexes.KeyspaceSchema{
-			defaultKeyspaceName: {
-				Keyspace: &vindexes.Keyspace{},
-				Tables:   map[string]*vindexes.Table{},
-				Vindexes: map[string]vindexes.Vindex{
-					"xxhash": &hashVindex{Type: "xxhash"},
-				},
-				Views: map[string]sqlparser.SelectStatement{},
-			},
-		},
-	}
-}
-
-func getKeyspaces(vschemaFile, vtexplainVschemaFile, keyspaceName string, sharded bool) (keyspaces []*cluster.Keyspace, vschema *vindexes.VSchema) {
-	ksRaw := RawKeyspaceVindex{
-		Keyspaces: map[string]interface{}{},
-	}
-	switch {
-	case vschemaFile != "":
-		ksRaw, vschema = readVschema(vschemaFile, false)
-	case vtexplainVschemaFile != "":
-		ksRaw, vschema = readVschema(vtexplainVschemaFile, true)
-	default:
-		// auto-vschema
-		vschema = defaultVschema(keyspaceName)
-		vschema.Keyspaces[keyspaceName].Keyspace.Sharded = sharded
-		ksSchema, err := json.Marshal(vschema.Keyspaces[keyspaceName])
-		exitIf(err, "marshalling vschema")
-		ksRaw.Keyspaces[keyspaceName] = ksSchema
-	}
-
-	var err error
-	for key, value := range ksRaw.Keyspaces {
-		var ksSchema string
-		valueRaw, ok := value.([]uint8)
-		if !ok {
-			valueRaw, err = json.Marshal(value)
-			exitIf(err, "marshalling keyspace schema")
-		}
-		ksSchema = string(valueRaw)
-		keyspaces = append(keyspaces, &cluster.Keyspace{
-			Name:    key,
-			VSchema: ksSchema,
-		})
-	}
-	return keyspaces, vschema
-}
-
-func readVschema(file string, vtexplain bool) (RawKeyspaceVindex, *vindexes.VSchema) {
-	rawVschema, srvVschema := getSrvVschema(file, vtexplain)
-	ksRaw, vschema, err := loadVschema(srvVschema, rawVschema)
-	exitIf(err, "loading vschema")
-	return ksRaw, vschema
-}
-
-func getSrvVschema(file string, wrap bool) ([]byte, *vschemapb.SrvVSchema) {
-	vschemaStr, err := os.ReadFile(file)
-	exitIf(err, "reading vschema file")
-
-	if wrap {
-		vschemaStr = []byte(fmt.Sprintf(`{"keyspaces": %s}`, vschemaStr))
-	}
-
-	var srvVSchema vschemapb.SrvVSchema
-	err = json.Unmarshal(vschemaStr, &srvVSchema)
-	exitIf(err, "unmarshalling vschema")
-
-	if len(srvVSchema.Keyspaces) == 0 {
-		exitIf(errors.New("no keyspaces found"), "loading vschema")
-	}
-
-	return vschemaStr, &srvVSchema
-}
-
-func loadVschema(srvVschema *vschemapb.SrvVSchema, rawVschema []byte) (RawKeyspaceVindex, *vindexes.VSchema, error) {
-	vschema := vindexes.BuildVSchema(srvVschema, sqlparser.NewTestParser())
-	if len(vschema.Keyspaces) == 0 {
-		return RawKeyspaceVindex{}, nil, errors.New("no keyspace defined in vschema")
-	}
-
-	var rkv RawKeyspaceVindex
-	err := json.Unmarshal(rawVschema, &rkv)
-	if err != nil {
-		return RawKeyspaceVindex{}, nil, err
-	}
-	return rkv, vschema, nil
-}
-
-type hashVindex struct {
-	vindexes.Hash
-	Type string `json:"type"`
-}
-
-func (hv hashVindex) String() string {
-	return "xxhash"
 }

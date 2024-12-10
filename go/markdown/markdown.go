@@ -64,6 +64,10 @@ func (m *MarkDown) PrintTable(headers []string, rows [][]string) {
 	m.NewLine()
 }
 
+func (m *MarkDown) Write(p []byte) (n int, err error) {
+	return m.buffer.Write(p)
+}
+
 func (m *MarkDown) WriteTo(w io.Writer) (n int64, err error) {
 	return m.buffer.WriteTo(w)
 }
