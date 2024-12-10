@@ -17,6 +17,12 @@ and query analysis.
 - **`vt summarize`**: A tool used to summarize or compare trace logs or key logs for easier human consumption.
 - **`vt dbinfo`**: A tool that provides information about the database schema, including row counts, useful column
   attributes and relevant subset of global variables.
+- **`vt planalyze`**: A tool that uses `vt keys` output plus a suggested VSchema to analyze potential query plans without
+  bringing up a cluster. Queries are classified as:
+  - **Pass-through**: Single-shard queries.
+  - **Simple routed**: Single-route plans, no expensive multi-shard operations.
+  - **Complex routed**: Plans requiring vtgate-level work. Acceptable if rarely used, but potentially slow for frequent queries.
+  - **Unplanable**: These queries currently not supported by Vitess.
 
 ## Installation
 

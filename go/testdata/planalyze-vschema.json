@@ -1,0 +1,114 @@
+{
+  "keyspaces": {
+    "main": {
+      "sharded": true,
+      "vindexes": {
+        "xxhash": {
+          "type": "xxhash"
+        }
+      },
+      "tables": {
+        "categories": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "products": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "users": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "orders": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "order_items": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "reviews": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "product_id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "inventory": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "product_id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "shipments": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "payments": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        },
+        "messages": {
+          "column_vindexes": [
+            {
+              "columns": [
+                "id"
+              ],
+              "name": "xxhash"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

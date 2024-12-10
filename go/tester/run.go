@@ -35,7 +35,7 @@ type Config struct {
 	OLAP                 bool
 	Sharded              bool
 	XUnit                bool
-	VschemaFile          string
+	VSchemaFile          string
 	VtExplainVschemaFile string
 	TraceFile            string
 	Tests                []string
@@ -71,13 +71,13 @@ func Run(cfg Config) error {
 		return fmt.Errorf("error reading environment variables: %w", err)
 	}
 
-	a := cfg.VschemaFile != ""
+	a := cfg.VSchemaFile != ""
 	b := cfg.VtExplainVschemaFile != ""
 	if a && b || a && cfg.Sharded || b && cfg.Sharded {
 		return wrongUsage("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
 	}
 
-	if cfg.NumberOfShards > 0 && !(cfg.Sharded || cfg.VschemaFile != "" || cfg.VtExplainVschemaFile != "") {
+	if cfg.NumberOfShards > 0 && !(cfg.Sharded || cfg.VSchemaFile != "" || cfg.VtExplainVschemaFile != "") {
 		return wrongUsage("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
 	}
 

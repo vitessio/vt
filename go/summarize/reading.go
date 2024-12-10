@@ -25,6 +25,7 @@ import (
 
 	"github.com/vitessio/vt/go/dbinfo"
 	"github.com/vitessio/vt/go/keys"
+	"github.com/vitessio/vt/go/planalyze"
 	"github.com/vitessio/vt/go/transactions"
 )
 
@@ -87,15 +88,9 @@ func readTransactionFile(fileName string) (summarizer, error) {
 }
 
 func readKeysFile(fileName string) (summarizer, error) {
-	c, err := os.ReadFile(fileName)
+	ko, err := keys.ReadKeysFile(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("error opening file: %w", err)
-	}
-
-	var ko keys.Output
-	err = json.Unmarshal(c, &ko)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing json: %w", err)
+		return nil, err
 	}
 
 	return func(s *Summary) error {
@@ -123,5 +118,17 @@ func readDBInfoFile(fileName string) (summarizer, error) {
 			table.ReferencedTables = ti.ForeignKeys
 		}
 		return nil
+	}, nil
+}
+
+func readPlanalyzeFile(filename string) (summarizer, error) {
+	p, err := planalyze.ReadPlanalyzeFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(s *Summary) error {
+		s.analyzedFiles = append(s.analyzedFiles, filename)
+		return summarizePlanAnalyze(s, p)
 	}, nil
 }

@@ -58,6 +58,8 @@ func Run(files []string, hotMetric string, showGraph bool) {
 			t, err = readTracedFile(file)
 		case data.KeysFile:
 			w, err = readKeysFile(file)
+		case data.PlanalyzeFile:
+			w, err = readPlanalyzeFile(file)
 		default:
 			err = errors.New("unknown file type")
 		}

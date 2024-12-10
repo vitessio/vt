@@ -32,10 +32,10 @@ func testerCmd() *cobra.Command {
 	var csvConfig data.CSVConfig
 
 	cmd := &cobra.Command{
-		Aliases: []string{"test"},
-		Use:     "tester ",
+		Aliases: []string{"tester"},
+		Use:     "test ",
 		Short:   "Test the given workload against both Vitess and MySQL.",
-		Example: "vt tester ",
+		Example: "vt test ",
 		Args:    cobra.MinimumNArgs(1),
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			csvConfig = csvFlagsToConfig(cmd, *flags)
@@ -109,7 +109,7 @@ func usageErr(cmd *cobra.Command, err error) error {
 func commonFlags(cmd *cobra.Command, cfg *vttester.Config) {
 	cmd.Flags().StringVar(&cfg.LogLevel, "log-level", "error", "The log level of vt tester: info, warn, error, debug.")
 	cmd.Flags().IntVar(&cfg.NumberOfShards, "number-of-shards", 0, "Number of shards to use for the sharded keyspace.")
-	cmd.Flags().StringVar(&cfg.VschemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
+	cmd.Flags().StringVar(&cfg.VSchemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
 	cmd.Flags().StringVar(&cfg.VtExplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")
 	cmd.Flags().StringVar(&cfg.TraceFile, "trace-file", "", "Do a vexplain trace on all queries and store the output in the given file.")
 	cmd.Flags().BoolVar(&cfg.Sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
