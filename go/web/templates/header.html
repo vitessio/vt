@@ -1,0 +1,38 @@
+{{define "header"}}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var coll = document.getElementsByClassName("collapsible");
+    for (var i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.maxHeight) {
+          content.style.maxHeight = null;
+        } else {
+          content.style.maxHeight = content.scrollHeight + "px";
+        }
+      });
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function() {
+    var columnUsages = document.getElementsByClassName("columnUsage");
+    for (var i = 0; i < columnUsages.length; i++) {
+      if (i % 2 === 0) {
+        columnUsages[i].classList.add("even");
+      } else {
+        columnUsages[i].classList.add("odd");
+      }
+    }
+  });
+</script>
+<header>
+  <img style="height:48px" src="images/vitess-logo.png" alt="VT Logo">
+  <h1 style="display: inline;color:orange;font-size: xx-large">Vitess vt utilities</h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+  </nav>
+</header>
+{{end}}
+

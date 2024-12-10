@@ -39,7 +39,7 @@ The output JSON file contains an array of transaction patterns, each summarizing
           "updated_columns": [
             "apa"
           ],
-          "predicates": [
+          "Predicates": [
             {
               "table": "tblA",
               "col": "foo",
@@ -60,7 +60,7 @@ The output JSON file contains an array of transaction patterns, each summarizing
           "updated_columns": [
             "monkey"
           ],
-          "predicates": [
+          "Predicates": [
             {
               "table": "tblB",
               "col": "bar",
@@ -102,24 +102,24 @@ Each object in the query-signatures array represents a generalized query and inc
  * op: The operation type (e.g., "insert", "update", "delete").
  * affected_table: The table affected by the query.
  * updated_columns: (Only for update operations) An array of column names that are updated by the query.
- * predicates: An array of conditions (also known as predicates) used in the query’s WHERE clause. Each predicate abstracts the condition to focus on the pattern rather than specific values. Not all predicates are included in the query signature; only those that could be used by the planner to select if the transaction is a single shard or a distributed transaction.
+ * Predicates: An array of conditions (also known as Predicates) used in the query’s WHERE clause. Each predicate abstracts the condition to focus on the pattern rather than specific values. Not all Predicates are included in the query signature; only those that could be used by the planner to select if the transaction is a single shard or a distributed transaction.
 
 #### Inside Each Predicate
 
-Each predicate object in the predicates array includes:
+Each predicate object in the Predicates array includes:
  * table: The name of the table referenced in the condition.
  * col: The column name used in the condition.
  * op: A code representing the comparison operator used in the condition. For example:
    - 0 might represent the "=" operator.
    - Other numbers might represent different operators like <, >, LIKE, etc.
- * val: A generalized placeholder value used in the condition. Instead of showing specific values, placeholders are used to indicate where values are compared. Identical placeholders across different predicates suggest that the same variable or parameter is used. -1 is a special value that indicates a unique value used only by this predicate.
+ * val: A generalized placeholder value used in the condition. Instead of showing specific values, placeholders are used to indicate where values are compared. Identical placeholders across different Predicates suggest that the same variable or parameter is used. -1 is a special value that indicates a unique value used only by this predicate.
 
 ### Example Explained
 
-Consider the following predicates array:
+Consider the following Predicates array:
 
 ```json
-"predicates": [
+"Predicates": [
   {
     "table": "tblA",
     "col": "foo",
@@ -138,7 +138,7 @@ Consider the following predicates array:
  * The first predicate represents a condition on tblA.foo, using the operator code 0 (e.g., "="), with a generalized value 0.
  * The second predicate represents a condition on tblA.id, also using the operator code 0, with a generalized value -1. That means that this value was only used by this predicate and not shared by any other queries in the transaction.
 
-This numbering helps identify the relationships between different predicates in the transaction patterns and can be used to help guide choices in sharding strategies.
+This numbering helps identify the relationships between different Predicates in the transaction patterns and can be used to help guide choices in sharding strategies.
 
 ## Practical Use Cases
 

@@ -29,32 +29,32 @@ import (
 
 func TestTableSummary(t *testing.T) {
 	expected := []string{
-		"l_orderkey " + Join.String() + " 72%",
-		"l_orderkey " + Grouping.String() + " 17%",
-		"l_suppkey " + Join.String() + " 39%",
-		"l_suppkey " + JoinRange.String() + " 17%",
-		"l_commitdate " + WhereRange.String() + " 28%",
-		"l_receiptdate " + WhereRange.String() + " 28%",
-		"l_shipdate " + WhereRange.String() + " 22%",
-		"l_partkey " + Join.String() + " 17%",
-		"l_returnflag " + Where.String() + " 6%",
-		"l_shipmode " + WhereRange.String() + " 6%",
-		"l_shipmode " + Grouping.String() + " 6%",
+		"l_orderkey/" + Join.String() + " 72%",
+		"l_orderkey/" + Grouping.String() + " 17%",
+		"l_suppkey/" + Join.String() + " 39%",
+		"l_suppkey/" + JoinRange.String() + " 17%",
+		"l_commitdate/" + WhereRange.String() + " 28%",
+		"l_receiptdate/" + WhereRange.String() + " 28%",
+		"l_shipdate/" + WhereRange.String() + " 22%",
+		"l_partkey/" + Join.String() + " 17%",
+		"l_returnflag/" + Where.String() + " 6%",
+		"l_shipmode/" + WhereRange.String() + " 6%",
+		"l_shipmode/" + Grouping.String() + " 6%",
 	}
 
 	ts := TableSummary{
-		ColumnUses: map[ColumnInformation]ColumnUsage{
-			{Name: "l_shipmode", Pos: WhereRange}:    {Percentage: 6},
-			{Name: "l_receiptdate", Pos: WhereRange}: {Percentage: 28},
-			{Name: "l_shipdate", Pos: WhereRange}:    {Percentage: 22},
-			{Name: "l_orderkey", Pos: Grouping}:      {Percentage: 17},
-			{Name: "l_orderkey", Pos: Join}:          {Percentage: 72},
-			{Name: "l_suppkey", Pos: Join}:           {Percentage: 39},
-			{Name: "l_shipmode", Pos: Grouping}:      {Percentage: 6},
-			{Name: "l_returnflag", Pos: Where}:       {Percentage: 6},
-			{Name: "l_partkey", Pos: Join}:           {Percentage: 17},
-			{Name: "l_suppkey", Pos: JoinRange}:      {Percentage: 17},
-			{Name: "l_commitdate", Pos: WhereRange}:  {Percentage: 28},
+		ColumnUses: map[string]ColumnUsage{
+			(&ColumnInformation{Name: "l_shipmode", Pos: WhereRange}).String():    {Percentage: 6},
+			(&ColumnInformation{Name: "l_receiptdate", Pos: WhereRange}).String(): {Percentage: 28},
+			(&ColumnInformation{Name: "l_shipdate", Pos: WhereRange}).String():    {Percentage: 22},
+			(&ColumnInformation{Name: "l_orderkey", Pos: Grouping}).String():      {Percentage: 17},
+			(&ColumnInformation{Name: "l_orderkey", Pos: Join}).String():          {Percentage: 72},
+			(&ColumnInformation{Name: "l_suppkey", Pos: Join}).String():           {Percentage: 39},
+			(&ColumnInformation{Name: "l_shipmode", Pos: Grouping}).String():      {Percentage: 6},
+			(&ColumnInformation{Name: "l_returnflag", Pos: Where}).String():       {Percentage: 6},
+			(&ColumnInformation{Name: "l_partkey", Pos: Join}).String():           {Percentage: 17},
+			(&ColumnInformation{Name: "l_suppkey", Pos: JoinRange}).String():      {Percentage: 17},
+			(&ColumnInformation{Name: "l_commitdate", Pos: WhereRange}).String():  {Percentage: 28},
 		},
 	}
 

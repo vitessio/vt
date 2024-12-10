@@ -32,23 +32,23 @@ import (
 
 type (
 	Summary struct {
-		tables        []*TableSummary
-		failures      []FailuresSummary
-		transactions  []TransactionSummary
+		Tables        []*TableSummary
+		Failures      []FailuresSummary
+		Transactions  []TransactionSummary
+		HotQueries    []keys.QueryAnalysisResult
 		planAnalysis  PlanAnalysis
-		hotQueries    []keys.QueryAnalysisResult
 		hotQueryFn    getMetric
-		analyzedFiles []string
+		AnalyzedFiles []string
 		queryGraph    queryGraph
-		joins         []joinDetails
-		hasRowCount   bool
+		Joins         []joinDetails
+		HasRowCount   bool
 	}
 
 	TableSummary struct {
 		Table            string
 		ReadQueryCount   int
 		WriteQueryCount  int
-		ColumnUses       map[ColumnInformation]ColumnUsage
+		ColumnUses       map[string]ColumnUsage
 		JoinPredicates   []operators.JoinPredicate
 		Failed           bool
 		RowCount         int
@@ -103,22 +103,22 @@ func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
 **Analyzed File%s**: ` + "%s" + `
 
 `
-	if len(s.analyzedFiles) > 1 {
+	if len(s.AnalyzedFiles) > 1 {
 		filePlural = "s"
 	}
-	for i, file := range s.analyzedFiles {
-		s.analyzedFiles[i] = "`" + file + "`"
+	for i, file := range s.AnalyzedFiles {
+		s.AnalyzedFiles[i] = "`" + file + "`"
 	}
-	md.Printf(msg, now.Format(time.DateTime), filePlural, strings.Join(s.analyzedFiles, ", "))
+	md.Printf(msg, now.Format(time.DateTime), filePlural, strings.Join(s.AnalyzedFiles, ", "))
 	err := renderPlansSection(md, s.planAnalysis)
 	if err != nil {
 		return err
 	}
-	renderHotQueries(md, s.hotQueries, s.hotQueryFn)
-	renderTableUsage(md, s.tables, s.hasRowCount)
+	renderHotQueries(md, s.HotQueries, s.hotQueryFn)
+	renderTableUsage(md, s.Tables, s.HasRowCount)
 	renderTablesJoined(md, s)
-	renderTransactions(md, s.transactions)
-	renderFailures(md, s.failures)
+	renderTransactions(md, s.Transactions)
+	renderFailures(md, s.Failures)
 
 	_, err = md.WriteTo(out)
 	if err != nil {
@@ -128,7 +128,7 @@ func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
 }
 
 func (s *Summary) GetTable(name string) *TableSummary {
-	for _, table := range s.tables {
+	for _, table := range s.Tables {
 		if table.Table == name {
 			return table
 		}
@@ -137,7 +137,7 @@ func (s *Summary) GetTable(name string) *TableSummary {
 }
 
 func (s *Summary) AddTable(table *TableSummary) {
-	s.tables = append(s.tables, table)
+	s.Tables = append(s.Tables, table)
 }
 
 func (ts TableSummary) IsEmpty() bool {
