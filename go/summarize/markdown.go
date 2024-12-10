@@ -27,26 +27,12 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 
-	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
 	"github.com/vitessio/vt/go/planalyze"
 )
 
-func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult, metricReader getMetric) {
+func renderHotQueries(md *markdown.MarkDown, queries []HotQueryResult) {
 	if len(queries) == 0 {
-		return
-	}
-
-	hasTime := false
-	// Sort the queries in descending order of hotness
-	sort.Slice(queries, func(i, j int) bool {
-		if queries[i].QueryTime != 0 {
-			hasTime = true
-		}
-		return metricReader(queries[i]) > metricReader(queries[j])
-	})
-
-	if !hasTime {
 		return
 	}
 
@@ -58,13 +44,12 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 
 	for i, query := range queries {
 		queryID := fmt.Sprintf("Q%d", i+1)
-		avgQueryTime := query.QueryTime / float64(query.UsageCount)
 		rows = append(rows, []string{
 			queryID,
-			humanize.Comma(int64(query.UsageCount)),
-			fmt.Sprintf("%.2f", query.QueryTime),
-			fmt.Sprintf("%.2f", avgQueryTime),
-			humanize.Comma(int64(query.RowsExamined)),
+			humanize.Comma(int64(query.QueryAnalysisResult.UsageCount)),
+			fmt.Sprintf("%.2f", query.QueryAnalysisResult.QueryTime),
+			fmt.Sprintf("%.2f", query.AvgQueryTime),
+			humanize.Comma(int64(query.QueryAnalysisResult.RowsExamined)),
 		})
 	}
 
@@ -77,7 +62,7 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 		queryID := fmt.Sprintf("Q%d", i+1)
 		md.PrintHeader(queryID, 4)
 		md.Println("```sql")
-		md.Println(query.QueryStructure)
+		md.Println(query.QueryAnalysisResult.QueryStructure)
 		md.Println("```")
 		md.NewLine()
 	}
@@ -258,10 +243,13 @@ func renderPlansSection(md *markdown.MarkDown, analysis PlanAnalysis) error {
 func renderQueryPlans(md *markdown.MarkDown, queries []planalyze.AnalyzedQuery, title string) error {
 	for i, query := range queries {
 		if i == 0 {
-			md.Printf("# %s Queries\n\n", title)
+			md.PrintHeader(fmt.Sprintf("%s Queries\n\n", title), 3)
 		}
-		md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
-		md.Println("## Plan\n\n```json")
+		md.PrintHeader("Query", 4)
+		md.Printf("```sql\n%s\n```\n\n", query.QueryStructure)
+
+		md.PrintHeader("Plan", 4)
+		md.Println("```json")
 
 		// Indent the JSON output. If we don't do this, the json will be indented all wrong
 		var buf bytes.Buffer
@@ -274,6 +262,7 @@ func renderQueryPlans(md *markdown.MarkDown, queries []planalyze.AnalyzedQuery, 
 		}
 		md.NewLine()
 		md.Println("```")
+		md.Println("---")
 		md.NewLine()
 	}
 	return nil

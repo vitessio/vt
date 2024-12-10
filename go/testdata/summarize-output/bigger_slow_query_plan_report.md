@@ -13,16 +13,15 @@
 |Total|13|
 
 
-# Simple routed Queries
+### Simple routed Queries
 
-## Query
 
+#### Query
 ```sql
 SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` < :_i_stock_level /* INT64 */
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Route",
@@ -36,15 +35,14 @@ SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS 
   "Table": "inventory, products"
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` BETWEEN :1 /* INT64 */ AND :2 /* INT64 */
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Route",
@@ -58,17 +56,17 @@ SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS 
   "Table": "inventory, products"
 }
 ```
+---
 
-# Complex routed Queries
+### Complex routed Queries
 
-## Query
 
+#### Query
 ```sql
 SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :1 /* INT64 */
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Limit",
@@ -89,15 +87,14 @@ SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `u`.`username`, sum(`o`.`total_amount`) AS `total_spent` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`created_at` BETWEEN :1 /* VARCHAR */ AND :2 /* VARCHAR */ GROUP BY `u`.`id` HAVING sum(`o`.`total_amount`) > :_total_spent /* INT64 */
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Filter",
@@ -170,15 +167,14 @@ SELECT `u`.`username`, sum(`o`.`total_amount`) AS `total_spent` FROM `users` AS 
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `c`.`name`, COUNT(`o`.`id`) AS `order_count` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` JOIN `orders` AS `o` ON `oi`.`order_id` = `o`.`id` GROUP BY `c`.`id`
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Aggregate",
@@ -317,15 +313,14 @@ SELECT `c`.`name`, COUNT(`o`.`id`) AS `order_count` FROM `categories` AS `c` JOI
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `c`.`name`, sum(`oi`.`price` * `oi`.`quantity`) AS `total_sales` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` GROUP BY `c`.`id` ORDER BY sum(`oi`.`price` * `oi`.`quantity`) DESC LIMIT :1 /* INT64 */
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Limit",
@@ -442,15 +437,14 @@ SELECT `c`.`name`, sum(`oi`.`price` * `oi`.`quantity`) AS `total_sales` FROM `ca
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `o`.`id`, `o`.`created_at` FROM `orders` AS `o` LEFT JOIN `shipments` AS `s` ON `o`.`id` = `s`.`order_id` WHERE `s`.`shipped_date` IS NULL AND `o`.`created_at` < DATE_SUB(now(), INTERVAL :1 /* INT64 */ day)
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Filter",
@@ -493,15 +487,14 @@ SELECT `o`.`id`, `o`.`created_at` FROM `orders` AS `o` LEFT JOIN `shipments` AS 
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `p`.`payment_method`, avg(`o`.`total_amount`) AS `avg_order_value` FROM `payments` AS `p` JOIN `orders` AS `o` ON `p`.`order_id` = `o`.`id` GROUP BY `p`.`payment_method`
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Projection",
@@ -570,15 +563,14 @@ SELECT `p`.`payment_method`, avg(`o`.`total_amount`) AS `avg_order_value` FROM `
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT DATE(`o`.`created_at`) AS `order_date`, count(*) AS `order_count` FROM `orders` AS `o` WHERE `o`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ day) GROUP BY DATE(`o`.`created_at`)
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Aggregate",
@@ -602,15 +594,14 @@ SELECT DATE(`o`.`created_at`) AS `order_date`, count(*) AS `order_count` FROM `o
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `m`.`sender_id`, COUNT(DISTINCT `m`.`receiver_id`) AS `unique_receivers` FROM `messages` AS `m` GROUP BY `m`.`sender_id` HAVING COUNT(DISTINCT `m`.`receiver_id`) > :_unique_receivers /* INT64 */
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Filter",
@@ -640,15 +631,14 @@ SELECT `m`.`sender_id`, COUNT(DISTINCT `m`.`receiver_id`) AS `unique_receivers` 
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` LEFT JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`id` IS NULL
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Filter",
@@ -691,15 +681,14 @@ SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` LEFT JOIN `orders` AS `o` ON
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` JOIN `reviews` AS `r` ON `u`.`id` = `r`.`user_id` WHERE `o`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month) AND `r`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month)
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Join",
@@ -761,15 +750,14 @@ SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.
   ]
 }
 ```
+---
 
-## Query
-
+#### Query
 ```sql
 SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` WHERE `r`.`created_at` >= DATE_SUB(now(), INTERVAL :1 /* INT64 */ week) GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :2 /* INT64 */
 ```
 
-## Plan
-
+#### Plan
 ```json
 {
   "OperatorType": "Limit",
@@ -790,4 +778,5 @@ SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN
   ]
 }
 ```
+---
 
