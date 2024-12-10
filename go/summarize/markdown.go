@@ -59,11 +59,24 @@ func renderHotQueries(md *markdown.MarkDown, queries []HotQueryResult) {
 	// After the table, list the full queries with their IDs
 	md.PrintHeader("Query Details", 3)
 	for i, query := range queries {
+		hasPlanAnalysis := len(string(query.PlanAnalysis.PlanOutput)) > 0
+
 		queryID := fmt.Sprintf("Q%d", i+1)
+		if hasPlanAnalysis {
+			queryID += fmt.Sprintf(" (`%s`)", query.PlanAnalysis.Complexity.String())
+		}
+
 		md.PrintHeader(queryID, 4)
 		md.Println("```sql")
 		md.Println(query.QueryAnalysisResult.QueryStructure)
 		md.Println("```")
+
+		if hasPlanAnalysis {
+			md.Println("```json")
+			md.Println(string(query.PlanAnalysis.PlanOutput))
+			md.Println("```")
+		}
+
 		md.NewLine()
 	}
 }
