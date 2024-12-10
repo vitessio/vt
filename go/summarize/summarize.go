@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -115,11 +116,50 @@ func printSummary(hotMetric string, workers []summaryWorker) (*Summary, error) {
 			return nil, err
 		}
 	}
+
+	err = compileSummary(s)
+	if err != nil {
+		return nil, err
+	}
+
 	err = s.PrintMarkdown(os.Stdout, time.Now())
 	if err != nil {
 		return nil, err
 	}
 	return s, nil
+}
+
+func compileSummary(s *Summary) error {
+	if err := compileHotQueries(s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func compileHotQueries(s *Summary) error {
+	for _, result := range s.queries {
+		checkQueryForHotness(&s.hotQueries, result, s.hotQueryFn)
+	}
+	var hasTime bool
+	sort.Slice(s.hotQueries, func(i, j int) bool {
+		if s.hotQueries[i].QueryAnalysisResult.QueryTime != 0 {
+			hasTime = true
+		}
+		fnI := s.hotQueryFn(s.hotQueries[i].QueryAnalysisResult)
+		fnJ := s.hotQueryFn(s.hotQueries[j].QueryAnalysisResult)
+
+		// if the two metrics are equal, sort them by alphabetical order
+		if fnI == fnJ {
+			return s.hotQueries[i].QueryAnalysisResult.QueryStructure > s.hotQueries[j].QueryAnalysisResult.QueryStructure
+		}
+		return fnI > fnJ
+	})
+
+	// If we did not record any time, there is no hotness to record, so removing the field so it does not get rendered.
+	if !hasTime {
+		s.hotQueries = nil
+	}
+	return nil
 }
 
 func checkTraceConditions(traces []traceSummary, workers []summaryWorker, hotMetric string) error {

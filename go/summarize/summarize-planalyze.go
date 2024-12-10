@@ -28,6 +28,9 @@ func summarizePlanAnalyze(s *Summary, data planalyze.Output) (err error) {
 		Unplannable:  len(data.Unplannable),
 	}
 
+	s.addPlanResult(data.SimpleRouted)
+	s.addPlanResult(data.Complex)
+
 	s.planAnalysis.simpleRouted = append(s.planAnalysis.simpleRouted, data.SimpleRouted...)
 	s.planAnalysis.complex = append(s.planAnalysis.complex, data.Complex...)
 	return nil

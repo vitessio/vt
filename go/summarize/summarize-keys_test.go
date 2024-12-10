@@ -118,6 +118,9 @@ func TestSummarizeKeysWithHotnessFile(t *testing.T) {
 			err = fn(s)
 			require.NoError(t, err)
 
+			err = compileSummary(s)
+			require.NoError(t, err)
+
 			err = s.PrintMarkdown(sb, now)
 			require.NoError(t, err)
 
