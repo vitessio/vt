@@ -160,20 +160,20 @@
 
 <button class="collapsible">Transaction Patterns</button>
 <div class="content">
-    {{range .Transactions}}
-    <h3>Pattern {{.Index}} (Observed {{.Count}} times)</h3>
-    <p><strong>Tables Involved:</strong> {{range .Tables}}{{.}}, {{end}}</p>
+    {{range $index, $tx := .Transactions}}
+    <h3>Pattern {{$index | add 1}} (Observed {{$tx.Count}} times)</h3>
+    <p><strong>Tables Involved:</strong> TBD</p>
     <h4>Query Patterns</h4>
-    {{range .Queries}}
-    <p>{{.Index}}. <strong>{{.Type}}</strong> on <code>{{.Table}}</code></p>
-    <p>Predicates: {{range .Predicates}}{{.}} AND {{end}}</p>
+    {{range $index2, $query := .Queries}}
+    <p>{{$index | add 1}} . <strong>{{$query.Type}}</strong> on <code>{{$query.Table}}</code></p>
+    <p>Predicates: {{range $query.Predicates}}{{.}} AND {{end}}</p>
     {{end}}
     <h4>Shared Predicate Values</h4>
-    {{range .Joins}}
-    <p>Value {{.Index}} applied to:</p>
+    {{range $index3, $join := $tx.Joins}}
+    <p>Value {{$index | add 1}} applied to:</p>
     <ul>
         {{range .}}
-        <li>{{.}}</li>
+        <li>{{$join}}</li>
         {{end}}
     </ul>
     {{end}}
