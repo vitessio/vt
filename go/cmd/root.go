@@ -59,6 +59,10 @@ func Execute() {
 	root.AddCommand(transactionsCmd())
 	root.AddCommand(planalyzeCmd())
 
+	if err := root.ParseFlags(os.Args[1:]); err != nil {
+		panic(err)
+	}
+
 	if !webserverStarted && port > 0 {
 		webserverStarted = true
 		go startWebServer(port, ch)
@@ -68,6 +72,7 @@ func Execute() {
 
 	// FIXME: add sync b/w webserver and root command, for now just add a wait to make sure webserver is running
 	time.Sleep(2 * time.Second)
+
 	err := root.Execute()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
