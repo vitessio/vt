@@ -36,11 +36,7 @@ type (
 		Failures      []FailuresSummary
 		Transactions  []TransactionSummary
 		HotQueries    []keys.QueryAnalysisResult
-		tables        []*TableSummary
-		failures      []FailuresSummary
-		transactions  []TransactionSummary
 		planAnalysis  PlanAnalysis
-		hotQueries    []keys.QueryAnalysisResult
 		hotQueryFn    getMetric
 		AnalyzedFiles []string
 		queryGraph    queryGraph

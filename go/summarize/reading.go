@@ -128,7 +128,7 @@ func readPlanalyzeFile(filename string) (summarizer, error) {
 	}
 
 	return func(s *Summary) error {
-		s.analyzedFiles = append(s.analyzedFiles, filename)
+		s.AnalyzedFiles = append(s.AnalyzedFiles, filename)
 		return summarizePlanAnalyze(s, p)
 	}, nil
 }
