@@ -122,18 +122,6 @@ func Run(port int64) {
 			DateOfAnalysis: time.Now().Format(time.DateTime),
 		}
 
-		{
-			// FIXME: remove before merging, for debugging only
-			pretty, err := json.MarshalIndent(summarizeOutput, "", "  ")
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
-			if err := os.WriteFile("web.json", pretty, 0o600); err != nil {
-				panic(err)
-			}
-		}
-
 		RenderFileToGin("summarize.html", &summarizeOutput, c)
 	})
 
