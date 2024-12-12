@@ -27,26 +27,12 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 
-	"github.com/vitessio/vt/go/keys"
 	"github.com/vitessio/vt/go/markdown"
 	"github.com/vitessio/vt/go/planalyze"
 )
 
-func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult, metricReader getMetric) {
+func renderHotQueries(md *markdown.MarkDown, queries []HotQueryResult) {
 	if len(queries) == 0 {
-		return
-	}
-
-	hasTime := false
-	// Sort the queries in descending order of hotness
-	sort.Slice(queries, func(i, j int) bool {
-		if queries[i].QueryTime != 0 {
-			hasTime = true
-		}
-		return metricReader(queries[i]) > metricReader(queries[j])
-	})
-
-	if !hasTime {
 		return
 	}
 
@@ -58,13 +44,12 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 
 	for i, query := range queries {
 		queryID := fmt.Sprintf("Q%d", i+1)
-		avgQueryTime := query.QueryTime / float64(query.UsageCount)
 		rows = append(rows, []string{
 			queryID,
-			humanize.Comma(int64(query.UsageCount)),
-			fmt.Sprintf("%.2f", query.QueryTime),
-			fmt.Sprintf("%.2f", avgQueryTime),
-			humanize.Comma(int64(query.RowsExamined)),
+			humanize.Comma(int64(query.QueryAnalysisResult.UsageCount)),
+			fmt.Sprintf("%.2f", query.QueryAnalysisResult.QueryTime),
+			fmt.Sprintf("%.2f", query.AvgQueryTime),
+			humanize.Comma(int64(query.QueryAnalysisResult.RowsExamined)),
 		})
 	}
 
@@ -74,11 +59,24 @@ func renderHotQueries(md *markdown.MarkDown, queries []keys.QueryAnalysisResult,
 	// After the table, list the full queries with their IDs
 	md.PrintHeader("Query Details", 3)
 	for i, query := range queries {
+		hasPlanAnalysis := len(string(query.PlanAnalysis.PlanOutput)) > 0
+
 		queryID := fmt.Sprintf("Q%d", i+1)
+		if hasPlanAnalysis {
+			queryID += fmt.Sprintf(" (`%s`)", query.PlanAnalysis.Complexity.String())
+		}
+
 		md.PrintHeader(queryID, 4)
 		md.Println("```sql")
-		md.Println(query.QueryStructure)
+		md.Println(query.QueryAnalysisResult.QueryStructure)
 		md.Println("```")
+
+		if hasPlanAnalysis {
+			md.Println("```json")
+			md.Println(string(query.PlanAnalysis.PlanOutput))
+			md.Println("```")
+		}
+
 		md.NewLine()
 	}
 }
@@ -230,8 +228,7 @@ func renderTransactions(md *markdown.MarkDown, transactions []TransactionSummary
 }
 
 func renderPlansSection(md *markdown.MarkDown, analysis PlanAnalysis) error {
-	sum := analysis.PassThrough + analysis.SimpleRouted + analysis.Complex + analysis.Unplannable
-	if sum == 0 {
+	if analysis.Total == 0 {
 		return nil
 	}
 
@@ -243,25 +240,28 @@ func renderPlansSection(md *markdown.MarkDown, analysis PlanAnalysis) error {
 		{planalyze.SimpleRouted.String(), strconv.Itoa(analysis.SimpleRouted)},
 		{planalyze.Complex.String(), strconv.Itoa(analysis.Complex)},
 		{planalyze.Unplannable.String(), strconv.Itoa(analysis.Unplannable)},
-		{"Total", strconv.Itoa(sum)},
+		{"Total", strconv.Itoa(analysis.Total)},
 	}
 	md.PrintTable(headers, rows)
 	md.NewLine()
 
-	err := renderQueryPlans(md, analysis.simpleRouted, planalyze.SimpleRouted.String())
+	err := renderQueryPlans(md, analysis.SimpleRoutedQ, planalyze.SimpleRouted.String())
 	if err != nil {
 		return err
 	}
-	return renderQueryPlans(md, analysis.complex, planalyze.Complex.String())
+	return renderQueryPlans(md, analysis.ComplexQ, planalyze.Complex.String())
 }
 
 func renderQueryPlans(md *markdown.MarkDown, queries []planalyze.AnalyzedQuery, title string) error {
 	for i, query := range queries {
 		if i == 0 {
-			md.Printf("# %s Queries\n\n", title)
+			md.PrintHeader(fmt.Sprintf("%s Queries\n\n", title), 3)
 		}
-		md.Printf("## Query\n\n```sql\n%s\n```\n\n", query.QueryStructure)
-		md.Println("## Plan\n\n```json")
+		md.PrintHeader("Query", 4)
+		md.Printf("```sql\n%s\n```\n\n", query.QueryStructure)
+
+		md.PrintHeader("Plan", 4)
+		md.Println("```json")
 
 		// Indent the JSON output. If we don't do this, the json will be indented all wrong
 		var buf bytes.Buffer
@@ -274,6 +274,7 @@ func renderQueryPlans(md *markdown.MarkDown, queries []planalyze.AnalyzedQuery, 
 		}
 		md.NewLine()
 		md.Println("```")
+		md.Println("---")
 		md.NewLine()
 	}
 	return nil

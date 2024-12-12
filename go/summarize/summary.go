@@ -35,13 +35,24 @@ type (
 		Tables        []*TableSummary
 		Failures      []FailuresSummary
 		Transactions  []TransactionSummary
-		HotQueries    []keys.QueryAnalysisResult
-		planAnalysis  PlanAnalysis
+		PlanAnalysis  PlanAnalysis
+		HotQueries    []HotQueryResult
 		hotQueryFn    getMetric
 		AnalyzedFiles []string
 		queryGraph    queryGraph
 		Joins         []joinDetails
 		HasRowCount   bool
+		queries       map[string]QueryResult
+	}
+
+	QueryResult struct {
+		QueryAnalysisResult keys.QueryAnalysisResult
+		PlanAnalysis        planalyze.AnalyzedQuery
+	}
+
+	HotQueryResult struct {
+		QueryResult
+		AvgQueryTime float64
 	}
 
 	TableSummary struct {
@@ -76,9 +87,10 @@ type (
 		SimpleRouted int
 		Complex      int
 		Unplannable  int
+		Total        int
 
-		simpleRouted []planalyze.AnalyzedQuery
-		complex      []planalyze.AnalyzedQuery
+		SimpleRoutedQ []planalyze.AnalyzedQuery
+		ComplexQ      []planalyze.AnalyzedQuery
 	}
 )
 
@@ -90,8 +102,23 @@ func NewSummary(hotMetric string) (*Summary, error) {
 
 	return &Summary{
 		queryGraph: make(queryGraph),
+		queries:    make(map[string]QueryResult),
 		hotQueryFn: hotness,
 	}, nil
+}
+
+func (s *Summary) addQueryResult(qr keys.QueryAnalysisResult) {
+	val := s.queries[qr.QueryStructure]
+	val.QueryAnalysisResult = qr
+	s.queries[qr.QueryStructure] = val
+}
+
+func (s *Summary) addPlanResult(p []planalyze.AnalyzedQuery) {
+	for _, query := range p {
+		val := s.queries[query.QueryStructure]
+		val.PlanAnalysis = query
+		s.queries[query.QueryStructure] = val
+	}
 }
 
 func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
@@ -110,11 +137,11 @@ func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
 		s.AnalyzedFiles[i] = "`" + file + "`"
 	}
 	md.Printf(msg, now.Format(time.DateTime), filePlural, strings.Join(s.AnalyzedFiles, ", "))
-	err := renderPlansSection(md, s.planAnalysis)
+	err := renderPlansSection(md, s.PlanAnalysis)
 	if err != nil {
 		return err
 	}
-	renderHotQueries(md, s.HotQueries, s.hotQueryFn)
+	renderHotQueries(md, s.HotQueries)
 	renderTableUsage(md, s.Tables, s.HasRowCount)
 	renderTablesJoined(md, s)
 	renderTransactions(md, s.Transactions)

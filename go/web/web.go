@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/vitessio/vt/go/summarize"
+	"github.com/vitessio/vt/go/web/state"
 )
 
 func RenderFileToGin(fileName string, data any, c *gin.Context) {
@@ -48,6 +48,11 @@ type SummaryOutput struct {
 
 func getFuncMap() template.FuncMap {
 	return template.FuncMap{
+		"jsonToString": func(j json.RawMessage) string {
+			var formattedJSON bytes.Buffer
+			_ = json.Indent(&formattedJSON, j, "", "  ")
+			return formattedJSON.String()
+		},
 		"add": func(a, b int) int { return a + b },
 		"divide": func(a, b any) float64 {
 			if b == 0 || b == nil {
@@ -84,7 +89,7 @@ func addFuncMap(r *gin.Engine) {
 	r.SetFuncMap(getFuncMap())
 }
 
-func Run(port int64) {
+func Run(s *state.State) error {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard // Disable logging
 	r := gin.Default()
@@ -125,10 +130,12 @@ func Run(port int64) {
 		RenderFileToGin("summarize.html", &summarizeOutput, c)
 	})
 
-	if os.WriteFile("/dev/stderr", []byte(fmt.Sprintf("Starting web server on http://localhost:%d\n", port)), 0o600) != nil {
-		panic("Failed to write to /dev/stderr")
+	if _, err := fmt.Fprintf(os.Stderr, "Starting web server on http://localhost:%d\n", s.GetPort()); err != nil {
+		return err
 	}
-	if err := r.Run(fmt.Sprintf(":%d", port)); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+
+	if err := r.Run(fmt.Sprintf(":%d", s.GetPort())); err != nil {
+		return err
 	}
+	return nil
 }

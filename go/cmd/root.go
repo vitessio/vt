@@ -24,32 +24,26 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vitessio/vt/go/web"
+	"github.com/vitessio/vt/go/web/state"
 )
+
+//nolint:gochecknoglobals // the state is protected using mutexes
+var wstate *state.State
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	// rootCmd represents the base command when called without any subcommands
-	var port int64
-	webserverStarted := false
-	ch := make(chan int, 2)
 	root := &cobra.Command{
 		Use:   "vt",
 		Short: "Utils tools for testing, running and benchmarking Vitess.",
-		RunE: func(_ *cobra.Command, _ []string) error {
-			if port > 0 {
-				if webserverStarted {
-					return nil
-				}
-				webserverStarted = true
-				go startWebServer(port, ch)
-				<-ch
-			}
-			return nil
+		CompletionOptions: cobra.CompletionOptions{
+			DisableDefaultCmd: true,
 		},
 	}
+
+	var port int64
 	root.PersistentFlags().Int64VarP(&port, "port", "p", 8080, "Port to run the web server on")
-	root.CompletionOptions.HiddenDefaultCmd = true
 
 	root.AddCommand(summarizeCmd(&port))
 	root.AddCommand(testerCmd())
@@ -63,15 +57,19 @@ func Execute() {
 		panic(err)
 	}
 
-	if !webserverStarted && port > 0 {
-		webserverStarted = true
-		go startWebServer(port, ch)
+	// Start the web server for all commands no matter what
+	wstate = state.NewState(port)
+	ch := make(chan int, 1)
+	if port > 0 {
+		wstate.SetStarted(true)
+		go startWebServer(ch)
+		if !wstate.WaitUntilAvailable(10 * time.Second) {
+			fmt.Println("Timed out waiting for server to start")
+			os.Exit(1)
+		}
 	} else {
 		ch <- 1
 	}
-
-	// FIXME: add sync b/w webserver and root command, for now just add a wait to make sure webserver is running
-	time.Sleep(2 * time.Second)
 
 	err := root.Execute()
 	if err != nil {
@@ -81,13 +79,15 @@ func Execute() {
 	<-ch
 }
 
-func startWebServer(port int64, ch chan int) {
-	if port > 0 && port != 8080 {
-		panic("(FIXME: make port configurable) Port is not 8080")
+func startWebServer(ch chan int) {
+	err := web.Run(wstate)
+	if err != nil {
+		panic(err)
 	}
-	web.Run(port)
-	if os.WriteFile("/dev/stderr", []byte("Web server is running, use Ctrl-C to exit\n"), 0o600) != nil {
-		panic("Failed to write to /dev/stderr")
+
+	_, err = fmt.Fprint(os.Stderr, "Web server is running, use Ctrl-C to exit\n")
+	if err != nil {
+		panic(err)
 	}
 	ch <- 1
 }

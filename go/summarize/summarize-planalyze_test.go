@@ -27,15 +27,25 @@ import (
 )
 
 func TestSummarizePlans(t *testing.T) {
-	fn, err := readPlanalyzeFile("../testdata/planalyze-output/bigger_slow_query_plan_report.json")
+	fnPlan, err := readPlanalyzeFile("../testdata/planalyze-output/bigger_slow_query_plan_report.json")
 	require.NoError(t, err)
+
+	fnKeys, err := readKeysFile("../testdata/keys-output/bigger_slow_query_log.json")
+	require.NoError(t, err)
+
 	sb := &strings.Builder{}
 	now := time.Date(2024, time.January, 1, 1, 2, 3, 0, time.UTC)
 
-	s, err := NewSummary("")
+	s, err := NewSummary("usage-count")
 	require.NoError(t, err)
 
-	err = fn(s)
+	err = fnPlan(s)
+	require.NoError(t, err)
+
+	err = fnKeys(s)
+	require.NoError(t, err)
+
+	err = compileSummary(s)
 	require.NoError(t, err)
 
 	err = s.PrintMarkdown(sb, now)

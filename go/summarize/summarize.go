@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 
@@ -31,9 +32,23 @@ import (
 	"golang.org/x/term"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/web/state"
 )
 
 type (
+	Config struct {
+		Files     []string
+		HotMetric string
+
+		OutputFormat string
+
+		Port int64
+
+		ShowGraph bool
+
+		WState *state.State
+	}
+
 	traceSummary struct {
 		Name          string
 		TracedQueries []TracedQuery
@@ -42,11 +57,11 @@ type (
 
 type summaryWorker = func(s *Summary) error
 
-func Run(files []string, hotMetric string, showGraph bool, outputFormat string, port *int64) {
+func Run(cfg *Config) {
 	var traces []traceSummary
 	var workers []summaryWorker
 
-	for _, file := range files {
+	for _, file := range cfg.Files {
 		typ, err := data.GetFileType(file)
 		exitIfError(err)
 		var w summarizer
@@ -77,16 +92,16 @@ func Run(files []string, hotMetric string, showGraph bool, outputFormat string, 
 
 	traceCount := len(traces)
 	if traceCount <= 0 {
-		s, err := printSummary(hotMetric, workers, outputFormat, port)
+		s, err := printSummary(cfg.HotMetric, workers, cfg.OutputFormat, cfg.Port)
 		exitIfError(err)
-		if showGraph {
+		if cfg.ShowGraph {
 			err := renderQueryGraph(s)
 			exitIfError(err)
 		}
 		return
 	}
 
-	err := checkTraceConditions(traces, workers, hotMetric)
+	err := checkTraceConditions(traces, workers, cfg.HotMetric)
 	exitIfError(err)
 
 	switch traceCount {
@@ -106,7 +121,7 @@ func exitIfError(err error) {
 	os.Exit(1)
 }
 
-func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, port *int64) (*Summary, error) {
+func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, port int64) (*Summary, error) {
 	s, err := NewSummary(hotMetric)
 	if err != nil {
 		return nil, err
@@ -117,8 +132,13 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 			return nil, err
 		}
 	}
+
+	err = compileSummary(s)
+	if err != nil {
+		return nil, err
+	}
 	outputFormat = strings.ToLower(outputFormat)
-	if *port == 0 && outputFormat == "html" {
+	if port == 0 && outputFormat == "html" {
 		fmt.Println("port is required when output format is html")
 		os.Exit(1)
 	}
@@ -148,6 +168,39 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 		return nil, errors.New("unknown output format")
 	}
 	return s, nil
+}
+
+func compileSummary(s *Summary) error {
+	if err := compileHotQueries(s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func compileHotQueries(s *Summary) error {
+	for _, result := range s.queries {
+		checkQueryForHotness(&s.HotQueries, result, s.hotQueryFn)
+	}
+	var hasTime bool
+	sort.Slice(s.HotQueries, func(i, j int) bool {
+		if s.HotQueries[i].QueryAnalysisResult.QueryTime != 0 {
+			hasTime = true
+		}
+		fnI := s.hotQueryFn(s.HotQueries[i].QueryAnalysisResult)
+		fnJ := s.hotQueryFn(s.HotQueries[j].QueryAnalysisResult)
+
+		// if the two metrics are equal, sort them by alphabetical order
+		if fnI == fnJ {
+			return s.HotQueries[i].QueryAnalysisResult.QueryStructure > s.HotQueries[j].QueryAnalysisResult.QueryStructure
+		}
+		return fnI > fnJ
+	})
+
+	// If we did not record any time, there is no hotness to record, so removing the field so it does not get rendered.
+	if !hasTime {
+		s.HotQueries = nil
+	}
+	return nil
 }
 
 func launchInBrowser(tmpFile *os.File) error {

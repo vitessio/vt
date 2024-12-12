@@ -23,9 +23,9 @@ import (
 )
 
 func summarizeCmd(port *int64) *cobra.Command {
-	var hotMetric string
-	var showGraph bool
-	var outputFormat string
+	cfg := summarize.Config{
+		WState: wstate,
+	}
 
 	cmd := &cobra.Command{
 		Use:     "summarize old_file.json [new_file.json]",
@@ -34,13 +34,15 @@ func summarizeCmd(port *int64) *cobra.Command {
 		Example: "vt summarize old.json new.json",
 		Args:    cobra.RangeArgs(1, 2),
 		Run: func(_ *cobra.Command, args []string) {
-			summarize.Run(args, hotMetric, showGraph, outputFormat, port)
+			cfg.Files = args
+			cfg.Port = *port
+			summarize.Run(&cfg)
 		},
 	}
 
-	cmd.Flags().StringVar(&hotMetric, "hot-metric", "total-time", "Metric to determine hot queries (options: usage-count, total-rows-examined, avg-rows-examined, avg-time, total-time)")
-	cmd.Flags().BoolVar(&showGraph, "graph", false, "Show the query graph in the browser")
-	cmd.Flags().StringVar(&outputFormat, "format", "html", "Output format (options: html, markdown)")
+	cmd.Flags().StringVar(&cfg.HotMetric, "hot-metric", "total-time", "Metric to determine hot queries (options: usage-count, total-rows-examined, avg-rows-examined, avg-time, total-time)")
+	cmd.Flags().BoolVar(&cfg.ShowGraph, "graph", false, "Show the query graph in the browser")
+	cmd.Flags().StringVar(&cfg.OutputFormat, "format", "html", "Output format (options: html, markdown)")
 
 	return cmd
 }

@@ -247,8 +247,8 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {
 
 	// First pass: collect all graphData and count occurrences
 	for _, query := range queries.Queries {
+		summary.addQueryResult(query)
 		gatherTableInfo(query, tableSummaries, tableUsageWriteCounts, tableUsageReadCounts)
-		checkQueryForHotness(&summary.HotQueries, query, summary.hotQueryFn)
 	}
 
 	// Second pass: calculate percentages
@@ -327,15 +327,25 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {
 	return nil
 }
 
-func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.QueryAnalysisResult, metricReader getMetric) {
+func checkQueryForHotness(hotQueries *[]HotQueryResult, query QueryResult, metricReader getMetric) {
 	// todo: we should be able to choose different metrics for hotness - e.g. total time spent on query, number of rows examined, etc.
+	newHotQueryFn := func() HotQueryResult {
+		return HotQueryResult{
+			QueryResult: QueryResult{
+				QueryAnalysisResult: query.QueryAnalysisResult,
+				PlanAnalysis:        query.PlanAnalysis,
+			},
+			AvgQueryTime: query.QueryAnalysisResult.QueryTime / float64(query.QueryAnalysisResult.UsageCount),
+		}
+	}
+
 	switch {
 	case len(*hotQueries) < HotQueryCount:
 		// If we have not yet reached the limit, add the query
-		*hotQueries = append(*hotQueries, query)
-	case metricReader(query) > metricReader((*hotQueries)[0]):
+		*hotQueries = append(*hotQueries, newHotQueryFn())
+	case metricReader(query.QueryAnalysisResult) > metricReader((*hotQueries)[0].QueryAnalysisResult):
 		// If the current query has more usage than the least used hot query, replace it
-		(*hotQueries)[0] = query
+		(*hotQueries)[0] = newHotQueryFn()
 	default:
 		// If the current query is not hot enough, just return
 		return
@@ -344,7 +354,7 @@ func checkQueryForHotness(hotQueries *[]keys.QueryAnalysisResult, query keys.Que
 	// Sort the hot queries by query time so that the least used query is always at the front
 	sort.Slice(*hotQueries,
 		func(i, j int) bool {
-			return metricReader((*hotQueries)[i]) < metricReader((*hotQueries)[j])
+			return metricReader((*hotQueries)[i].QueryAnalysisResult) < metricReader((*hotQueries)[j].QueryAnalysisResult)
 		})
 }
 
