@@ -32,6 +32,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/web/state"
 )
 
 type (
@@ -41,9 +42,11 @@ type (
 
 		OutputFormat string
 
-		Port int
+		Port int64
 
 		ShowGraph bool
+
+		WState *state.State
 	}
 
 	traceSummary struct {
@@ -118,7 +121,7 @@ func exitIfError(err error) {
 	os.Exit(1)
 }
 
-func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, port int) (*Summary, error) {
+func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, port int64) (*Summary, error) {
 	s, err := NewSummary(hotMetric)
 	if err != nil {
 		return nil, err

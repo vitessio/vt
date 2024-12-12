@@ -22,8 +22,10 @@ import (
 	"github.com/vitessio/vt/go/summarize"
 )
 
-func summarizeCmd(_ *int64) *cobra.Command {
-	var cfg summarize.Config
+func summarizeCmd(port *int64) *cobra.Command {
+	cfg := summarize.Config{
+		WState: wstate,
+	}
 
 	cmd := &cobra.Command{
 		Use:     "summarize old_file.json [new_file.json]",
@@ -33,6 +35,7 @@ func summarizeCmd(_ *int64) *cobra.Command {
 		Args:    cobra.RangeArgs(1, 2),
 		Run: func(_ *cobra.Command, args []string) {
 			cfg.Files = args
+			cfg.Port = *port
 			summarize.Run(&cfg)
 		},
 	}
@@ -40,7 +43,6 @@ func summarizeCmd(_ *int64) *cobra.Command {
 	cmd.Flags().StringVar(&cfg.HotMetric, "hot-metric", "total-time", "Metric to determine hot queries (options: usage-count, total-rows-examined, avg-rows-examined, avg-time, total-time)")
 	cmd.Flags().BoolVar(&cfg.ShowGraph, "graph", false, "Show the query graph in the browser")
 	cmd.Flags().StringVar(&cfg.OutputFormat, "format", "html", "Output format (options: html, markdown)")
-	cmd.Flags().IntVar(&cfg.Port, "port", 8000, "Port to listen on for the webserver")
 
 	return cmd
 }
