@@ -35,9 +35,8 @@ type (
 		Tables        []*TableSummary
 		Failures      []FailuresSummary
 		Transactions  []TransactionSummary
-		HotQueries    []keys.QueryAnalysisResult
-		planAnalysis  PlanAnalysis
-		hotQueries    []HotQueryResult
+		PlanAnalysis  PlanAnalysis
+		HotQueries    []HotQueryResult
 		hotQueryFn    getMetric
 		AnalyzedFiles []string
 		queryGraph    queryGraph
@@ -88,6 +87,7 @@ type (
 		SimpleRouted int
 		Complex      int
 		Unplannable  int
+		Total        int
 
 		simpleRouted []planalyze.AnalyzedQuery
 		complex      []planalyze.AnalyzedQuery
@@ -137,11 +137,11 @@ func (s *Summary) PrintMarkdown(out io.Writer, now time.Time) error {
 		s.AnalyzedFiles[i] = "`" + file + "`"
 	}
 	md.Printf(msg, now.Format(time.DateTime), filePlural, strings.Join(s.AnalyzedFiles, ", "))
-	err := renderPlansSection(md, s.planAnalysis)
+	err := renderPlansSection(md, s.PlanAnalysis)
 	if err != nil {
 		return err
 	}
-	renderHotQueries(md, s.hotQueries)
+	renderHotQueries(md, s.HotQueries)
 	renderTableUsage(md, s.Tables, s.HasRowCount)
 	renderTablesJoined(md, s)
 	renderTransactions(md, s.Transactions)

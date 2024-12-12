@@ -228,8 +228,7 @@ func renderTransactions(md *markdown.MarkDown, transactions []TransactionSummary
 }
 
 func renderPlansSection(md *markdown.MarkDown, analysis PlanAnalysis) error {
-	sum := analysis.PassThrough + analysis.SimpleRouted + analysis.Complex + analysis.Unplannable
-	if sum == 0 {
+	if analysis.Total == 0 {
 		return nil
 	}
 
@@ -241,7 +240,7 @@ func renderPlansSection(md *markdown.MarkDown, analysis PlanAnalysis) error {
 		{planalyze.SimpleRouted.String(), strconv.Itoa(analysis.SimpleRouted)},
 		{planalyze.Complex.String(), strconv.Itoa(analysis.Complex)},
 		{planalyze.Unplannable.String(), strconv.Itoa(analysis.Unplannable)},
-		{"Total", strconv.Itoa(sum)},
+		{"Total", strconv.Itoa(analysis.Total)},
 	}
 	md.PrintTable(headers, rows)
 	md.NewLine()

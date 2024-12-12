@@ -13,6 +13,40 @@
     </thead>
 </table>
 
+<button class="collapsible">Query Planning</button>
+<div class="content">
+    <table>
+        <thead>
+        <tr>
+            <th>Plan Complexity</th>
+            <th>Count</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Pass-through</td>
+            <td>{{.PlanAnalysis.PassThrough}}</td>
+        </tr>
+        <tr>
+            <td>Simple routed</td>
+            <td>{{.PlanAnalysis.SimpleRouted}}</td>
+        </tr>
+        <tr>
+            <td>Complex routed</td>
+            <td>{{.PlanAnalysis.Complex}}</td>
+        </tr>
+        <tr>
+            <td>Unplannable</td>
+            <td>{{.PlanAnalysis.Unplannable}}</td>
+        </tr>
+        <tr>
+            <td>Total</td>
+            <td>{{.PlanAnalysis.Total}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
 <button class="collapsible">Top Queries</button>
 <div class="content">
     <table>
@@ -29,10 +63,10 @@
         {{range $index, $query := .HotQueries}}
         <tr>
             <td>{{$index | add 1}}</td> <!-- Add 1 to start numbering from 1 -->
-            <td>{{$query.UsageCount}}</td>
-            <td>{{$query.QueryTime}}</td>
-            <td>{{divide .QueryTime .UsageCount}}</td>
-            <td>{{$query.RowsExamined}}</td>
+            <td>{{$query.QueryAnalysisResult.UsageCount}}</td>
+            <td>{{$query.QueryAnalysisResult.QueryTime}}</td>
+            <td>{{divide $query.QueryAnalysisResult.QueryTime $query.QueryAnalysisResult.UsageCount}}</td>
+            <td>{{$query.QueryAnalysisResult.RowsExamined}}</td>
         </tr>
         {{end}}
         </tbody>
@@ -52,7 +86,7 @@
         {{range $index, $query := .HotQueries}}
         <tr>
             <td style="text-align: right">{{$index | add 1}}</td>
-            <td style="text-align: left"><code>{{.QueryStructure}}</code></td>
+            <td style="text-align: left"><code>{{$query.QueryAnalysisResult.QueryStructure}}</code></td>
         </tr>
         {{end}}
         </tbody>

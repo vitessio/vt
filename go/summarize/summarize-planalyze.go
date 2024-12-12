@@ -21,17 +21,18 @@ import (
 )
 
 func summarizePlanAnalyze(s *Summary, data planalyze.Output) (err error) {
-	s.planAnalysis = PlanAnalysis{
+	s.PlanAnalysis = PlanAnalysis{
 		PassThrough:  len(data.PassThrough),
 		SimpleRouted: len(data.SimpleRouted),
 		Complex:      len(data.Complex),
 		Unplannable:  len(data.Unplannable),
 	}
+	s.PlanAnalysis.Total = s.PlanAnalysis.PassThrough + s.PlanAnalysis.SimpleRouted + s.PlanAnalysis.Complex + s.PlanAnalysis.Unplannable
 
 	s.addPlanResult(data.SimpleRouted)
 	s.addPlanResult(data.Complex)
 
-	s.planAnalysis.simpleRouted = append(s.planAnalysis.simpleRouted, data.SimpleRouted...)
-	s.planAnalysis.complex = append(s.planAnalysis.complex, data.Complex...)
+	s.PlanAnalysis.simpleRouted = append(s.PlanAnalysis.simpleRouted, data.SimpleRouted...)
+	s.PlanAnalysis.complex = append(s.PlanAnalysis.complex, data.Complex...)
 	return nil
 }

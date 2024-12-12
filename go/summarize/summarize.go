@@ -179,26 +179,26 @@ func compileSummary(s *Summary) error {
 
 func compileHotQueries(s *Summary) error {
 	for _, result := range s.queries {
-		checkQueryForHotness(&s.hotQueries, result, s.hotQueryFn)
+		checkQueryForHotness(&s.HotQueries, result, s.hotQueryFn)
 	}
 	var hasTime bool
-	sort.Slice(s.hotQueries, func(i, j int) bool {
-		if s.hotQueries[i].QueryAnalysisResult.QueryTime != 0 {
+	sort.Slice(s.HotQueries, func(i, j int) bool {
+		if s.HotQueries[i].QueryAnalysisResult.QueryTime != 0 {
 			hasTime = true
 		}
-		fnI := s.hotQueryFn(s.hotQueries[i].QueryAnalysisResult)
-		fnJ := s.hotQueryFn(s.hotQueries[j].QueryAnalysisResult)
+		fnI := s.hotQueryFn(s.HotQueries[i].QueryAnalysisResult)
+		fnJ := s.hotQueryFn(s.HotQueries[j].QueryAnalysisResult)
 
 		// if the two metrics are equal, sort them by alphabetical order
 		if fnI == fnJ {
-			return s.hotQueries[i].QueryAnalysisResult.QueryStructure > s.hotQueries[j].QueryAnalysisResult.QueryStructure
+			return s.HotQueries[i].QueryAnalysisResult.QueryStructure > s.HotQueries[j].QueryAnalysisResult.QueryStructure
 		}
 		return fnI > fnJ
 	})
 
 	// If we did not record any time, there is no hotness to record, so removing the field so it does not get rendered.
 	if !hasTime {
-		s.hotQueries = nil
+		s.HotQueries = nil
 	}
 	return nil
 }
