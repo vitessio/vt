@@ -58,11 +58,30 @@ type (
 	joinDetails struct {
 		Tbl1, Tbl2  string
 		Occurrences int
-		predicates  []operators.JoinPredicate
+		Predicates  []operators.JoinPredicate
 	}
 
 	queryGraph map[graphKey]map[operators.JoinPredicate]int
 )
+
+func (ci *ColumnInformation) String() string {
+	return fmt.Sprintf("%s/%s", ci.Name, ci.Pos)
+}
+
+func ColumnInfoFromString(s string) (*ColumnInformation, error) {
+	ci := ColumnInformation{}
+	parts := strings.Split(s, "/")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid column information: %s", s)
+	}
+	ci.Name = parts[0]
+	pos, err := PositionFromString(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid column position: %s", parts[1])
+	}
+	ci.Pos = pos
+	return &ci, nil
+}
 
 const (
 	Join Position = iota
@@ -89,8 +108,38 @@ func (p Position) String() string {
 	return "UNKNOWN"
 }
 
-func (ci ColumnInformation) String() string {
-	return fmt.Sprintf("%s %s", ci.Name, ci.Pos)
+func PositionFromString(s string) (Position, error) {
+	switch s {
+	case "JOIN":
+		return Join, nil
+	case "JOIN RANGE":
+		return JoinRange, nil
+	case "WHERE":
+		return Where, nil
+	case "WHERE RANGE":
+		return WhereRange, nil
+	case "GROUP":
+		return Grouping, nil
+	}
+
+	return 0, fmt.Errorf("invalid position: %s", s)
+}
+
+type TemplateColumn struct {
+	ColInfo ColumnInformation
+	Usage   ColumnUsage
+}
+
+func (ts TableSummary) GetColumnsSlice() []TemplateColumn {
+	columns := make([]TemplateColumn, 0, len(ts.ColumnUses))
+	for colInfoKey, usage := range ts.ColumnUses {
+		colInfo, err := ColumnInfoFromString(colInfoKey)
+		if err != nil {
+			panic(err)
+		}
+		columns = append(columns, TemplateColumn{ColInfo: *colInfo, Usage: usage})
+	}
+	return columns
 }
 
 func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
@@ -100,8 +149,12 @@ func (ts TableSummary) GetColumns() iter.Seq2[ColumnInformation, ColumnUsage] {
 	}
 	columns := make([]colDetails, 0, len(ts.ColumnUses))
 	maxColUse := make(map[string]float64)
-	for colInfo, usage := range ts.ColumnUses {
-		columns = append(columns, colDetails{ci: colInfo, cu: usage})
+	for colInfoKey, usage := range ts.ColumnUses {
+		colInfo, err := ColumnInfoFromString(colInfoKey)
+		if err != nil {
+			panic(err)
+		}
+		columns = append(columns, colDetails{ci: *colInfo, cu: usage})
 		if maxColUse[colInfo.Name] < usage.Percentage {
 			maxColUse[colInfo.Name] = usage.Percentage
 		}
@@ -237,7 +290,7 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {
 			Count: len(query.LineNumbers),
 		})
 	}
-	summary.failures = failures
+	summary.Failures = failures
 
 	for _, query := range queries.Queries {
 		for _, pred := range query.JoinPredicates {
@@ -255,21 +308,21 @@ func summarizeKeysQueries(summary *Summary, queries *keys.Output) error {
 		sort.Slice(joinPredicates, func(i, j int) bool {
 			return joinPredicates[i].String() < joinPredicates[j].String()
 		})
-		summary.joins = append(summary.joins, joinDetails{
+		summary.Joins = append(summary.Joins, joinDetails{
 			Tbl1:        tables.Tbl1,
 			Tbl2:        tables.Tbl2,
 			Occurrences: occurrences,
-			predicates:  joinPredicates,
+			Predicates:  joinPredicates,
 		})
 	}
-	sort.Slice(summary.joins, func(i, j int) bool {
-		if summary.joins[i].Occurrences != summary.joins[j].Occurrences {
-			return summary.joins[i].Occurrences > summary.joins[j].Occurrences
+	sort.Slice(summary.Joins, func(i, j int) bool {
+		if summary.Joins[i].Occurrences != summary.Joins[j].Occurrences {
+			return summary.Joins[i].Occurrences > summary.Joins[j].Occurrences
 		}
-		if summary.joins[i].Tbl1 != summary.joins[j].Tbl1 {
-			return summary.joins[i].Tbl1 < summary.joins[j].Tbl1
+		if summary.Joins[i].Tbl1 != summary.Joins[j].Tbl1 {
+			return summary.Joins[i].Tbl1 < summary.Joins[j].Tbl1
 		}
-		return summary.joins[i].Tbl2 < summary.joins[j].Tbl2
+		return summary.Joins[i].Tbl2 < summary.Joins[j].Tbl2
 	})
 	return nil
 }
@@ -310,7 +363,7 @@ func gatherTableInfo(query keys.QueryAnalysisResult, tableSummaries map[string]*
 		if _, exists := tableSummaries[table]; !exists {
 			tableSummaries[table] = &TableSummary{
 				Table:      table,
-				ColumnUses: make(map[ColumnInformation]ColumnUsage),
+				ColumnUses: make(map[string]ColumnUsage),
 			}
 		}
 
@@ -337,9 +390,9 @@ func summarizeColumnUsage(tableSummary *TableSummary, query keys.QueryAnalysisRe
 		columns = slices.Compact(columns)
 
 		for _, col := range columns {
-			usage := tableSummary.ColumnUses[col]
+			usage := tableSummary.ColumnUses[col.String()]
 			usage.Count += query.UsageCount
-			tableSummary.ColumnUses[col] = usage
+			tableSummary.ColumnUses[col.String()] = usage
 		}
 	}
 

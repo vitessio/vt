@@ -1,0 +1,151 @@
+{{define "content"}}
+
+<h1>VT Utilities</h1>
+<p>The <code>vt</code> binary encapsulates several utility tools for Vitess, providing a comprehensive suite for
+    testing, summarizing, and query analysis.</p>
+
+<h2>Tools Included</h2>
+<ul>
+    <li><strong><code>vt test</code></strong>: A testing utility using the same test files as the <a
+            href="https://github.com/mysql/mysql-server/tree/8.0/mysql-test">MySQL Test Framework</a>. It compares the
+        results of identical queries executed on both MySQL and Vitess (vtgate), helping to ensure compatibility.
+    </li>
+    <li><strong><code>vt keys</code></strong>: A utility that analyzes query logs and provides information about
+        queries, tables, joins, and column usage.
+    </li>
+    <li><strong><code>vt transactions</code></strong>: A tool that analyzes query logs to identify transaction patterns
+        and outputs a JSON report detailing these patterns.
+    </li>
+    <li><strong><code>vt trace</code></strong>: A tool that generates execution traces for queries without comparing
+        against MySQL. It helps analyze query behavior and performance in Vitess environments.
+    </li>
+    <li><strong><code>vt summarize</code></strong>: A tool used to summarize or compare trace logs or key logs for
+        easier human consumption.
+    </li>
+    <li><strong><code>vt dbinfo</code></strong>: A tool that provides information about the database schema, including
+        row counts, useful column attributes and relevant subset of global variables.
+    </li>
+</ul>
+
+<h2>Installation</h2>
+<p>You can install <code>vt</code> using the following command:</p>
+<pre><code>go install github.com/vitessio/vt/go/vt@latest</code></pre>
+
+<h2>Testing Methodology</h2>
+<p>To verify compatibility and correctness, the testing strategy involves running identical queries on both MySQL and
+    vtgate, followed by a comparison of results. The process includes:</p>
+<ol>
+    <li><strong>Query Execution</strong>: Each test query is executed on both MySQL and vtgate.</li>
+    <li><strong>Result Comparison</strong>: The returned data, result set structure (column types, order), and errors
+        are compared.
+    </li>
+    <li><strong>Error Handling</strong>: Any errors are checked to ensure vtgate produces the same error types as MySQL.
+    </li>
+</ol>
+<p>This dual-testing strategy ensures high confidence in vtgate's compatibility with MySQL.</p>
+
+<h3>Sharded Testing Strategy</h3>
+<p>Vitess operates in a sharded environment, presenting unique challenges, especially during schema changes (DDL). The
+    <code>vt test</code> tool handles these by converting DDL statements into VSchema commands.</p>
+<p>Here's an example of running <code>vt test</code>:</p>
+<pre><code>vt test --sharded t/basic.test  # Runs tests on a sharded database</code></pre>
+<p>Custom schemas and configurations can be applied using directives. Run <code>vt test --help</code>, and check out
+    <code>directives.test</code> for more examples.</p>
+
+<h2>Tracing and Query Analysis</h2>
+<h3>Comparative Tracing with <code>vt test</code></h3>
+<p><code>vt test</code> can generate traces while comparing behavior with MySQL using the <code>--trace-file</code>
+    flag:</p>
+<pre><code>vt test --sharded --trace-file=trace-log.json t/tpch.test</code></pre>
+
+<h3>Standalone Tracing with <code>vt trace</code></h3>
+<p><code>vt trace</code> focuses solely on analyzing query execution in Vitess without MySQL comparison:</p>
+<pre><code># With VSchema and backup initialization
+vt trace --vschema=t/vschema.json --backup-path=/path/to/backup --number-of-shards=4 t/tpch.test > trace-log.json</code></pre>
+<p><code>vt trace</code> accepts most of the same configuration flags as <code>vt test</code>, including:</p>
+<ul>
+    <li><code>--sharded</code>: Enable auto-sharded mode - uses primary keys as sharding keys. Not a good idea for a
+        production environment, but can be used to ensure that all queries work in a sharded environment.
+    </li>
+    <li><code>--vschema</code>: Specify the VSchema configuration</li>
+    <li><code>--backup-path</code>: Initialize from a backup</li>
+    <li><code>--number-of-shards</code>: Specify the number of shards to bring up</li>
+    <li>Other database configuration flags</li>
+</ul>
+<p>Both <code>vt trace</code> and <code>vt keys</code> support different input file formats through the <code>--input-type</code>
+    flag:</p>
+<p>Example using different input types:</p>
+<pre><code># Analyze SQL file or slow query log
+vt trace slow-query.log > trace-log.json
+
+# Analyze MySQL general query log
+vt trace --input-type=mysql-log general-query.log > trace-log.json
+
+# Analyze VTGate query log
+vt trace --input-type=vtgate-log vtgate-querylog.log > trace-log.json</code></pre>
+<p>Both types of trace logs can be analyzed using <code>vt summarize</code>:</p>
+<pre><code>vt summarize trace-log.json  # Summarize a single trace
+vt summarize trace-log1.json trace-log2.json  # Compare two traces</code></pre>
+
+<h2>Key Analysis Workflow</h2>
+<p><code>vt keys</code> analyzes query logs and outputs detailed information about tables, column usage, and joins in
+    queries. This data can be summarized using <code>vt summarize</code>.</p>
+<p>Here's a typical workflow:</p>
+<ol>
+    <li><strong>Run <code>vt keys</code> to analyze queries</strong>:</li>
+</ol>
+<pre><code># Analyze an SQL file or slow query log
+vt keys slow-query.log > keys-log.json
+
+# Analyze a MySQL general query log
+vt keys --input-type=mysql-log general-query.log > keys-log.json
+
+# Analyze VTGate query log
+vt trace --input-type=vtgate-log vtgate-querylog.log > trace-log.json</code></pre>
+<p>This command generates a <code>keys-log.json</code> file that contains a detailed analysis of table and column usage
+    from the queries.</p>
+<ol start="2">
+    <li><strong>Summarize the <code>keys-log</code> using <code>vt summarize</code></strong>:</li>
+</ol>
+<pre><code>vt summarize keys-log.json</code></pre>
+<p>This command summarizes the key analysis, providing insight into which tables and columns are used across queries,
+    and how frequently they are involved in filters, groupings, and joins.</p>
+<p>If you have access to the running database, you can use <code>vt dbinfo > dbinfo.json</code> and pass it to <code>summarize</code>
+    so that the analysis can take into account the additional information from the database schema and configuration:
+</p>
+<pre><code>vt summarize keys-log.json dbinfo.json</code></pre>
+
+<h2>Transaction Analysis with vt transactions</h2>
+<p>The <code>vt transactions</code> command is designed to analyze query logs and identify patterns of transactional
+    queries. It processes the logs to find sequences of queries that form transactions and outputs a JSON report
+    summarizing these patterns. Read more about how to use and how to read the output in the <a
+            href="./go/transactions/README.md">vt transactions documentation</a>.</p>
+
+<h2>Using <code>--backup-path</code> Flag</h2>
+<p>The <code>--backup-path</code> flag allows <code>vt test</code> and <code>vt trace</code> to initialize tests from a
+    database backup rather than an empty database. This is particularly helpful when verifying compatibility during
+    version upgrades or testing stateful operations.</p>
+<pre><code>vt test --backup-path /path/to/backup -vschema t/vschema.json t/basic.test</code></pre>
+
+<h2>Contributing</h2>
+<p>We welcome contributions in the following areas:</p>
+<ul>
+    <li>Writing documentation on how to use the framework</li>
+    <li>Triaging issues</li>
+    <li>Submitting new test cases</li>
+    <li>Fixing bugs in the test framework</li>
+    <li>Adding features from the MySQL test framework that are missing in this implementation</li>
+</ul>
+<p>After cloning the repo, make sure to run:</p>
+<pre><code>make install-hooks</code></pre>
+<p>to install the pre-commit hooks.</p>
+
+<h2>License</h2>
+<p>Vitess Tester is licensed under the Apache 2.0 license. See the <a href="./LICENSE">LICENSE</a> file for more
+    information.</p>
+
+<h2>Acknowledgments</h2>
+<p>Vitess Tester started as a fork from <a href="https://github.com/pingcap/mysql-tester">pingcap/mysql-tester</a>. We
+    thank the original authors for their foundational work.</p>
+
+{{end}}

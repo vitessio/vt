@@ -61,17 +61,18 @@ func TestApp(t *testing.T) {
 		args []string
 		want string
 	}{
-		{[]string{"help"}, "Utils tools for testing, running and benchmarking Vitess"},
-		{[]string{"keys", "t/demo.test"}, `"queryStructure"`},
+		{[]string{"-p", "0", "help"}, "Utils tools for testing, running and benchmarking Vitess"},
+		{[]string{"-p", "0", "keys", "t/demo.test"}, `"queryStructure"`},
 	}
 	projectRoot, err := filepath.Abs("../../")
 	require.NoError(t, err)
 
 	for _, tt := range tests {
-		t.Run("vt "+strings.Join(tt.args, " "), func(t *testing.T) {
+		t.Run("vt  "+strings.Join(tt.args, " "), func(t *testing.T) {
 			cmd := exec.Command("./vt", tt.args...)
 			cmd.Dir = projectRoot
-			out, err := cmd.CombinedOutput()
+			out, err := cmd.Output()
+			fmt.Printf("err:|%v|\n", err)
 			require.NoError(t, err, string(out))
 			require.Contains(t, string(out), tt.want)
 		})
