@@ -47,6 +47,47 @@
     </table>
 </div>
 
+<button class="collapsible">Query Plans</button>
+<div class="content">
+    <h3>Simple Routed Queries</h3>
+    {{range $index, $query := .PlanAnalysis.SimpleRoutedQ}}
+    <table>
+        <thead>
+        <tr>
+            <th>Query</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td style="text-align: left">{{$query.QueryStructure}}</td>
+        </tr>
+        </tbody>
+    </table>
+    <pre>
+        {{- jsonToString $query.PlanOutput}}
+    </pre>
+    {{end}}
+
+    <h3>Complex Queries</h3>
+    {{range $index, $query := .PlanAnalysis.ComplexQ}}
+    <table>
+        <thead>
+        <tr>
+            <th>Query</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td style="text-align: left">{{$query.QueryStructure}}</td>
+        </tr>
+        </tbody>
+    </table>
+    <pre>
+        {{- jsonToString $query.PlanOutput}}
+    </pre>
+    {{end}}
+</div>
+
 <button class="collapsible">Top Queries</button>
 <div class="content">
     <table>

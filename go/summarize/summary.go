@@ -89,8 +89,8 @@ type (
 		Unplannable  int
 		Total        int
 
-		simpleRouted []planalyze.AnalyzedQuery
-		complex      []planalyze.AnalyzedQuery
+		SimpleRoutedQ []planalyze.AnalyzedQuery
+		ComplexQ      []planalyze.AnalyzedQuery
 	}
 )
 

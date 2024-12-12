@@ -48,6 +48,11 @@ type SummaryOutput struct {
 
 func getFuncMap() template.FuncMap {
 	return template.FuncMap{
+		"jsonToString": func(j json.RawMessage) string {
+			var formattedJSON bytes.Buffer
+			_ = json.Indent(&formattedJSON, j, "", "  ")
+			return formattedJSON.String()
+		},
 		"add": func(a, b int) int { return a + b },
 		"divide": func(a, b any) float64 {
 			if b == 0 || b == nil {

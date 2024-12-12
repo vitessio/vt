@@ -245,11 +245,11 @@ func renderPlansSection(md *markdown.MarkDown, analysis PlanAnalysis) error {
 	md.PrintTable(headers, rows)
 	md.NewLine()
 
-	err := renderQueryPlans(md, analysis.simpleRouted, planalyze.SimpleRouted.String())
+	err := renderQueryPlans(md, analysis.SimpleRoutedQ, planalyze.SimpleRouted.String())
 	if err != nil {
 		return err
 	}
-	return renderQueryPlans(md, analysis.complex, planalyze.Complex.String())
+	return renderQueryPlans(md, analysis.ComplexQ, planalyze.Complex.String())
 }
 
 func renderQueryPlans(md *markdown.MarkDown, queries []planalyze.AnalyzedQuery, title string) error {

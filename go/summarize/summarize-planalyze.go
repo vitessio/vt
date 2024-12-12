@@ -32,7 +32,7 @@ func summarizePlanAnalyze(s *Summary, data planalyze.Output) (err error) {
 	s.addPlanResult(data.SimpleRouted)
 	s.addPlanResult(data.Complex)
 
-	s.PlanAnalysis.simpleRouted = append(s.PlanAnalysis.simpleRouted, data.SimpleRouted...)
-	s.PlanAnalysis.complex = append(s.PlanAnalysis.complex, data.Complex...)
+	s.PlanAnalysis.SimpleRoutedQ = append(s.PlanAnalysis.SimpleRoutedQ, data.SimpleRouted...)
+	s.PlanAnalysis.ComplexQ = append(s.PlanAnalysis.ComplexQ, data.Complex...)
 	return nil
 }
