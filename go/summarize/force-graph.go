@@ -40,7 +40,7 @@ type (
 		Value      int      `json:"value"`
 		Type       string   `json:"type"`
 		Curvature  float64  `json:"curvature"`
-		Predicates []string `json:"Predicates"`
+		Predicates []string `json:"predicates"`
 	}
 
 	graphData struct {
