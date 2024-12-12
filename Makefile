@@ -31,7 +31,7 @@ build:
 	@go build -o vt ./go/vt
 
 test:
-	go test -count=1 ./go/...
+	go test -v -count=1 ./go/...
 
 tidy:
 	go mod tidy
