@@ -35,6 +35,17 @@ import (
 )
 
 type (
+	Config struct {
+		Files     []string
+		HotMetric string
+
+		OutputFormat string
+
+		Port int
+
+		ShowGraph bool
+	}
+
 	traceSummary struct {
 		Name          string
 		TracedQueries []TracedQuery
@@ -43,11 +54,11 @@ type (
 
 type summaryWorker = func(s *Summary) error
 
-func Run(files []string, hotMetric string, showGraph bool, outputFormat string, port *int64) {
+func Run(cfg *Config) {
 	var traces []traceSummary
 	var workers []summaryWorker
 
-	for _, file := range files {
+	for _, file := range cfg.Files {
 		typ, err := data.GetFileType(file)
 		exitIfError(err)
 		var w summarizer
@@ -78,16 +89,16 @@ func Run(files []string, hotMetric string, showGraph bool, outputFormat string, 
 
 	traceCount := len(traces)
 	if traceCount <= 0 {
-		s, err := printSummary(hotMetric, workers, outputFormat, port)
+		s, err := printSummary(cfg.HotMetric, workers, cfg.OutputFormat, cfg.Port)
 		exitIfError(err)
-		if showGraph {
+		if cfg.ShowGraph {
 			err := renderQueryGraph(s)
 			exitIfError(err)
 		}
 		return
 	}
 
-	err := checkTraceConditions(traces, workers, hotMetric)
+	err := checkTraceConditions(traces, workers, cfg.HotMetric)
 	exitIfError(err)
 
 	switch traceCount {
@@ -107,7 +118,7 @@ func exitIfError(err error) {
 	os.Exit(1)
 }
 
-func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, port *int64) (*Summary, error) {
+func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, port int) (*Summary, error) {
 	s, err := NewSummary(hotMetric)
 	if err != nil {
 		return nil, err
@@ -124,7 +135,7 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 		return nil, err
 	}
 	outputFormat = strings.ToLower(outputFormat)
-	if *port == 0 && outputFormat == "html" {
+	if port == 0 && outputFormat == "html" {
 		fmt.Println("port is required when output format is html")
 		os.Exit(1)
 	}
