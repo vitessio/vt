@@ -52,6 +52,11 @@ func Run(files []string, hotMetric string, showGraph bool, outputFormat string, 
 	var traces []traceSummary
 	var workers []summaryWorker
 
+	if launchWebServer && outputFormat != "html" {
+		fmt.Println("cannot use --web flag without --format=html")
+		os.Exit(1)
+	}
+
 	for _, file := range files {
 		typ, err := data.GetFileType(file)
 		exitIfError(err)
@@ -137,7 +142,7 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 				return s, err
 			}
 		} else {
-			html, err := utils.RenderFile("summarize_standalone.html", "summarize_standalone.html", summarizeOutput)
+			html, err := utils.RenderFile("summarize.html", "layout_standalone.html", summarizeOutput)
 			if err != nil {
 				return nil, err
 			}

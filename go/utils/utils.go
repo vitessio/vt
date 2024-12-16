@@ -58,10 +58,10 @@ func GetFuncMap() template.FuncMap {
 
 func RenderFile(tplFileName, layoutFileName string, data any) (*bytes.Buffer, error) {
 	tmpl := template.Must(template.New(tplFileName).Funcs(GetFuncMap()).ParseFiles(
-		"go/web/templates/layout.html",
 		"go/web/templates/footer.html",
 		"go/web/templates/header.html",
 		fmt.Sprintf("go/web/templates/%s", tplFileName),
+		fmt.Sprintf("go/web/templates/%s", layoutFileName),
 	))
 
 	var buf bytes.Buffer
