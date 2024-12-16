@@ -17,7 +17,6 @@ limitations under the License.
 package summarize
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -31,6 +30,8 @@ import (
 	"golang.org/x/term"
 
 	"github.com/vitessio/vt/go/data"
+	"github.com/vitessio/vt/go/utils"
+	"github.com/vitessio/vt/go/web"
 )
 
 type (
@@ -40,9 +41,14 @@ type (
 	}
 )
 
+type SummaryOutput struct {
+	Summary
+	DateOfAnalysis string
+}
+
 type summaryWorker = func(s *Summary) error
 
-func Run(files []string, hotMetric string, showGraph bool, outputFormat string, port *int64) {
+func Run(files []string, hotMetric string, showGraph bool, outputFormat string, launchWebServer bool) {
 	var traces []traceSummary
 	var workers []summaryWorker
 
@@ -77,7 +83,7 @@ func Run(files []string, hotMetric string, showGraph bool, outputFormat string, 
 
 	traceCount := len(traces)
 	if traceCount <= 0 {
-		s, err := printSummary(hotMetric, workers, outputFormat, port)
+		s, err := printSummary(hotMetric, workers, outputFormat, launchWebServer)
 		exitIfError(err)
 		if showGraph {
 			err := renderQueryGraph(s)
@@ -106,7 +112,7 @@ func exitIfError(err error) {
 	os.Exit(1)
 }
 
-func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, port *int64) (*Summary, error) {
+func printSummary(hotMetric string, workers []summaryWorker, outputFormat string, launchWebServer bool) (*Summary, error) {
 	s, err := NewSummary(hotMetric)
 	if err != nil {
 		return nil, err
@@ -118,25 +124,27 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 		}
 	}
 	outputFormat = strings.ToLower(outputFormat)
-	if *port == 0 && outputFormat == "html" {
-		fmt.Println("port is required when output format is html")
-		os.Exit(1)
-	}
 	switch outputFormat {
 	case "html":
-		summaryJSON, err := json.Marshal(*s)
-		if err != nil {
-			fmt.Println("Error marshalling summary:", err)
-			return nil, err
+		summarizeOutput := SummaryOutput{
+			Summary:        *s,
+			DateOfAnalysis: time.Now().Format(time.DateTime),
 		}
 
-		tmpFile, err := writeToTempFile(summaryJSON)
-		if err != nil {
-			return s, err
-		}
-		err = launchInBrowser(tmpFile)
-		if err != nil {
-			return s, err
+		if launchWebServer {
+			err = launchInBrowser(summarizeOutput)
+			if err != nil {
+				return s, err
+			}
+		} else {
+			html, err := utils.RenderFile("summarize_standalone.html", "summarize_standalone.html", summarizeOutput)
+			if err != nil {
+				return nil, err
+			}
+			_, err = io.Copy(os.Stdout, html)
+			if err != nil {
+				return nil, err
+			}
 		}
 	case "markdown":
 		// Print the response
@@ -150,16 +158,30 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 	return s, nil
 }
 
-func launchInBrowser(tmpFile *os.File) error {
+func launchInBrowser(summarizeOutput SummaryOutput) error {
+	html, err := utils.RenderFile("summarize.html", "layout.html", summarizeOutput)
+	if err != nil {
+		return err
+	}
+	tmpFile, err := writeToTempFile(html.Bytes())
+	if err != nil {
+		return err
+	}
+
+	ch := make(chan error)
+	go func() {
+		web.Run(8080)
+		ch <- nil
+	}()
 	port := int64(8080) // FIXME: take this from flags
 	url := fmt.Sprintf("http://localhost:%d/summarize?file=", port) + tmpFile.Name()
-	err := exec.Command("open", url).Start()
+	err = exec.Command("open", url).Start()
 	if err != nil {
 		fmt.Println("Error launching browser:", err)
 		return err
 	}
 	fmt.Println("URL launched in default browser:", url)
-	return nil
+	return <-ch
 }
 
 func writeToTempFile(summaryJSON []byte) (*os.File, error) {
