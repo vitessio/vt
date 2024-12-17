@@ -35,7 +35,7 @@ func keysCmd() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, _ []string) {
 			csvConfig = csvFlagsToConfig(cmd, *flags)
 		},
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(c *cobra.Command, args []string) error {
 			cfg := keys.Config{
 				FileName: args[0],
 			}
@@ -46,7 +46,7 @@ func keysCmd() *cobra.Command {
 			}
 			cfg.Loader = loader
 
-			return keys.Run(cfg)
+			return keys.Run(c.OutOrStdout(), cfg)
 		},
 	}
 

@@ -65,7 +65,7 @@ func TestKeys(t *testing.T) {
 	for _, tcase := range cases {
 		t.Run(tcase.expectedFile, func(t *testing.T) {
 			sb := &strings.Builder{}
-			err := run(sb, tcase.cfg)
+			err := Run(sb, tcase.cfg)
 			require.NoError(t, err)
 
 			out, err := os.ReadFile("../testdata/keys-output/" + tcase.expectedFile)
