@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 
 	querypb "vitess.io/vitess/go/vt/proto/query"
@@ -73,11 +72,7 @@ type (
 	}
 )
 
-func Run(cfg Config) error {
-	return run(os.Stdout, cfg)
-}
-
-func run(out io.Writer, cfg Config) error {
+func Run(out io.Writer, cfg Config) error {
 	si := &SchemaInfo{
 		Tables: make(map[string]Columns),
 	}

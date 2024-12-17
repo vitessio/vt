@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            overflow:auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        header {
+            background-color: black;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px; /* Fixed height */
+            width: 100%;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        header nav a {
+            margin-left: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+        }
+
+        header nav a:hover {
+            color: #FFD700;
+        }
+
+        main {
+            height: calc(100% - 150px); /* Adjusted for header and footer heights */
+            overflow-y: auto; /* Enable vertical scrolling if content overflows */
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+            padding: 20px;
+            background: white;
+            margin: 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        /* Footer Styles */
+        footer {
+            background-color: orange;
+            color: black;
+            text-align: center;
+            height: 40px; /* Fixed height */
+            line-height: 40px; /* Vertically center content */
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+        }
+
+        footer p {
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+        }
+
+        h1, h2, h3, h4 {
+            color: #333;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            margin-left: 10%;
+            margin-right: 10%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: orange;
+            text-align: center;
+        }
+
+        td {
+            text-align: right;
+        }
+
+        .fixed-header {
+            top: 60px;
+            position: fixed;
+            width: 100%;
+            background-color: white;
+            z-index: 1000;
+            text-align: center;
+            margin-bottom: 200px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* Collapsible section styles */
+        .collapsible {
+            cursor: pointer;
+            padding: 10px;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 18px;
+            background-color: #e1bc98;
+            margin-top: 20px;
+        }
+
+        .collapsible.active {
+            background-color: orange; /* Color when expanded */
+        }
+
+        .collapsible:after {
+            content: '\002B'; /* Unicode character for "plus" sign */
+            font-size: 13px;
+            color: #777;
+            float: right;
+            margin-left: 5px;
+        }
+
+        .collapsible.active:after {
+            content: "\2212"; /* Unicode character for "minus" sign */
+        }
+
+        .content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: #f9f9f9;
+            padding: 0 18px;
+        }
+
+        .columnUsage {
+            padding-top:10px;
+            padding-bottom:10px;
+        }
+
+        .columnUsage.odd {
+            background-color: #ddd; /* Background color for odd divs */
+        }
+
+        .columnUsage.even {
+            background-color: #eee; /* Background color for even divs */
+        }
+
+
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var coll = document.getElementsByClassName("collapsible");
+            for (var i = 0; i < coll.length; i++) {
+                coll[i].addEventListener("click", function() {
+                    this.classList.toggle("active");
+                    var content = this.nextElementSibling;
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                    }
+                });
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var columnUsages = document.getElementsByClassName("columnUsage");
+            for (var i = 0; i < columnUsages.length; i++) {
+                if (i % 2 === 0) {
+                    columnUsages[i].classList.add("even");
+                } else {
+                    columnUsages[i].classList.add("odd");
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+<main>
+    {{template "content" .}}
+</main>
+</body>
+</html>
