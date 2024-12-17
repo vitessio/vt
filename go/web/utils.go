@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package web
 
 import (
 	"bytes"
@@ -22,33 +22,26 @@ import (
 	"html/template"
 )
 
-func GetFuncMap() template.FuncMap {
+func toFloat64(a any) float64 {
+	switch v := a.(type) {
+	case int:
+		return float64(v)
+	case float64:
+		return v
+	default:
+		return 0
+	}
+}
+
+func funcMap() template.FuncMap {
 	return template.FuncMap{
 		"add": func(a, b int) int { return a + b },
 		"divide": func(a, b any) float64 {
-			if b == 0 || b == nil {
+			aFloat := toFloat64(a)
+			bFloat := toFloat64(b)
+
+			if bFloat == 0 {
 				return 0 // Handle division by zero or nil
-			}
-
-			// Convert `a` and `b` to float64
-			var aFloat, bFloat float64
-
-			switch v := a.(type) {
-			case int:
-				aFloat = float64(v)
-			case float64:
-				aFloat = v
-			default:
-				return 0 // Invalid type, return 0
-			}
-
-			switch v := b.(type) {
-			case int:
-				bFloat = float64(v)
-			case float64:
-				bFloat = v
-			default:
-				return 0 // Invalid type, return 0
 			}
 
 			return aFloat / bFloat
@@ -57,7 +50,7 @@ func GetFuncMap() template.FuncMap {
 }
 
 func RenderFile(tplFileName, layoutFileName string, data any) (*bytes.Buffer, error) {
-	tmpl := template.Must(template.New(tplFileName).Funcs(GetFuncMap()).ParseFiles(
+	tmpl := template.Must(template.New(tplFileName).Funcs(funcMap()).ParseFiles(
 		"go/web/templates/footer.html",
 		"go/web/templates/header.html",
 		fmt.Sprintf("go/web/templates/%s", tplFileName),

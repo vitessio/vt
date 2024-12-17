@@ -24,12 +24,10 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/vitessio/vt/go/utils"
 )
 
 func RenderFileToGin(fileName string, data any, c *gin.Context) {
-	buf, err := utils.RenderFile(fileName, "layout.html", data)
+	buf, err := RenderFile(fileName, "layout.html", data)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -41,7 +39,7 @@ func Run(port int64) {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard // Disable logging
 	r := gin.Default()
-	r.SetFuncMap(utils.GetFuncMap())
+	r.SetFuncMap(funcMap())
 
 	r.LoadHTMLGlob("go/web/templates/*.html")
 	r.Static("/css", "go/web/templates/css")

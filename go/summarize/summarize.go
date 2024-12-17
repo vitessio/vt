@@ -30,7 +30,6 @@ import (
 	"golang.org/x/term"
 
 	"github.com/vitessio/vt/go/data"
-	"github.com/vitessio/vt/go/utils"
 	"github.com/vitessio/vt/go/web"
 )
 
@@ -142,7 +141,7 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 				return s, err
 			}
 		} else {
-			html, err := utils.RenderFile("summarize.html", "layout_standalone.html", summarizeOutput)
+			html, err := web.RenderFile("summarize.html", "layout_standalone.html", summarizeOutput)
 			if err != nil {
 				return nil, err
 			}
@@ -164,7 +163,7 @@ func printSummary(hotMetric string, workers []summaryWorker, outputFormat string
 }
 
 func launchInBrowser(summarizeOutput SummaryOutput) error {
-	html, err := utils.RenderFile("summarize.html", "layout.html", summarizeOutput)
+	html, err := web.RenderFile("summarize.html", "layout.html", summarizeOutput)
 	if err != nil {
 		return err
 	}
