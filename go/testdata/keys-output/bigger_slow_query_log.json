@@ -316,6 +316,14 @@
         "rowsSent": 15,
         "rowsExamined": 6500,
         "timestamp": 1690891224
+      },
+      {
+        "queryStructure": "COMMIT",
+        "usageCount": 1,
+        "lineNumbers": [
+          220
+        ],
+        "statementType": "COMMIT"
       }
     ],
     "failed": [

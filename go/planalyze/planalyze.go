@@ -91,7 +91,7 @@ func run(out io.Writer, cfg Config, logFile string) error {
 	a := cfg.VSchemaFile != ""
 	b := cfg.VtExplainVschemaFile != ""
 	if a == b {
-		return errors.New("specify exactly one of the following flags: -vschema, -vtexplain-vschema, -sharded")
+		return errors.New("specify exactly one of the following flags: -vschema or -vtexplain-vschema")
 	}
 
 	_, vschema, err := data.GetKeyspaces(cfg.VSchemaFile, cfg.VtExplainVschemaFile, "main", false)
@@ -123,20 +123,35 @@ func run(out io.Writer, cfg Config, logFile string) error {
 		plan, err = planbuilder.TestBuilder(query.QueryStructure, vw, "")
 
 		res := getPlanRes(err, plan)
-		description := engine.PrimitiveToPlanDescription(plan.Instructions, nil)
-		b := new(bytes.Buffer)
-		enc := json.NewEncoder(b)
-		enc.SetEscapeHTML(false)
-		enc.SetIndent("", "  ")
-		err = enc.Encode(description)
-		if err != nil {
-			return err
+		switch {
+		case res == Unplannable:
+			errBytes, jsonErr := json.Marshal(err.Error())
+			if jsonErr != nil {
+				return jsonErr
+			}
+			planalyzer.Queries[res] = append(planalyzer.Queries[res], AnalyzedQuery{
+				QueryStructure: query.QueryStructure,
+				Complexity:     res,
+				PlanOutput:     errBytes,
+			})
+		case plan.Instructions != nil:
+			description := engine.PrimitiveToPlanDescription(plan.Instructions, nil)
+			b := new(bytes.Buffer)
+			enc := json.NewEncoder(b)
+			enc.SetEscapeHTML(false)
+			enc.SetIndent("", "  ")
+			err = enc.Encode(description)
+			if err != nil {
+				return err
+			}
+			planalyzer.Queries[res] = append(planalyzer.Queries[res], AnalyzedQuery{
+				QueryStructure: query.QueryStructure,
+				Complexity:     res,
+				PlanOutput:     json.RawMessage(b.String()),
+			})
+		default:
+			// if we don't have an instruction, this query is not interesting for planalyze
 		}
-		planalyzer.Queries[res] = append(planalyzer.Queries[res], AnalyzedQuery{
-			QueryStructure: query.QueryStructure,
-			Complexity:     res,
-			PlanOutput:     json.RawMessage(b.String()),
-		})
 	}
 
 	type jsonOutput struct {
@@ -171,11 +186,25 @@ func getPlanRes(err error, plan *engine.Plan) PlanComplexity {
 		return Unplannable
 	}
 
-	rb, ok := plan.Instructions.(*engine.Route)
-	switch {
-	case !ok:
+	var rp *engine.RoutingParameters
+
+	switch prim := plan.Instructions.(type) {
+	case *engine.Route:
+		rp = prim.RoutingParameters
+	case *engine.Update:
+		rp = prim.RoutingParameters
+	case *engine.Delete:
+		rp = prim.RoutingParameters
+	case *engine.Insert:
+		if prim.InsertCommon.Opcode == engine.InsertUnsharded {
+			return PassThrough
+		}
+		return SimpleRouted
+	default:
 		return Complex
-	case rb.Opcode.IsSingleShard():
+	}
+
+	if rp.Opcode.IsSingleShard() {
 		return PassThrough
 	}
 

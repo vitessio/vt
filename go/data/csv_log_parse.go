@@ -18,6 +18,7 @@ package data
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -81,6 +82,10 @@ func (c *csvLogReaderState) Next() (Query, bool) {
 
 	l, _ := c.reader.FieldPos(0)
 
+	helpfulPanic := func(err error, val string) {
+		panic(fmt.Sprintf("%s at line: %d for value: %s", err.Error(), l, val))
+	}
+
 	recordToInt := func(idx *int) int {
 		if idx == nil {
 			return 0
@@ -88,7 +93,7 @@ func (c *csvLogReaderState) Next() (Query, bool) {
 		val := record[*idx]
 		i, err := strconv.Atoi(val)
 		if err != nil {
-			panic(err)
+			helpfulPanic(err, val)
 		}
 		return i
 	}
@@ -100,7 +105,7 @@ func (c *csvLogReaderState) Next() (Query, bool) {
 		val := record[*idx]
 		f, err := strconv.ParseFloat(val, 64)
 		if err != nil {
-			panic(err)
+			helpfulPanic(err, val)
 		}
 		return f
 	}
@@ -112,7 +117,7 @@ func (c *csvLogReaderState) Next() (Query, bool) {
 		val := record[*idx]
 		t, err := time.Parse(time.DateTime, val)
 		if err != nil {
-			panic(err)
+			helpfulPanic(err, val)
 		}
 		return t.Unix()
 	}

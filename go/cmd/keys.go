@@ -32,10 +32,8 @@ func keysCmd() *cobra.Command {
 		Short:   "Runs vexplain keys on all queries of the test file",
 		Example: "vt keys file.test",
 		Args:    cobra.ExactArgs(1),
-		PreRun: func(cmd *cobra.Command, _ []string) {
-			csvConfig = csvFlagsToConfig(cmd, *flags)
-		},
 		RunE: func(c *cobra.Command, args []string) error {
+			csvConfig = csvFlagsToConfig(c, *flags)
 			cfg := keys.Config{
 				FileName: args[0],
 			}
