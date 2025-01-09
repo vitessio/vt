@@ -186,11 +186,25 @@ func getPlanRes(err error, plan *engine.Plan) PlanComplexity {
 		return Unplannable
 	}
 
-	rb, ok := plan.Instructions.(*engine.Route)
-	switch {
-	case !ok:
+	var rp *engine.RoutingParameters
+
+	switch prim := plan.Instructions.(type) {
+	case *engine.Route:
+		rp = prim.RoutingParameters
+	case *engine.Update:
+		rp = prim.RoutingParameters
+	case *engine.Delete:
+		rp = prim.RoutingParameters
+	case *engine.Insert:
+		if prim.InsertCommon.Opcode == engine.InsertUnsharded {
+			return PassThrough
+		}
+		return SimpleRouted
+	default:
 		return Complex
-	case rb.Opcode.IsSingleShard():
+	}
+
+	if rp.Opcode.IsSingleShard() {
 		return PassThrough
 	}
 
