@@ -89,5 +89,8 @@ func csvFlagsToConfig(cmd *cobra.Command, flags csvFlags) data.CSVConfig {
 	if cmd.Flags().Changed("csv-timestamp-field") {
 		c.TimestampField = &flags.timestampField
 	}
+	if cmd.Flags().Changed("csv-header") {
+		c.Header = flags.header
+	}
 	return c
 }
