@@ -1,337 +1,345 @@
 {
-    "fileType": "keys",
-    "queries": [
-      {
-        "queryStructure": "SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :1 /* INT64 */",
-        "usageCount": 2,
-        "lineNumbers": [
-          9,
-          98
-        ],
-        "tableNames": [
-          "products",
-          "reviews"
-        ],
-        "groupingColumns": [
-          "products.id"
-        ],
-        "joinPredicates": [
-          "products.id = reviews.product_id"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.210456,
-        "lockTime": 0.0025,
-        "rowsSent": 7,
-        "rowsExamined": 3000
-      },
-      {
-        "queryStructure": "SELECT `u`.`username`, sum(`o`.`total_amount`) AS `total_spent` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`created_at` BETWEEN :1 /* VARCHAR */ AND :2 /* VARCHAR */ GROUP BY `u`.`id` HAVING sum(`o`.`total_amount`) \u003e :_total_spent /* INT64 */",
-        "usageCount": 3,
-        "lineNumbers": [
-          14,
-          88,
-          158
-        ],
-        "tableNames": [
-          "users",
-          "orders"
-        ],
-        "groupingColumns": [
-          "users.id"
-        ],
-        "joinPredicates": [
-          "orders.user_id = users.id"
-        ],
-        "filterColumns": [
-          "orders.created_at ge",
-          "orders.created_at le"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.5811459999999999,
-        "lockTime": 0.0077,
-        "rowsSent": 119,
-        "rowsExamined": 17000,
-        "timestamp": 1690891202
-      },
-      {
-        "queryStructure": "SELECT `c`.`name`, COUNT(`o`.`id`) AS `order_count` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` JOIN `orders` AS `o` ON `oi`.`order_id` = `o`.`id` GROUP BY `c`.`id`",
-        "usageCount": 2,
-        "lineNumbers": [
-          19,
-          132
-        ],
-        "tableNames": [
-          "categories",
-          "products",
-          "order_items",
-          "orders"
-        ],
-        "groupingColumns": [
-          "categories.id"
-        ],
-        "joinPredicates": [
-          "categories.id = products.category_id",
-          "order_items.order_id = orders.id",
-          "order_items.product_id = products.id"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.371023,
-        "lockTime": 0.0040999999999999995,
-        "rowsSent": 28,
-        "rowsExamined": 16000,
-        "timestamp": 1690891203
-      },
-      {
-        "queryStructure": "SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` \u003c :_i_stock_level /* INT64 */",
-        "usageCount": 2,
-        "lineNumbers": [
-          29,
-          108
-        ],
-        "tableNames": [
-          "products",
-          "inventory"
-        ],
-        "joinPredicates": [
-          "inventory.product_id = products.id"
-        ],
-        "filterColumns": [
-          "inventory.stock_level lt"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.311245,
-        "lockTime": 0.0045000000000000005,
-        "rowsSent": 27,
-        "rowsExamined": 15000,
-        "timestamp": 1690891204
-      },
-      {
-        "queryStructure": "SELECT `c`.`name`, sum(`oi`.`price` * `oi`.`quantity`) AS `total_sales` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` GROUP BY `c`.`id` ORDER BY sum(`oi`.`price` * `oi`.`quantity`) DESC LIMIT :1 /* INT64 */",
-        "usageCount": 2,
-        "lineNumbers": [
-          37,
-          186
-        ],
-        "tableNames": [
-          "categories",
-          "products",
-          "order_items"
-        ],
-        "groupingColumns": [
-          "categories.id"
-        ],
-        "joinPredicates": [
-          "categories.id = products.category_id",
-          "order_items.product_id = products.id"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.401467,
-        "lockTime": 0.0060999999999999995,
-        "rowsSent": 31,
-        "rowsExamined": 20000,
-        "timestamp": 1690891205
-      },
-      {
-        "queryStructure": "SELECT `o`.`id`, `o`.`created_at` FROM `orders` AS `o` LEFT JOIN `shipments` AS `s` ON `o`.`id` = `s`.`order_id` WHERE `s`.`shipped_date` IS NULL AND `o`.`created_at` \u003c DATE_SUB(now(), INTERVAL :1 /* INT64 */ day)",
-        "usageCount": 2,
-        "lineNumbers": [
-          48,
-          116
-        ],
-        "tableNames": [
-          "orders",
-          "shipments"
-        ],
-        "joinPredicates": [
-          "orders.id = shipments.order_id"
-        ],
-        "filterColumns": [
-          "orders.created_at lt"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.340912,
-        "lockTime": 0.0037,
-        "rowsSent": 2,
-        "rowsExamined": 8500,
-        "timestamp": 1690891206
-      },
-      {
-        "queryStructure": "SELECT `p`.`payment_method`, avg(`o`.`total_amount`) AS `avg_order_value` FROM `payments` AS `p` JOIN `orders` AS `o` ON `p`.`order_id` = `o`.`id` GROUP BY `p`.`payment_method`",
-        "usageCount": 2,
-        "lineNumbers": [
-          56,
-          142
-        ],
-        "tableNames": [
-          "payments",
-          "orders"
-        ],
-        "groupingColumns": [
-          "payments.payment_method"
-        ],
-        "joinPredicates": [
-          "orders.id = payments.order_id"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.330246,
-        "lockTime": 0.0039,
-        "rowsSent": 7,
-        "rowsExamined": 6000,
-        "timestamp": 1690891207
-      },
-      {
-        "queryStructure": "SELECT DATE(`o`.`created_at`) AS `order_date`, count(*) AS `order_count` FROM `orders` AS `o` WHERE `o`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ day) GROUP BY DATE(`o`.`created_at`)",
-        "usageCount": 2,
-        "lineNumbers": [
-          64,
-          168
-        ],
-        "tableNames": [
-          "orders"
-        ],
-        "filterColumns": [
-          "orders.created_at ge"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.370912,
-        "lockTime": 0.0039,
-        "rowsSent": 53,
-        "rowsExamined": 16000,
-        "timestamp": 1690891208
-      },
-      {
-        "queryStructure": "SELECT `m`.`sender_id`, COUNT(DISTINCT `m`.`receiver_id`) AS `unique_receivers` FROM `messages` AS `m` GROUP BY `m`.`sender_id` HAVING COUNT(DISTINCT `m`.`receiver_id`) \u003e :_unique_receivers /* INT64 */",
-        "usageCount": 3,
-        "lineNumbers": [
-          72,
-          150,
-          216
-        ],
-        "tableNames": [
-          "messages"
-        ],
-        "groupingColumns": [
-          "messages.sender_id"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.612034,
-        "lockTime": 0.0078,
-        "rowsSent": 56,
-        "rowsExamined": 30000,
-        "timestamp": 1690891209
-      },
-      {
-        "queryStructure": "SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` LEFT JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`id` IS NULL",
-        "usageCount": 2,
-        "lineNumbers": [
-          80,
-          124
-        ],
-        "tableNames": [
-          "users",
-          "orders"
-        ],
-        "joinPredicates": [
-          "orders.user_id = users.id"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.490468,
-        "lockTime": 0.0085,
-        "rowsSent": 7,
-        "rowsExamined": 16000,
-        "timestamp": 1690891210
-      },
-      {
-        "queryStructure": "SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` JOIN `reviews` AS `r` ON `u`.`id` = `r`.`user_id` WHERE `o`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month) AND `r`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month)",
-        "usageCount": 1,
-        "lineNumbers": [
-          176
-        ],
-        "tableNames": [
-          "users",
-          "orders",
-          "reviews"
-        ],
-        "joinPredicates": [
-          "orders.user_id = users.id",
-          "reviews.user_id = users.id"
-        ],
-        "filterColumns": [
-          "orders.created_at ge",
-          "reviews.created_at ge"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.220123,
-        "lockTime": 0.0038,
-        "rowsSent": 2,
-        "rowsExamined": 8000,
-        "timestamp": 1690891221
-      },
-      {
-        "queryStructure": "SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` WHERE `r`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ week) GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :2 /* INT64 */",
-        "usageCount": 1,
-        "lineNumbers": [
-          197
-        ],
-        "tableNames": [
-          "products",
-          "reviews"
-        ],
-        "groupingColumns": [
-          "products.id"
-        ],
-        "joinPredicates": [
-          "products.id = reviews.product_id"
-        ],
-        "filterColumns": [
-          "reviews.created_at ge"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.160456,
-        "lockTime": 0.0015,
-        "rowsSent": 10,
-        "rowsExamined": 3500,
-        "timestamp": 1690891223
-      },
-      {
-        "queryStructure": "SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` BETWEEN :1 /* INT64 */ AND :2 /* INT64 */",
-        "usageCount": 1,
-        "lineNumbers": [
-          208
-        ],
-        "tableNames": [
-          "products",
-          "inventory"
-        ],
-        "joinPredicates": [
-          "inventory.product_id = products.id"
-        ],
-        "filterColumns": [
-          "inventory.stock_level ge",
-          "inventory.stock_level le"
-        ],
-        "statementType": "SELECT",
-        "queryTime": 0.200123,
-        "lockTime": 0.0027,
-        "rowsSent": 15,
-        "rowsExamined": 6500,
-        "timestamp": 1690891224
-      }
-    ],
-    "failed": [
-      {
-        "query": "/bin/mysqld, Version: 8.0.26 (Source distribution). started with:\nTcp port: 3306  Unix socket: /tmp/mysql.sock\nTime                 Id Command    Argument\nuse testdb;",
-        "lineNumbers": [
-          1
-        ],
-        "error": "syntax error at position 2"
-      },
-      {
-        "query": "SET timestamp=1690891201;",
-        "lineNumbers": [
-          8
-        ],
-        "error": "syntax error at position 14 near 'timestamp'"
-      }
-    ]
-  }
+  "fileType": "keys",
+  "queries": [
+    {
+      "queryStructure": "SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :1 /* INT64 */",
+      "usageCount": 2,
+      "lineNumbers": [
+        9,
+        98
+      ],
+      "tableNames": [
+        "products",
+        "reviews"
+      ],
+      "groupingColumns": [
+        "products.id"
+      ],
+      "joinPredicates": [
+        "products.id = reviews.product_id"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.210456,
+      "lockTime": 0.0025,
+      "rowsSent": 7,
+      "rowsExamined": 3000
+    },
+    {
+      "queryStructure": "SELECT `u`.`username`, sum(`o`.`total_amount`) AS `total_spent` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`created_at` BETWEEN :1 /* VARCHAR */ AND :2 /* VARCHAR */ GROUP BY `u`.`id` HAVING sum(`o`.`total_amount`) \u003e :_total_spent /* INT64 */",
+      "usageCount": 3,
+      "lineNumbers": [
+        14,
+        88,
+        158
+      ],
+      "tableNames": [
+        "users",
+        "orders"
+      ],
+      "groupingColumns": [
+        "users.id"
+      ],
+      "joinPredicates": [
+        "orders.user_id = users.id"
+      ],
+      "filterColumns": [
+        "orders.created_at ge",
+        "orders.created_at le"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.5811459999999999,
+      "lockTime": 0.0077,
+      "rowsSent": 119,
+      "rowsExamined": 17000,
+      "timestamp": 1690891202
+    },
+    {
+      "queryStructure": "SELECT `c`.`name`, COUNT(`o`.`id`) AS `order_count` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` JOIN `orders` AS `o` ON `oi`.`order_id` = `o`.`id` GROUP BY `c`.`id`",
+      "usageCount": 2,
+      "lineNumbers": [
+        19,
+        132
+      ],
+      "tableNames": [
+        "categories",
+        "products",
+        "order_items",
+        "orders"
+      ],
+      "groupingColumns": [
+        "categories.id"
+      ],
+      "joinPredicates": [
+        "categories.id = products.category_id",
+        "order_items.order_id = orders.id",
+        "order_items.product_id = products.id"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.371023,
+      "lockTime": 0.0040999999999999995,
+      "rowsSent": 28,
+      "rowsExamined": 16000,
+      "timestamp": 1690891203
+    },
+    {
+      "queryStructure": "SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` \u003c :_i_stock_level /* INT64 */",
+      "usageCount": 2,
+      "lineNumbers": [
+        29,
+        108
+      ],
+      "tableNames": [
+        "products",
+        "inventory"
+      ],
+      "joinPredicates": [
+        "inventory.product_id = products.id"
+      ],
+      "filterColumns": [
+        "inventory.stock_level lt"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.311245,
+      "lockTime": 0.0045000000000000005,
+      "rowsSent": 27,
+      "rowsExamined": 15000,
+      "timestamp": 1690891204
+    },
+    {
+      "queryStructure": "SELECT `c`.`name`, sum(`oi`.`price` * `oi`.`quantity`) AS `total_sales` FROM `categories` AS `c` JOIN `products` AS `p` ON `c`.`id` = `p`.`category_id` JOIN `order_items` AS `oi` ON `p`.`id` = `oi`.`product_id` GROUP BY `c`.`id` ORDER BY sum(`oi`.`price` * `oi`.`quantity`) DESC LIMIT :1 /* INT64 */",
+      "usageCount": 2,
+      "lineNumbers": [
+        37,
+        186
+      ],
+      "tableNames": [
+        "categories",
+        "products",
+        "order_items"
+      ],
+      "groupingColumns": [
+        "categories.id"
+      ],
+      "joinPredicates": [
+        "categories.id = products.category_id",
+        "order_items.product_id = products.id"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.401467,
+      "lockTime": 0.0060999999999999995,
+      "rowsSent": 31,
+      "rowsExamined": 20000,
+      "timestamp": 1690891205
+    },
+    {
+      "queryStructure": "SELECT `o`.`id`, `o`.`created_at` FROM `orders` AS `o` LEFT JOIN `shipments` AS `s` ON `o`.`id` = `s`.`order_id` WHERE `s`.`shipped_date` IS NULL AND `o`.`created_at` \u003c DATE_SUB(now(), INTERVAL :1 /* INT64 */ day)",
+      "usageCount": 2,
+      "lineNumbers": [
+        48,
+        116
+      ],
+      "tableNames": [
+        "orders",
+        "shipments"
+      ],
+      "joinPredicates": [
+        "orders.id = shipments.order_id"
+      ],
+      "filterColumns": [
+        "orders.created_at lt"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.340912,
+      "lockTime": 0.0037,
+      "rowsSent": 2,
+      "rowsExamined": 8500,
+      "timestamp": 1690891206
+    },
+    {
+      "queryStructure": "SELECT `p`.`payment_method`, avg(`o`.`total_amount`) AS `avg_order_value` FROM `payments` AS `p` JOIN `orders` AS `o` ON `p`.`order_id` = `o`.`id` GROUP BY `p`.`payment_method`",
+      "usageCount": 2,
+      "lineNumbers": [
+        56,
+        142
+      ],
+      "tableNames": [
+        "payments",
+        "orders"
+      ],
+      "groupingColumns": [
+        "payments.payment_method"
+      ],
+      "joinPredicates": [
+        "orders.id = payments.order_id"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.330246,
+      "lockTime": 0.0039,
+      "rowsSent": 7,
+      "rowsExamined": 6000,
+      "timestamp": 1690891207
+    },
+    {
+      "queryStructure": "SELECT DATE(`o`.`created_at`) AS `order_date`, count(*) AS `order_count` FROM `orders` AS `o` WHERE `o`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ day) GROUP BY DATE(`o`.`created_at`)",
+      "usageCount": 2,
+      "lineNumbers": [
+        64,
+        168
+      ],
+      "tableNames": [
+        "orders"
+      ],
+      "filterColumns": [
+        "orders.created_at ge"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.370912,
+      "lockTime": 0.0039,
+      "rowsSent": 53,
+      "rowsExamined": 16000,
+      "timestamp": 1690891208
+    },
+    {
+      "queryStructure": "SELECT `m`.`sender_id`, COUNT(DISTINCT `m`.`receiver_id`) AS `unique_receivers` FROM `messages` AS `m` GROUP BY `m`.`sender_id` HAVING COUNT(DISTINCT `m`.`receiver_id`) \u003e :_unique_receivers /* INT64 */",
+      "usageCount": 3,
+      "lineNumbers": [
+        72,
+        150,
+        216
+      ],
+      "tableNames": [
+        "messages"
+      ],
+      "groupingColumns": [
+        "messages.sender_id"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.612034,
+      "lockTime": 0.0078,
+      "rowsSent": 56,
+      "rowsExamined": 30000,
+      "timestamp": 1690891209
+    },
+    {
+      "queryStructure": "SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` LEFT JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` WHERE `o`.`id` IS NULL",
+      "usageCount": 2,
+      "lineNumbers": [
+        80,
+        124
+      ],
+      "tableNames": [
+        "users",
+        "orders"
+      ],
+      "joinPredicates": [
+        "orders.user_id = users.id"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.490468,
+      "lockTime": 0.0085,
+      "rowsSent": 7,
+      "rowsExamined": 16000,
+      "timestamp": 1690891210
+    },
+    {
+      "queryStructure": "SELECT `u`.`id`, `u`.`username` FROM `users` AS `u` JOIN `orders` AS `o` ON `u`.`id` = `o`.`user_id` JOIN `reviews` AS `r` ON `u`.`id` = `r`.`user_id` WHERE `o`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month) AND `r`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ month)",
+      "usageCount": 1,
+      "lineNumbers": [
+        176
+      ],
+      "tableNames": [
+        "users",
+        "orders",
+        "reviews"
+      ],
+      "joinPredicates": [
+        "orders.user_id = users.id",
+        "reviews.user_id = users.id"
+      ],
+      "filterColumns": [
+        "orders.created_at ge",
+        "reviews.created_at ge"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.220123,
+      "lockTime": 0.0038,
+      "rowsSent": 2,
+      "rowsExamined": 8000,
+      "timestamp": 1690891221
+    },
+    {
+      "queryStructure": "SELECT `p`.`name`, avg(`r`.`rating`) AS `avg_rating` FROM `products` AS `p` JOIN `reviews` AS `r` ON `p`.`id` = `r`.`product_id` WHERE `r`.`created_at` \u003e= DATE_SUB(now(), INTERVAL :1 /* INT64 */ week) GROUP BY `p`.`id` ORDER BY avg(`r`.`rating`) DESC LIMIT :2 /* INT64 */",
+      "usageCount": 1,
+      "lineNumbers": [
+        197
+      ],
+      "tableNames": [
+        "products",
+        "reviews"
+      ],
+      "groupingColumns": [
+        "products.id"
+      ],
+      "joinPredicates": [
+        "products.id = reviews.product_id"
+      ],
+      "filterColumns": [
+        "reviews.created_at ge"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.160456,
+      "lockTime": 0.0015,
+      "rowsSent": 10,
+      "rowsExamined": 3500,
+      "timestamp": 1690891223
+    },
+    {
+      "queryStructure": "SELECT `p`.`name`, `i`.`stock_level` FROM `products` AS `p` JOIN `inventory` AS `i` ON `p`.`id` = `i`.`product_id` WHERE `i`.`stock_level` BETWEEN :1 /* INT64 */ AND :2 /* INT64 */",
+      "usageCount": 1,
+      "lineNumbers": [
+        208
+      ],
+      "tableNames": [
+        "products",
+        "inventory"
+      ],
+      "joinPredicates": [
+        "inventory.product_id = products.id"
+      ],
+      "filterColumns": [
+        "inventory.stock_level ge",
+        "inventory.stock_level le"
+      ],
+      "statementType": "SELECT",
+      "queryTime": 0.200123,
+      "lockTime": 0.0027,
+      "rowsSent": 15,
+      "rowsExamined": 6500,
+      "timestamp": 1690891224
+    },
+    {
+      "queryStructure": "COMMIT",
+      "usageCount": 1,
+      "lineNumbers": [
+        7
+      ],
+      "statementType": "COMMIT"
+    }
+  ],
+  "failed": [
+    {
+      "query": "/bin/mysqld, Version: 8.0.26 (Source distribution). started with:\nTcp port: 3306  Unix socket: /tmp/mysql.sock\nTime                 Id Command    Argument\nuse testdb;",
+      "lineNumbers": [
+        1
+      ],
+      "error": "syntax error at position 2"
+    },
+    {
+      "query": "SET timestamp=1690891201;",
+      "lineNumbers": [
+        8
+      ],
+      "error": "syntax error at position 14 near 'timestamp'"
+    }
+  ]
+}

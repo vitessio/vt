@@ -123,20 +123,35 @@ func run(out io.Writer, cfg Config, logFile string) error {
 		plan, err = planbuilder.TestBuilder(query.QueryStructure, vw, "")
 
 		res := getPlanRes(err, plan)
-		description := engine.PrimitiveToPlanDescription(plan.Instructions, nil)
-		b := new(bytes.Buffer)
-		enc := json.NewEncoder(b)
-		enc.SetEscapeHTML(false)
-		enc.SetIndent("", "  ")
-		err = enc.Encode(description)
-		if err != nil {
-			return err
+		switch {
+		case res == Unplannable:
+			errBytes, jsonErr := json.Marshal(err.Error())
+			if jsonErr != nil {
+				return jsonErr
+			}
+			planalyzer.Queries[res] = append(planalyzer.Queries[res], AnalyzedQuery{
+				QueryStructure: query.QueryStructure,
+				Complexity:     res,
+				PlanOutput:     errBytes,
+			})
+		case plan.Instructions != nil:
+			description := engine.PrimitiveToPlanDescription(plan.Instructions, nil)
+			b := new(bytes.Buffer)
+			enc := json.NewEncoder(b)
+			enc.SetEscapeHTML(false)
+			enc.SetIndent("", "  ")
+			err = enc.Encode(description)
+			if err != nil {
+				return err
+			}
+			planalyzer.Queries[res] = append(planalyzer.Queries[res], AnalyzedQuery{
+				QueryStructure: query.QueryStructure,
+				Complexity:     res,
+				PlanOutput:     json.RawMessage(b.String()),
+			})
+		default:
+			// if we don't have an instruction, this query is not interesting for planalyze
 		}
-		planalyzer.Queries[res] = append(planalyzer.Queries[res], AnalyzedQuery{
-			QueryStructure: query.QueryStructure,
-			Complexity:     res,
-			PlanOutput:     json.RawMessage(b.String()),
-		})
 	}
 
 	type jsonOutput struct {
