@@ -27,16 +27,17 @@ func planalyzeCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "planalyze",
-		Short:   "Analyze the query plan",
-		Example: "vt planalyze --vcshema-file file.vschema keys-log.json",
+		Short:   "Analyze the query plans using the keys output",
+		Long:    "Analyze the query plans. The report will report how many queries fall into one of the four categories: `passthrough`, `simple-routed`, `complex`, `unplannable`.",
+		Example: "vt planalyze --vcshema file.vschema keys-log.json",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			return planalyze.Run(cfg, args[0])
 		},
 	}
 
-	cmd.Flags().StringVar(&cfg.VSchemaFile, "vschema", "", "Disable auto-vschema by providing your own vschema file. This cannot be used with either -vtexplain-vschema or -sharded.")
-	cmd.Flags().StringVar(&cfg.VtExplainVschemaFile, "vtexplain-vschema", "", "Disable auto-vschema by providing your own vtexplain vschema file. This cannot be used with either -vschema or -sharded.")
+	cmd.Flags().StringVar(&cfg.VSchemaFile, "vschema", "", "Supply the vschema in a format that can contain multiple keyspaces. This cannot be used with -vtexplain-vschema.")
+	cmd.Flags().StringVar(&cfg.VtExplainVschemaFile, "vtexplain-vschema", "", "Supply the vschema in a format that contains a single keyspace")
 
 	return cmd
 }

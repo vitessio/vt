@@ -91,7 +91,7 @@ func run(out io.Writer, cfg Config, logFile string) error {
 	a := cfg.VSchemaFile != ""
 	b := cfg.VtExplainVschemaFile != ""
 	if a == b {
-		return errors.New("specify exactly one of the following flags: -vschema, -vtexplain-vschema, -sharded")
+		return errors.New("specify exactly one of the following flags: -vschema or -vtexplain-vschema")
 	}
 
 	_, vschema, err := data.GetKeyspaces(cfg.VSchemaFile, cfg.VtExplainVschemaFile, "main", false)
