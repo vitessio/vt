@@ -28,6 +28,7 @@ const (
 	VitessOnly
 	MySQLOnly
 	ErrorExpected
+	AllowDifferentFieldSizes
 )
 
 type theState uint8
@@ -63,6 +64,8 @@ func (s theState) getStateName() string {
 		return "SkipBelowVersion"
 	case ErrorExpected:
 		return "ErrorExpected"
+	case AllowDifferentFieldSizes:
+		return "AllowDifferentFieldSizes"
 	default:
 		return "Unknown"
 	}
@@ -70,7 +73,7 @@ func (s theState) getStateName() string {
 
 func (s *State) changeStateTo(newState theState) error {
 	if s.state != None {
-		return fmt.Errorf("cannot set skip next: %s state is already active", s.state.getStateName())
+		return fmt.Errorf("cannot set %s: %s state is already active", newState.getStateName(), s.state.getStateName())
 	}
 	s.state = newState
 	return nil
@@ -180,6 +183,14 @@ func (s *State) ShouldSkip() bool {
 	s.skipBinary = ""
 	s.state = None
 	return !okayToRun
+}
+
+func (s *State) SetAllowDifferentFieldSizes() error {
+	return s.changeStateTo(AllowDifferentFieldSizes)
+}
+
+func (s *State) AllowDifferentFieldSizes() bool {
+	return s.checkAndClear(AllowDifferentFieldSizes)
 }
 
 func (s *State) RunOnVitess() bool {
