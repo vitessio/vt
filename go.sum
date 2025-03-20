@@ -630,7 +630,5 @@ nullprogram.com/x/optparse v1.0.0/go.mod h1:KdyPE+Igbe0jQUrVfMqDMeJQIJZEuyV7pjYm
 rsc.io/pdf v0.1.1/go.mod h1:n8OzWcQ6Sp37PL01nO98y4iUCRdTGarVfzxY20ICaU4=
 sigs.k8s.io/yaml v1.4.0 h1:Mk1wCc2gy/F0THH0TAp1QYyJNzRm2KCLy3o5ASXVI5E=
 sigs.k8s.io/yaml v1.4.0/go.mod h1:Ejl7/uTz7PSA4eKMyQCUTnhZYNmLIl+5c2lQPGR2BPY=
-vitess.io/vitess v0.10.3-0.20250320173243-c8365374c14e h1:CYmToKjIBR1dJuYhETlrRRrJI1JTO4kkOEw1fGtE5/g=
-vitess.io/vitess v0.10.3-0.20250320173243-c8365374c14e/go.mod h1:QUvZ+ZSvRxK9sVDPi06E05CySbthOPdkbt+3LnoK+7c=
 vitess.io/vitess v0.10.3-0.20250320180030-02451562a602 h1:BbwQhXCrNcrnpr/xlc1KBBBZaXqNSTtjJJgfzdKRqDU=
 vitess.io/vitess v0.10.3-0.20250320180030-02451562a602/go.mod h1:QUvZ+ZSvRxK9sVDPi06E05CySbthOPdkbt+3LnoK+7c=
