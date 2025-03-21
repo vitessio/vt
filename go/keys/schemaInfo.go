@@ -53,8 +53,8 @@ func (s *SchemaInfo) handleCreateTable(create *sqlparser.CreateTable) {
 	s.Tables[create.Table.Name.String()] = columns
 }
 
-func (s *SchemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes.Table, vindexes.Vindex, string, topodata.TabletType, key.Destination, error) {
-	var tbl *vindexes.Table
+func (s *SchemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes.BaseTable, vindexes.Vindex, string, topodata.TabletType, key.ShardDestination, error) {
+	var tbl *vindexes.BaseTable
 	ks := tablename.Qualifier.String()
 	if ks == "" {
 		ks = s.KsName
@@ -64,7 +64,7 @@ func (s *SchemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes
 		// This is a table from our keyspace. We should be able to find it
 		columns, found := s.Tables[tablename.Name.String()]
 		if found {
-			tbl = &vindexes.Table{
+			tbl = &vindexes.BaseTable{
 				Name:                    tablename.Name,
 				Keyspace:                &vindexes.Keyspace{Name: s.KsName, Sharded: true},
 				Columns:                 columns,
@@ -75,7 +75,7 @@ func (s *SchemaInfo) FindTableOrVindex(tablename sqlparser.TableName) (*vindexes
 
 	if tbl == nil {
 		// This is a table from another keyspace, or we couldn't find it in our keyspace
-		tbl = &vindexes.Table{
+		tbl = &vindexes.BaseTable{
 			Name:                    tablename.Name,
 			Keyspace:                &vindexes.Keyspace{Name: ks, Sharded: true},
 			ColumnListAuthoritative: false,

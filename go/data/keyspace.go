@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"vitess.io/vitess/go/test/endtoend/cluster"
-	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
@@ -39,11 +38,11 @@ func defaultVschema(defaultKeyspaceName string) *vindexes.VSchema {
 		Keyspaces: map[string]*vindexes.KeyspaceSchema{
 			defaultKeyspaceName: {
 				Keyspace: &vindexes.Keyspace{},
-				Tables:   map[string]*vindexes.Table{},
+				Tables:   map[string]*vindexes.BaseTable{},
 				Vindexes: map[string]vindexes.Vindex{
 					"xxhash": &hashVindex{Type: "xxhash"},
 				},
-				Views: map[string]sqlparser.SelectStatement{},
+				Views: map[string]*vindexes.View{},
 			},
 		},
 	}

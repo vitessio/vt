@@ -190,6 +190,8 @@ func (t *Tester) handleQuery(q data.Query) {
 		t.prepareVExplain(q.Query)
 	case data.WaitForAuthoritative:
 		t.waitAuthoritative(q.Query)
+	case data.AllowDifferentFieldSizes:
+		err = t.state.SetAllowDifferentFieldSizes()
 	case data.SQLQuery:
 		if t.vexplain == "" {
 			t.runQuery(q)
@@ -376,7 +378,7 @@ func (t *Tester) handleCreateTable(create *sqlparser.CreateTable) func() {
 
 	ks := t.vschema.Keyspaces[t.ksNames[0]]
 	tableName := create.Table.Name
-	ks.Tables[tableName.String()] = &vindexes.Table{
+	ks.Tables[tableName.String()] = &vindexes.BaseTable{
 		Name:           tableName,
 		Keyspace:       ks.Keyspace,
 		ColumnVindexes: []*vindexes.ColumnVindex{shardingKeys},

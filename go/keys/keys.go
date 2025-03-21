@@ -119,7 +119,7 @@ func (ql *queryList) processQuery(si *SchemaInfo, ast sqlparser.Statement, q dat
 
 	mapBv := make(map[string]*querypb.BindVariable)
 	reservedVars := sqlparser.NewReservedVars("", bv)
-	err := sqlparser.Normalize(ast, reservedVars, mapBv)
+	_, err := sqlparser.Normalize(ast, reservedVars, mapBv, false, si.KsName, 1000, "", map[string]string{}, nil, nil)
 	if err != nil {
 		ql.addFailedQuery(q, err)
 		return
