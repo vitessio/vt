@@ -154,7 +154,7 @@ func (e *FileReporter) createErrorFileFor() *os.File {
 	errorPath := path.Join(e.errorDir(), qc)
 	file, err := os.Create(errorPath)
 	exitIf(err, "creating error file")
-	_, err = file.WriteString(fmt.Sprintf("Error log for query on line %d:\n%s\n\n", e.currentQueryLineNum, e.currentQuery))
+	_, err = fmt.Fprintf(file, "Error log for query on line %d:\n%s\n\n", e.currentQueryLineNum, e.currentQuery)
 	exitIf(err, "writing to error file")
 
 	return file

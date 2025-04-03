@@ -107,7 +107,7 @@ func (t *Tracer) runQuery(q data.Query, ast sqlparser.Statement, state *state.St
 
 	reference := state.IsReferenceSet()
 	_, isSelect := ast.(sqlparser.SelectStatement)
-	if reference || !state.RunOnVitess() || !(isSelect || sqlparser.IsDMLStatement(ast)) {
+	if reference || !state.RunOnVitess() || (!isSelect && !sqlparser.IsDMLStatement(ast)) {
 		return nil
 	}
 

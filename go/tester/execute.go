@@ -217,10 +217,10 @@ func generateShardRanges(numberOfShards int) []string {
 		start := i * step
 		end := (i + 1) * step
 
-		switch {
-		case i == 0:
+		switch i {
+		case 0:
 			ranges[i] = fmt.Sprintf("-%02x", end)
-		case i == numberOfShards-1:
+		case numberOfShards - 1:
 			ranges[i] = fmt.Sprintf("%02x-", start)
 		default:
 			ranges[i] = fmt.Sprintf("%02x-%02x", start, end)

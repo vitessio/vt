@@ -78,7 +78,7 @@ func Run(cfg Config) error {
 		return wrongUsage("specify only one of the following flags: -vschema, -vtexplain-vschema, -sharded")
 	}
 
-	if cfg.NumberOfShards > 0 && !(cfg.Sharded || cfg.VSchemaFile != "" || cfg.VtExplainVschemaFile != "") {
+	if cfg.NumberOfShards > 0 && !cfg.Sharded && cfg.VSchemaFile == "" && cfg.VtExplainVschemaFile == "" {
 		return wrongUsage("number-of-shards can only be used with -sharded, -vschema or -vtexplain-vschema")
 	}
 
