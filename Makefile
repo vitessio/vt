@@ -10,6 +10,9 @@ ifeq ($(GOBIN_DIR),)
 	GOBIN_DIR := $(shell go env GOPATH)/bin
 endif
 
+COMMIT := $(shell git rev-parse --short HEAD)
+DATE   := $(shell date +%Y-%m-%dT%H:%M:%S)
+
 test_and_build: test build
 
 # Version check
@@ -28,7 +31,10 @@ default: check_version build
 
 build:
 	@echo "Building vt..."
-	@go build -o vt ./go/vt
+	@go build -ldflags "\
+	  -X github.com/vitessio/vt/go/cmd.CommitSha=$(COMMIT) \
+	  -X github.com/vitessio/vt/go/cmd.BuildDate=$(DATE)" \
+	  -o vt ./go/vt
 
 test:
 	go test -v -count=1 ./go/...
