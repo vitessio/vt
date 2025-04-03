@@ -114,4 +114,5 @@ func commonFlags(cmd *cobra.Command, cfg *vttester.Config) {
 	cmd.Flags().StringVar(&cfg.TraceFile, "trace-file", "", "Do a vexplain trace on all queries and store the output in the given file.")
 	cmd.Flags().BoolVar(&cfg.Sharded, "sharded", false, "Run all tests on a sharded keyspace and using auto-vschema. This cannot be used with either -vschema or -vtexplain-vschema.")
 	cmd.Flags().StringVar(&cfg.BackupDir, "backup-path", "", "Restore from backup before running the tester")
+	cmd.Flags().BoolVar(&cfg.Verbose, "verbose", false, "Print to stdout the queries that are being run.")
 }

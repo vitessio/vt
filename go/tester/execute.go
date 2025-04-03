@@ -47,6 +47,9 @@ func ExecuteTests(
 
 	for _, name := range cfg.Tests {
 		errReporter := s.NewReporterForFile(name)
+		if cfg.Verbose {
+			errReporter = &loggingReporter{inner: errReporter}
+		}
 		vTester := NewTester(name, errReporter, info, cfg.OLAP, info.vschema, vschemaF, factory, cfg.Loader)
 		err := vTester.Run()
 		if err != nil {

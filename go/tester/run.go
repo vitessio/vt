@@ -41,6 +41,7 @@ type Config struct {
 	Tests                []string
 	NumberOfShards       int
 	Compare              bool
+	Verbose              bool
 
 	BackupDir string
 	Loader    data.Loader
