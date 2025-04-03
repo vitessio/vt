@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := test_and_build
 
 REQUIRED_GO_VERSION := 1.23
-GOLANGCI_LINT_VERSION := v1.64.6
+GOLANGCI_LINT_VERSION := v2.0.2
 
 # Determine the Go binary directory
 GOBIN_DIR := $(or $(GOBIN), $(shell go env GOBIN))
