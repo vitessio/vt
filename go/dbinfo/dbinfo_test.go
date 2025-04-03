@@ -61,7 +61,7 @@ func TestDBInfoLoad(t *testing.T) {
 			"gtid_mode":        "OFF",
 			"log_bin":          "ON",
 		}
-		require.EqualValues(t, expected, si.GlobalVariables)
+		require.Equal(t, expected, si.GlobalVariables)
 	})
 }
 

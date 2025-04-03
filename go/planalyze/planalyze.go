@@ -196,7 +196,7 @@ func getPlanRes(err error, plan *engine.Plan) PlanComplexity {
 	case *engine.Delete:
 		rp = prim.RoutingParameters
 	case *engine.Insert:
-		if prim.InsertCommon.Opcode == engine.InsertUnsharded {
+		if prim.Opcode == engine.InsertUnsharded {
 			return PassThrough
 		}
 		return SimpleRouted

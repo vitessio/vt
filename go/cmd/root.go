@@ -46,5 +46,6 @@ func getRootCmd() *cobra.Command {
 	root.AddCommand(dbinfoCmd())
 	root.AddCommand(transactionsCmd())
 	root.AddCommand(planalyzeCmd())
+	root.AddCommand(versionCmd())
 	return root
 }

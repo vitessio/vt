@@ -2,13 +2,16 @@
 .DEFAULT_GOAL := test_and_build
 
 REQUIRED_GO_VERSION := 1.23
-GOLANGCI_LINT_VERSION := v1.64.6
+GOLANGCI_LINT_VERSION := v2.0.2
 
 # Determine the Go binary directory
 GOBIN_DIR := $(or $(GOBIN), $(shell go env GOBIN))
 ifeq ($(GOBIN_DIR),)
 	GOBIN_DIR := $(shell go env GOPATH)/bin
 endif
+
+COMMIT := $(shell git rev-parse --short HEAD)
+DATE   := $(shell date +%Y-%m-%dT%H:%M:%S)
 
 test_and_build: test build
 
@@ -28,7 +31,10 @@ default: check_version build
 
 build:
 	@echo "Building vt..."
-	@go build -o vt ./go/vt
+	@go build -ldflags "\
+	  -X github.com/vitessio/vt/go/cmd.CommitSha=$(COMMIT) \
+	  -X github.com/vitessio/vt/go/cmd.BuildDate=$(DATE)" \
+	  -o vt ./go/vt
 
 test:
 	go test -v -count=1 ./go/...
