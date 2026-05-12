@@ -8,15 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Set up Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: './go.mod'
 
       - name: Cache Go modules
-        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c
+        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
         with:
           path: |
             ~/.cache/go-build
@@ -58,7 +58,7 @@ jobs:
         run: go test -v ./... | go-junit-report > report.xml
 
       - name: Test Summary
-        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86
+        uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         with:
           paths: "report.xml"
           show: "fail"
