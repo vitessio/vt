@@ -21,6 +21,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"vitess.io/vitess/go/mysql"
+	"vitess.io/vitess/go/test/endtoend/cluster"
 )
 
 func TestGenerateShardRanges(t *testing.T) {
@@ -40,4 +43,33 @@ func TestGenerateShardRanges(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+// TestSetupExternalMySQLSharesOneServer checks that every keyspace database exists on the returned reference server.
+func TestSetupExternalMySQLSharesOneServer(t *testing.T) {
+	clusterInstance := cluster.NewCluster("zone1", "127.0.0.1")
+	keyspaces := []*cluster.Keyspace{{Name: "commerce"}, {Name: "customer"}}
+
+	params, closers, err := setupExternalMySQL(keyspaces, clusterInstance)
+	t.Cleanup(func() {
+		for _, closer := range closers {
+			closer()
+		}
+	})
+	require.NoError(t, err)
+
+	conn, err := mysql.Connect(t.Context(), params)
+	require.NoError(t, err)
+	t.Cleanup(conn.Close)
+
+	qr, err := conn.ExecuteFetch("SHOW DATABASES", 100, false)
+	require.NoError(t, err)
+
+	var databases []string
+	for _, row := range qr.Rows {
+		databases = append(databases, row[0].ToString())
+	}
+
+	assert.Contains(t, databases, "commerce")
+	assert.Contains(t, databases, "customer")
 }

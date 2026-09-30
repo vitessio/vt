@@ -165,40 +165,41 @@ func startKeyspace(cfg Config, vschema *vindexes.VSchema, keyspace *cluster.Keys
 	return nil
 }
 
-// TODO: having a single connection is not correct if we are dealing with multiple mysql databases.
-func setupExternalMySQL(keyspaces []*cluster.Keyspace, clusterInstance *cluster.LocalProcessCluster) (_ *mysql.ConnParams, closers []func(), err error) {
-	// Create the mysqld server we will use to compare the results.
-	// We go through all the keyspaces we found in the vschema, and
-	// simply create the mysqld process during the first iteration with
-	// the first database, following iterations will create new databases.
-	var conn *mysql.Conn
-	defer func() {
-		if conn != nil {
-			conn.Close()
-		}
-	}()
-
-	var mysqlParamsValue mysql.ConnParams
-	for i, keyspace := range keyspaces {
-		if i > 0 {
-			_, err = conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", keyspace.Name), 0, false)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-
-		var closer func()
-		mysqlParamsValue, closer, err = utils.NewMySQL(clusterInstance, keyspace.Name, "")
-		if err != nil {
-			return nil, nil, err
-		}
-		conn, err = mysql.Connect(context.Background(), &mysqlParamsValue)
-		if err != nil {
-			return nil, nil, err
-		}
-		closers = append(closers, closer)
+// setupExternalMySQL starts one reference MySQL server and creates a database for each keyspace on it. Queries that
+// join keyspaces need every database on the same server.
+func setupExternalMySQL(keyspaces []*cluster.Keyspace, clusterInstance *cluster.LocalProcessCluster) (*mysql.ConnParams, []func(), error) {
+	if len(keyspaces) == 0 {
+		return nil, nil, errors.New("no keyspaces to create on the reference MySQL server")
 	}
-	return &mysqlParamsValue, closers, nil
+
+	params, closer, err := utils.NewMySQL(clusterInstance, keyspaces[0].Name, "")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := createDatabases(&params, keyspaces[1:]); err != nil {
+		closer()
+		return nil, nil, err
+	}
+
+	return &params, []func(){closer}, nil
+}
+
+// createDatabases creates a database for each keyspace on the MySQL server at params.
+func createDatabases(params *mysql.ConnParams, keyspaces []*cluster.Keyspace) error {
+	conn, err := mysql.Connect(context.Background(), params)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	for _, keyspace := range keyspaces {
+		if _, err := conn.ExecuteFetch(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", keyspace.Name), 0, false); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func generateShardRanges(numberOfShards int) []string {
