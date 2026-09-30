@@ -61,7 +61,7 @@ install-tools:
 	go install github.com/incu6us/goimports-reviser/v3@latest
 
 	@echo "Installing golangci-lint..."
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+	curl -sSfL https://golangci-lint.run/install.sh | \
 		sh -s -- -b $(GOBIN_DIR) $(GOLANGCI_LINT_VERSION)
 
 	@echo "All tools installed successfully."
