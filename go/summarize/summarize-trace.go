@@ -101,7 +101,7 @@ func summarizeTrace(t TracedQuery) QuerySummary {
 	return summary
 }
 
-func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, tq1, tq2 traceSummary) {
+func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, tq1, tq2 traceSummary) error {
 	summary1 := summarizeTraces(tq1.TracedQueries)
 	summary2 := summarizeTraces(tq2.TracedQueries)
 
@@ -120,12 +120,14 @@ func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, tq1, t
 		table := newTable(out, tw.AlignLeft, tw.AlignRight, tw.AlignRight, tw.AlignRight, tw.AlignLeft)
 		table.Header("Metric", tq1.Name, tq2.Name, "Diff", "% Change")
 
-		m1 := compareMetric(table, "Route Calls", s1.RouteCalls, s2.RouteCalls)
-		m2 := compareMetric(table, "Rows Sent", s1.RowsSent, s2.RowsSent)
-		m3 := compareMetric(table, "Rows In Memory", s1.RowsInMemory, s2.RowsInMemory)
-		m4 := compareMetric(table, "Shards Queried", s1.ShardsQueried, s2.ShardsQueried)
+		routeCalls, m1 := compareMetric("Route Calls", s1.RouteCalls, s2.RouteCalls)
+		rowsSent, m2 := compareMetric("Rows Sent", s1.RowsSent, s2.RowsSent)
+		rowsInMemory, m3 := compareMetric("Rows In Memory", s1.RowsInMemory, s2.RowsInMemory)
+		shardsQueried, m4 := compareMetric("Shards Queried", s1.ShardsQueried, s2.ShardsQueried)
+		if err := table.Bulk([][]string{routeCalls, rowsSent, rowsInMemory, shardsQueried}); err != nil {
+			return err
+		}
 
-		// we introduce variables to make sure we don't shortcut the evaluation
 		significant := m1 || m2 || m3 || m4
 		if significant {
 			significantChanges++
@@ -141,7 +143,9 @@ func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, tq1, t
 		s2ShardsQueried += s2.ShardsQueried
 
 		printQuery(out, termWidth, highLighter, s1.Q, significant)
-		table.Render()
+		if err := table.Render(); err != nil {
+			return err
+		}
 		fmt.Fprintln(out)
 	}
 
@@ -157,6 +161,8 @@ func compareTraces(out io.Writer, termWidth int, highLighter Highlighter, tq1, t
 	fmt.Fprintf(out, "- Average change in Data Sent: %.2f%%\n", totalDataSentChange)
 	fmt.Fprintf(out, "- Average change in Rows In Memory: %.2f%%\n", totalMemoryRowsChange)
 	fmt.Fprintf(out, "- Average change in Shards Queried: %.2f%%\n", totalShardsQueriedChange)
+
+	return nil
 }
 
 // newTable returns an ASCII table that prints its headers as given and aligns each row column as given.
@@ -168,8 +174,8 @@ func newTable(out io.Writer, columnAlignment ...tw.Align) *tablewriter.Table {
 	)
 }
 
-// compareMetric compares two metrics and appends the result to the table, returning true if the change is significant
-func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) bool {
+// compareMetric compares two metrics. It returns the table row for the comparison, and true if the change is significant.
+func compareMetric(metricName string, val1, val2 int) ([]string, bool) {
 	diff := val2 - val1
 	percentChange := float64(diff) / float64(val1) * 100
 	percentChangeStr := fmt.Sprintf("%.2f%%", percentChange)
@@ -178,18 +184,18 @@ func compareMetric(table *tablewriter.Table, metricName string, val1, val2 int) 
 		percentChange = 0 // To not skew the average calculation
 	}
 
-	table.Append([]string{
+	row := []string{
 		metricName,
 		strconv.Itoa(val1),
 		strconv.Itoa(val2),
 		strconv.Itoa(diff),
 		percentChangeStr,
-	})
+	}
 
-	return percentChange < -significantChangeThreshold
+	return row, percentChange < -significantChangeThreshold
 }
 
-func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, tq traceSummary) {
+func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, tq traceSummary) error {
 	summary := summarizeTraces(tq.TracedQueries)
 	for i, query := range tq.TracedQueries {
 		if i > 0 {
@@ -204,12 +210,20 @@ func printTraceSummary(out io.Writer, termWidth int, highLighter Highlighter, tq
 			"Rows In Memory",
 			"Shards Queried",
 		)
-		table.Append([]string{
+		err := table.Append([]string{
 			strconv.Itoa(querySummary.RouteCalls),
 			strconv.Itoa(querySummary.RowsSent),
 			strconv.Itoa(querySummary.RowsInMemory),
 			strconv.Itoa(querySummary.ShardsQueried),
 		})
-		table.Render()
+		if err != nil {
+			return err
+		}
+
+		if err := table.Render(); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
