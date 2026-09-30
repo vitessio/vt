@@ -99,8 +99,6 @@ func (nqr *ComparingQueryRunner) executeStmt(query string, ast sqlparser.Stateme
 		switch {
 		case state.CheckAndClearReference():
 			return nqr.executeReference(query, ast)
-		case state.AllowDifferentFieldSizes():
-			nqr.execAllowingAnyFieldSize(query)
 		case state.NormalExecution():
 			nqr.comparer.Exec(query)
 		case state.IsVitessOnlySet():
