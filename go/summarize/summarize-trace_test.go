@@ -106,7 +106,7 @@ func tf2() traceSummary {
 func TestSummary(t *testing.T) {
 	t.Run("tf1", func(t *testing.T) {
 		sb := &strings.Builder{}
-		printTraceSummary(sb, 80, noHighlight, tf1())
+		require.NoError(t, printTraceSummary(sb, 80, noHighlight, tf1()))
 		assert.Equal(t, `Query: select * from music
 Line # 1
 +-------------+-----------+----------------+----------------+
@@ -127,7 +127,7 @@ Line # 2
 
 	t.Run("tf2", func(t *testing.T) {
 		sb := &strings.Builder{}
-		printTraceSummary(sb, 80, noHighlight, tf2())
+		require.NoError(t, printTraceSummary(sb, 80, noHighlight, tf2()))
 		assert.Equal(t, `Query: select * from music
 Line # 1
 +-------------+-----------+----------------+----------------+
@@ -149,7 +149,7 @@ Line # 2
 
 func TestCompareFiles(t *testing.T) {
 	sb := &strings.Builder{}
-	compareTraces(sb, 80, noHighlight, tf1(), tf2())
+	require.NoError(t, compareTraces(sb, 80, noHighlight, tf1(), tf2()))
 	s := sb.String()
 	want := `Query: select * from music
 Line # 1 (significant)
@@ -187,7 +187,7 @@ func TestSummarizeTraceFile(t *testing.T) {
 	tq, err := readTracedFile("../testdata/trace-output/trace-log.json")
 	require.NoError(t, err)
 	sb := &strings.Builder{}
-	printTraceSummary(sb, 80, noHighlight, tq)
+	require.NoError(t, printTraceSummary(sb, 80, noHighlight, tq))
 	expected := `Query: INSERT INTO region (R_REGIONKEY, R_NAME, R_COMMENT) VALUES (1, 'ASIA',...
 Line # 80
 +-------------+-----------+----------------+----------------+

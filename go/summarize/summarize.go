@@ -101,9 +101,9 @@ func Run(files []string, hotMetric string, showGraph bool, outputFormat string, 
 
 	switch traceCount {
 	case 1:
-		printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0])
+		exitIfError(printTraceSummary(os.Stdout, terminalWidth(), highlightQuery, traces[0]))
 	case 2:
-		compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1])
+		exitIfError(compareTraces(os.Stdout, terminalWidth(), highlightQuery, traces[0], traces[1]))
 	}
 }
 

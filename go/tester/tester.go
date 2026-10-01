@@ -190,8 +190,6 @@ func (t *Tester) handleQuery(q data.Query) {
 		t.prepareVExplain(q.Query)
 	case data.WaitForAuthoritative:
 		t.waitAuthoritative(q.Query)
-	case data.AllowDifferentFieldSizes:
-		err = t.state.SetAllowDifferentFieldSizes()
 	case data.SQLQuery:
 		if t.vexplain == "" {
 			t.runQuery(q)

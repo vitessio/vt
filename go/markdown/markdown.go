@@ -46,7 +46,7 @@ func (m *MarkDown) NewLine() {
 }
 
 func (m *MarkDown) Printf(format string, args ...any) {
-	m.buffer.WriteString(fmt.Sprintf(format, args...))
+	fmt.Fprintf(&m.buffer, format, args...)
 }
 
 func (m *MarkDown) PrintTable(headers []string, rows [][]string) {

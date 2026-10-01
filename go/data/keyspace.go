@@ -24,13 +24,16 @@ import (
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
+// xxhashVindexName is the name and type of the default hash vindex.
+const xxhashVindexName = "xxhash"
+
 type hashVindex struct {
 	vindexes.Hash
 	Type string `json:"type"`
 }
 
 func (hv hashVindex) String() string {
-	return "xxhash"
+	return xxhashVindexName
 }
 
 func defaultVschema(defaultKeyspaceName string) *vindexes.VSchema {
@@ -40,7 +43,7 @@ func defaultVschema(defaultKeyspaceName string) *vindexes.VSchema {
 				Keyspace: &vindexes.Keyspace{},
 				Tables:   map[string]*vindexes.BaseTable{},
 				Vindexes: map[string]vindexes.Vindex{
-					"xxhash": &hashVindex{Type: "xxhash"},
+					xxhashVindexName: &hashVindex{Type: xxhashVindexName},
 				},
 				Views: map[string]*vindexes.View{},
 			},

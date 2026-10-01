@@ -35,21 +35,19 @@ const (
 	MysqlOnly
 	Reference
 	UsageCount
-	AllowDifferentFieldSizes
 )
 
 var commandMap = map[string]CmdType{ //nolint:gochecknoglobals // this is instead of a const
-	"query":                       SQLQuery,
-	"error":                       Error,
-	"skip":                        Skip,
-	"skip_if_below_version":       SkipIfBelowVersion,
-	"vexplain":                    VExplain,
-	"wait_authoritative":          WaitForAuthoritative,
-	"vitess_only":                 VitessOnly,
-	"mysql_only":                  MysqlOnly,
-	"reference":                   Reference,
-	"usage_count":                 UsageCount,
-	"allow_different_field_sizes": AllowDifferentFieldSizes,
+	"query":                 SQLQuery,
+	"error":                 Error,
+	"skip":                  Skip,
+	"skip_if_below_version": SkipIfBelowVersion,
+	"vexplain":              VExplain,
+	"wait_authoritative":    WaitForAuthoritative,
+	"vitess_only":           VitessOnly,
+	"mysql_only":            MysqlOnly,
+	"reference":             Reference,
+	"usage_count":           UsageCount,
 }
 
 func (cmd CmdType) String() string {

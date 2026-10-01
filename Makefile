@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := test_and_build
 
 REQUIRED_GO_VERSION := 1.23
-GOLANGCI_LINT_VERSION := v2.0.2
+GOLANGCI_LINT_VERSION := v2.14.0
 
 # Determine the Go binary directory
 GOBIN_DIR := $(or $(GOBIN), $(shell go env GOBIN))
@@ -61,7 +61,7 @@ install-tools:
 	go install github.com/incu6us/goimports-reviser/v3@latest
 
 	@echo "Installing golangci-lint..."
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+	curl -sSfL https://golangci-lint.run/install.sh | \
 		sh -s -- -b $(GOBIN_DIR) $(GOLANGCI_LINT_VERSION)
 
 	@echo "All tools installed successfully."

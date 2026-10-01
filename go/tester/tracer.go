@@ -140,7 +140,7 @@ func (t *Tracer) trace(query data.Query) error {
 	if t.alreadyWrittenTraces {
 		traceEntry.WriteString(",") // Prepend a comma if there are already written traces
 	}
-	traceEntry.WriteString(fmt.Sprintf(`{"Query": %s, "LineNumber": "%d", "Trace": `, queryJSON, query.Line))
+	fmt.Fprintf(&traceEntry, `{"Query": %s, "LineNumber": "%d", "Trace": `, queryJSON, query.Line)
 	traceEntry.Write(prettyTrace.Bytes()) // Add the formatted trace
 	traceEntry.WriteString("}")           // Close the JSON object
 
